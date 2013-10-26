@@ -17,9 +17,7 @@ The BBB has the 5370 software pre-installed. Currently you must "ssh" into the B
 
 ADDITIONAL DETAILS
 
-Currently you must login to the BBB and start the 5370 app manually (i.e. the BBB boots when you power-on the 5370 but the 5370 won't function as an instrument until the app is started).
-[this will be fixed when I figure out how to run a user program when Linux boots. Angstrom uses
-this new, impossibly complicated "systemctl" facility that I've already spent way too much time trying to understand. Maybe _you_ know how this is supposed to work and can tell me, lol]
+Currently you must login to the BBB and start the 5370 app manually (i.e. the BBB boots when you power-on the 5370 but the 5370 won't function as an instrument until the app is started). [this will be fixed when I figure out how to run a user program when Linux boots. Angstrom uses this new, impossibly complicated "systemctl" facility that I've already spent way too much time trying to understand. Maybe _you_ know how this is supposed to work and can tell me, lol]
 
 The best way to login to the board is by using ssh (e.g. ssh root@BBB_ip_address). Your network must be running a DHCP server somewhere for the BBB to obtain its IP address (usually your Internet router or modem). It is possible to use a USB WiFi dongle under Angstrom but commentary on the net says this is difficult and I haven't got it working yet. The BBB supplies drivers that allow networking over a USB cable, but I couldn't get DHCP to work with this setup (point-to-point IP using default non-routable addresses worked fine).
 
@@ -44,39 +42,45 @@ FILES
 The files in the github repository are organized as follows:
 
         firmware/<version>/     C code that runs on the BBB.
-        pcb/<version>/          Complete documentation for replicating or modifying the PCB.
+        pcb/<version>/          Complete documentation for replicating or 
+                                modifying the PCB.
         
-        firmware/5370[AB].ROM   Just for reference, packed-binary format copies of the ROM code from
-                                version A and B instruments. The .h files of the ROM code compiled
-                                with the code were derived from these.
+        firmware/5370[AB].ROM   Just for reference, packed-binary format copies
+                                of the ROM code from version A and B 
+                                instruments. The .h files of the ROM code 
+                                compiled with the code were derived from these.
         
         firmware/<version>/
                 6800/6800*      The Motorola M6800 microprocessor interpreter.
-                5370/5370*      Called from the interpreter to handle 5370 bus I/O.
-                5370/hpib*      The HPIB board emulator including the network client.
-                arch/sitara/*   BBB GPIO-specific generation of 5370 bus cycles via bit-banging.
-                support/*       Code to support the 7-segment display, LEDs, keys, etc.
-                user/*          An example of code to extend the capabilities of the instrument.
-                unix_env/*      A few customization files for Angstrom Linux including the
-                                device-tree file necessary to setup the GPIO lines. The shell script here called 't' is what you generally run.
+                5370/5370*      Called from the interpreter for 5370 bus I/O.
+                5370/hpib*      The HPIB board emulator.
+                arch/sitara/*   BBB GPIO-specific generation of 5370 bus cycles.
+                support/*       Code to support the 7-seg display, LEDs, etc.
+                user/*          An example of code to extend the capabilities of 
+                                the instrument.
+                unix_env/*      A few customization files for Angstrom Linux 
+                                including the device-tree file necessary to 
+                                setup the GPIO lines. The shell script here 
+                                called 't' is what you generally run.
         
         pcb/<version>/
-                5370.pro        KiCAD project file (references to libraries etc.)
+                5370.pro        KiCAD project file
                 5370.sch        KiCAD schematic source
                 5370.brd        KiCAD PCB layout source
-                5370.gvp        Gerbv project file (Gerbv is a Gerber viewer superior to KiCAD's)
-                5370.BOM.*      Bill-of-materials file: prices, part selection notes.
-                plot/5370-*.*   Gerber plots from KiCAD: 2-layer board, mask, silkscreen and
-                                edge cut files.
-                plot/5370.drl   KiCAD drill file: Excellon format, inches, keep zeros, minimal header,
-                                absolute origin, 2:4 precision
+                5370.gvp        Gerbv project file
+                5370.BOM.*      Bill-of-materials file: prices, part notes.
+                plot/5370-*.*   Gerber plots from KiCAD: 2-layer board, mask, 
+                                silkscreen and edge cut files.
+                plot/5370.drl   KiCAD drill file: Excellon format, inches,
+                                keep zeros, minimal header, absolute origin, 2:4
                 plot/makefile   Will zip all the files together.
         
         pcb/data.sheets/        Cut sheets for all components.
         
-        pcb/libraries.v1/       KiCAD-format library (schematic) and module (footprint) files
-        pcb/modules.v1/         for all the components used. No references are made to outside
-                                libraries to keep things simple.
+        pcb/libraries.v1/       KiCAD-format library (schematic) and module 
+        pcb/modules.v1/         (footprint) files for all the components used. 
+                                No references are made to outside libraries to
+                                keep things simple.
                 
 
 DESIGN OVERVIEW
@@ -92,12 +96,11 @@ The same philosophy was applied to the 5370's HPIB controller. Rather than disas
 
 KEYBOARD COMMANDS
 
-When the app is running it responds to several commands (type "?" or "help" for list).
-These are primarily to assist development when you're not sitting in the same room as the noisy beast:
+When the app is running it responds to several commands (type "?" or "help" for list). These are primarily to assist development when you're not sitting in the same room as the noisy beast:
 
-        d               show instrument display including measurement unit and key LEDs
+        d               show instrument display including units and key LEDs
         h [HPIB cmd]    emulate HPIB command input, e.g. "h md2"
-        k [f1 .. f4]    emulate function key 1-4 press, e.g. "k f2" is the "trig lvl" key
+        k [f1 .. f4]    emulate function key 1-4 press, e.g. "k f1" is TI key
         k [g1 .. g4]    emulate gate time key 1-4 press
         k [m1 .. m8]    emulate math key 1-8 press
         k [s1 .. s5]    emulate sample size key 1-5 press
