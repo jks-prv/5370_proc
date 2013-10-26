@@ -1,0 +1,27 @@
+#!/bin/sh
+
+if test ! -f .profile; then
+        cp 5370.v3.0/unix_env/.profile .;
+fi
+
+# out-of-the-box BBB doesn't seem to have NTP configured
+if grep -q 'NTPSERVERS=""' /etc/default/ntpdate ; then
+	cp 5370.v3.0/unix_env/ntpdate /etc/default;
+fi
+
+if date | grep -q 2000; then (echo start NTP; /usr/bin/ntpdate-sync); fi
+
+# setup 5370 device tree before running interpreter
+if test ! -f /lib/firmware/cape-bone-5370-00A0.dts; then
+	echo create 5370 device tree;
+	cp 5370.v3.0/unix_env/cape-bone-5370-00A0.dts /lib/firmware;
+	(cd /lib/firmware; dtc -O dtb -o cape-bone-5370-00A0.dtbo -b 0 -@ cape-bone-5370-00A0.dts);
+fi
+
+if grep -q 5370 /sys/devices/bone_capemgr.*/slots ; then
+	test 1; else
+	echo load 5370 device tree;
+	echo cape-bone-5370 > `ls /sys/devices/bone_capemgr.*/slots`;
+fi
+
+5370.v3.0/h

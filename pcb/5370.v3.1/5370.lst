@@ -1,0 +1,34 @@
+eeschema (2013-mar-25)-stable  >> Creation date: Saturday, October 26, 2013 02:30:27 PM
+#Cmp ( order = Reference )
+| C1         10uF        
+| C7         10nF        
+| C8         10nF        
+| D1         DIODE_SCHOTTKY
+| D2         DIODE_SCHOTTKY
+| FB1        1KZ         
+| P1         P1A         
+| P2         P1B         
+| R1         4K7         
+| R3         150         
+| R4         150         
+| U1         BEAGLEBONE_BLACK
+| U4         74LVC4245   
+#End Cmp
+
+#Cmp ( order = Value )
+| 10nF         C7        
+| 10nF         C8        
+| 10uF         C1        
+| DIODE_SCHOTTKY D1        
+| DIODE_SCHOTTKY D2        
+| 1KZ          FB1       
+| P1A          P1        
+| P1B          P2        
+| 150          R3        
+| 150          R4        
+| 4K7          R1        
+| BEAGLEBONE_BLACK U1        
+| 74LVC4245    U4        
+#End Cmp
+
+#End List

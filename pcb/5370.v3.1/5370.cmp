@@ -1,0 +1,94 @@
+Cmp-Mod V01 Created by CvPcb (2013-mar-25)-stable date = Saturday, October 26, 2013 10:35:17 AM
+
+BeginCmp
+TimeStamp = /4E6A89DC;
+Reference = C1;
+ValeurCmp = 10uF;
+IdModule  = 5370-SM1206-POL;
+EndCmp
+
+BeginCmp
+TimeStamp = /524C3344;
+Reference = C7;
+ValeurCmp = 10nF;
+IdModule  = 5370-SM0805;
+EndCmp
+
+BeginCmp
+TimeStamp = /524C35BC;
+Reference = C8;
+ValeurCmp = 10nF;
+IdModule  = 5370-SM0805;
+EndCmp
+
+BeginCmp
+TimeStamp = /5249BF35;
+Reference = D1;
+ValeurCmp = DIODE_SCHOTTKY;
+IdModule  = 5370-SOD-323;
+EndCmp
+
+BeginCmp
+TimeStamp = /5249CC1B;
+Reference = D2;
+ValeurCmp = DIODE_SCHOTTKY;
+IdModule  = 5370-SOD-323;
+EndCmp
+
+BeginCmp
+TimeStamp = /4E6A89C7;
+Reference = FB1;
+ValeurCmp = 1KZ;
+IdModule  = 5370-SM0805;
+EndCmp
+
+BeginCmp
+TimeStamp = /4E31D83C;
+Reference = P1;
+ValeurCmp = P1A;
+IdModule  = 5370-CARD-EDGE-18;
+EndCmp
+
+BeginCmp
+TimeStamp = /4E31D84D;
+Reference = P2;
+ValeurCmp = P1B;
+IdModule  = 5370-CARD-EDGE-18;
+EndCmp
+
+BeginCmp
+TimeStamp = /4E342CB2;
+Reference = R1;
+ValeurCmp = 4K7;
+IdModule  = 5370-bourns-4816P;
+EndCmp
+
+BeginCmp
+TimeStamp = /5249BCEA;
+Reference = R3;
+ValeurCmp = 150;
+IdModule  = 5370-SM0805;
+EndCmp
+
+BeginCmp
+TimeStamp = /5249CC15;
+Reference = R4;
+ValeurCmp = 150;
+IdModule  = 5370-SM0805;
+EndCmp
+
+BeginCmp
+TimeStamp = /5249AD48;
+Reference = U1;
+ValeurCmp = BEAGLEBONE_BLACK;
+IdModule  = 5370-BEAGLEBONE_BLACK;
+EndCmp
+
+BeginCmp
+TimeStamp = /5249AD70;
+Reference = U4;
+ValeurCmp = 74LVC4245;
+IdModule  = 5370-SO24;
+EndCmp
+
+EndListe
