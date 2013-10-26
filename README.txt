@@ -1,7 +1,7 @@
 This document describes the 5370 processor replacement board project
 
-	firmware release:	v3.0, October 25, 2013
-	PCB release:		v3.1, October 25, 2013
+        firmware release:       v3.0, October 25, 2013
+        PCB release:            v3.1, October 25, 2013
 
 Version 3.x uses an inexpensive BeagleBone Black (BBB) single-board computer as the host for the 5370 application code. The BBB runs Angstrom Linux from the 2GB on-board eMMC flash memory.
 
@@ -32,8 +32,8 @@ The "t" script in the root home directory does a few setup chores before running
 Technically you should really issue the "halt" command to Angstrom Linux and wait until the four blue activity LEDs on the BBB go off before powering the 5370 off (about 10 seconds). In practice I've been able to get away with skipping this, but the first time you're left with an unrecoverable corrupted filesystem you'll be very sorry.
 
 We all know stuff breaks when using different versions of things. All my BBBs have been hardware revision "A5C" boards. The software distribution of Angstrom Linux I use is "2013.06.20" found by doing:
-	mount /dev/mmcblk0p1 /mnt/boot
-	more /mnt/boot/ID.txt
+        mount /dev/mmcblk0p1 /mnt/boot
+        more /mnt/boot/ID.txt
 Which produces: "Cloud9 GNOME Image 2013.06.20". This distribution uses a Linux 3.8 kernel. See http://circuitco.com/support/index.php?title=BeagleBoneBlack for the latest information about BBB.
 
 If you're re-installing the BBB be certain to match the outline of the BBB to the silkscreen outline on the 5370 board. The BBB expansion connectors are not polarized.
@@ -43,42 +43,41 @@ FILES
 
 The files in the github repository are organized as follows:
 
-	firmware/<version>/		C code that runs on the BBB.
-	pcb/<version>/			Complete documentation for replicating or modifying the PCB.
-	
-	firmware/5370[AB].ROM	Just for reference, packed-binary format copies of the ROM code from
-							version A and B instruments. The .h files of the ROM code compiled
-							with the code were derived from these.
-	
-	firmware/<version>/
-		6800/6800*			The Motorola M6800 microprocessor interpreter.
-		5370/5370*			Called from the interpreter to handle 5370 bus I/O.
-		5370/hpib*			The HPIB board emulator including the network client.
-		arch/sitara/*		BBB GPIO-specific generation of 5370 bus cycles via bit-banging.
-		support/*			Code to support the 7-segment display, LEDs, keys, etc.
-		user/*				An example of code to extend the capabilities of the instrument.
-		unix_env/*			A few customization files for Angstrom Linux including the device-tree
-							file necessary to setup the GPIO lines. The shell script here called
-							't' is what you generally run.
-	
-	pcb/<version>/
-		5370.pro			KiCAD project file (references to libraries etc.)
-		5370.sch			KiCAD schematic source
-		5370.brd			KiCAD PCB layout source
-		5370.gvp			Gerbv project file (Gerbv is a Gerber viewer superior to KiCAD's)
-		5370.BOM.{ods,xls}	Bill-of-materials file: prices, part selection notes.
-		plot/5370-*.g??		Gerber plots from KiCAD: 2-layer board, mask, silkscreen and
-							edge cut files.
-		plot/5370.drl		KiCAD drill file: Excellon format, inches, keep zeros, minimal header,
-							absolute origin, 2:4 precision
-		plot/makefile		Will zip all the files together.
-	
-	pcb/data.sheets/		Cut sheets for all components.
-	
-	pcb/libraries.v1/		KiCAD-format library (schematic) and module (footprint) files
-	pcb/modules.v1/			for all the components used. No references are made to outside
-							libraries to keep things simple.
-		
+        firmware/<version>/     C code that runs on the BBB.
+        pcb/<version>/          Complete documentation for replicating or modifying the PCB.
+        
+        firmware/5370[AB].ROM   Just for reference, packed-binary format copies of the ROM code from
+                                version A and B instruments. The .h files of the ROM code compiled
+                                with the code were derived from these.
+        
+        firmware/<version>/
+                6800/6800*      The Motorola M6800 microprocessor interpreter.
+                5370/5370*      Called from the interpreter to handle 5370 bus I/O.
+                5370/hpib*      The HPIB board emulator including the network client.
+                arch/sitara/*   BBB GPIO-specific generation of 5370 bus cycles via bit-banging.
+                support/*       Code to support the 7-segment display, LEDs, keys, etc.
+                user/*          An example of code to extend the capabilities of the instrument.
+                unix_env/*      A few customization files for Angstrom Linux including the
+                                device-tree file necessary to setup the GPIO lines. The shell script here called 't' is what you generally run.
+        
+        pcb/<version>/
+                5370.pro        KiCAD project file (references to libraries etc.)
+                5370.sch        KiCAD schematic source
+                5370.brd        KiCAD PCB layout source
+                5370.gvp        Gerbv project file (Gerbv is a Gerber viewer superior to KiCAD's)
+                5370.BOM.*      Bill-of-materials file: prices, part selection notes.
+                plot/5370-*.*   Gerber plots from KiCAD: 2-layer board, mask, silkscreen and
+                                edge cut files.
+                plot/5370.drl   KiCAD drill file: Excellon format, inches, keep zeros, minimal header,
+                                absolute origin, 2:4 precision
+                plot/makefile   Will zip all the files together.
+        
+        pcb/data.sheets/        Cut sheets for all components.
+        
+        pcb/libraries.v1/       KiCAD-format library (schematic) and module (footprint) files
+        pcb/modules.v1/         for all the components used. No references are made to outside
+                                libraries to keep things simple.
+                
 
 DESIGN OVERVIEW
 
@@ -96,15 +95,15 @@ KEYBOARD COMMANDS
 When the app is running it responds to several commands (type "?" or "help" for list).
 These are primarily to assist development when you're not sitting in the same room as the noisy beast:
 
-	d				show instrument display including measurement unit and key LEDs
-	h [HPIB cmd]	emulate HPIB command input, e.g. "h md2"
-	k [f1 .. f4]	emulate function key 1-4 press, e.g. "k f2" is the "trig lvl" key
-	k [g1 .. g4]	emulate gate time key 1-4 press
-	k [m1 .. m8]	emulate math key 1-8 press
-	k [s1 .. s5]	emulate sample size key 1-5 press
-	k [o1 .. o6]	emulate "other" key 1-6 press (see code for mapping)
-	m				call measurement extension example code
-	q				quit
+        d               show instrument display including measurement unit and key LEDs
+        h [HPIB cmd]    emulate HPIB command input, e.g. "h md2"
+        k [f1 .. f4]    emulate function key 1-4 press, e.g. "k f2" is the "trig lvl" key
+        k [g1 .. g4]    emulate gate time key 1-4 press
+        k [m1 .. m8]    emulate math key 1-8 press
+        k [s1 .. s5]    emulate sample size key 1-5 press
+        k [o1 .. o6]    emulate "other" key 1-6 press (see code for mapping)
+        m               call measurement extension example code
+        q               quit
 
 For DEBUG versions of the app there are some others (see code).
 
