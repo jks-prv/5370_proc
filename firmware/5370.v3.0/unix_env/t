@@ -1,27 +1,30 @@
 #!/bin/sh
 
+VER=5370.v3.0
+CAPE=cape-bone-5370-00A0
+SLOTS=`ls /sys/devices/bone_capemgr.*/slots`
+
 if test ! -f .profile; then
-        cp 5370.v3.0/unix_env/.profile .;
+        cp $VER/unix_env/.profile .;
 fi
 
 # out-of-the-box BBB doesn't seem to have NTP configured
 if grep -q 'NTPSERVERS=""' /etc/default/ntpdate ; then
-	cp 5370.v3.0/unix_env/ntpdate /etc/default;
+	cp $VER/unix_env/ntpdate /etc/default;
 fi
 
-if date | grep -q 2000; then (echo start NTP; /usr/bin/ntpdate-sync); fi
+if date | grep -q 2000; then (echo start NTP; systemctl reload-or-restart ntpdate); fi
 
 # setup 5370 device tree before running interpreter
-if test ! -f /lib/firmware/cape-bone-5370-00A0.dts; then
+if test ! -f /lib/firmware/${CAPE}.dts; then
 	echo create 5370 device tree;
-	cp 5370.v3.0/unix_env/cape-bone-5370-00A0.dts /lib/firmware;
-	(cd /lib/firmware; dtc -O dtb -o cape-bone-5370-00A0.dtbo -b 0 -@ cape-bone-5370-00A0.dts);
+	cp $VER/unix_env/${CAPE}.dts /lib/firmware;
+	(cd /lib/firmware; dtc -O dtb -o ${CAPE}.dtbo -b 0 -@ ${CAPE}.dts);
 fi
 
-if grep -q 5370 /sys/devices/bone_capemgr.*/slots ; then
-	test 1; else
+if ! grep -q 5370 $SLOTS ; then
 	echo load 5370 device tree;
-	echo cape-bone-5370 > `ls /sys/devices/bone_capemgr.*/slots`;
+	echo cape-bone-5370 > $SLOTS;
 fi
 
-5370.v3.0/h
+$VER/h
