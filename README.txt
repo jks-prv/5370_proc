@@ -1,4 +1,4 @@
-This document describes the 5370 processor replacement board project
+This document describes the hp5370 processor replacement board project
 
         firmware release:       v3.0, October 25, 2013
         PCB release:            v3.1, October 25, 2013
@@ -17,11 +17,11 @@ The BBB has the 5370 software pre-installed. Currently you must "ssh" into the B
 
 ADDITIONAL DETAILS
 
-Currently you must login to the BBB and start the 5370 app manually (i.e. the BBB boots when you power-on the 5370 but the 5370 won't function as an instrument until the app is started). [this will be fixed when I figure out how to run a user program when Linux boots. Angstrom uses this new, impossibly complicated "systemctl" facility that I've already spent way too much time trying to understand. Maybe _you_ know how this is supposed to work and can tell me, lol]
+Currently you must login to the BBB and start the 5370 app manually (i.e. the BBB boots when you power-on the 5370 but the 5370 won't function as an instrument until the app is started). This will be fixed when I add an install target to the Makefile and the appropriate entry to /etc/init.d 
 
 The best way to login to the board is by using ssh (e.g. ssh root@BBB_ip_address). Your network must be running a DHCP server somewhere for the BBB to obtain its IP address (usually your Internet router or modem). It is possible to use a USB WiFi dongle under Angstrom but commentary on the net says this is difficult and I haven't got it working yet. The BBB supplies drivers that allow networking over a USB cable, but I couldn't get DHCP to work with this setup (point-to-point IP using default non-routable addresses worked fine).
 
-You also need a way to determine what IP address DHCP has given to the BBB. I use the iphone/ipad app "Fing" and look for the IP address associated with an Ethernet MAC address belonging to the Texas Instruments MAC range (TI makes the Sitara ARM processor chip used on the BBB). The IP address usually remains fixed once initially assigned. Most DHCP servers even have a way for you to associate an IP with a particular MAC permanently. [when I figure out how to start the app on power up the assigned IP address will be shown on the 5370 display briefly]
+You also need a way to determine what IP address DHCP has given to the BBB. I use the iphone/ipad app "Fing" and look for the IP address associated with an Ethernet MAC address belonging to the Texas Instruments MAC range (TI makes the Sitara ARM processor chip used on the BBB). The IP address usually remains fixed once initially assigned. Most DHCP servers even have a way for you to associate an IP with a particular MAC permanently. Eventually, when the app starts on power up, the assigned IP address will be shown on the 5370 display briefly.
 
 In the "5370.v3" directory are the full app sources. Also a client-side example program "bc" you would run on another machine to connect to the 5370 over TCP and do HPIB-style transfers including regular (12K meas/sec) and a new fast (39K meas/sec) binary mode. You can build a new app by typing "m" or "make" in this directory and running "hd" for the debug or "h" for the optimized version of the app.
 
