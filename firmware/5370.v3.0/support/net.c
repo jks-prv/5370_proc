@@ -46,8 +46,10 @@ int net_connect(net_type_e cs, char *host, char *port)
 	hints.ai_protocol = 0;          /* Any protocol */
 	
 	if (cs == SERVER) {
+		int val = 1;
 		struct	sockaddr_in	addr;
 		if ((sfd = socket(PF_INET, SOCK_STREAM, 0)) < 0) sys_panic("server socket");
+		setsockopt(sfd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof val);
 		addr.sin_family = AF_INET;
 		addr.sin_addr.s_addr = INADDR_ANY;
 		addr.sin_port = htons(HPIB_TCP_PORT);
