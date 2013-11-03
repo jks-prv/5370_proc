@@ -96,30 +96,30 @@ The files in the github repository are organized as follows:
                                 compiled with the code were derived from these.
         
         firmware/<version>/
-                6800/6800*      The Motorola M6800 microprocessor interpreter.
-                5370/5370*      Called from the interpreter for 5370 bus I/O.
-                5370/hpib*      The HPIB board emulator.
-                arch/sitara/*   BBB GPIO-specific generation of 5370 bus cycles.
-                support/*       Code to support the 7-seg display, LEDs, etc.
-                user/*          An example of code to extend the capabilities of
-
+            6800/6800*          The Motorola M6800 microprocessor interpreter.
+            5370/5370*          Called from the interpreter for 5370 bus I/O.
+            5370/hpib*          The HPIB board emulator.
+            arch/sitara/*       BBB GPIO-specific generation of 5370 bus cycles.
+            support/*           Code to support the 7-seg display, LEDs, etc.
+            user/*              An example of code to extend the capabilities of
                                 the instrument.
-                unix_env/*      A few customization files for Angstrom Linux 
+            unix_env/*          A few customization files for Angstrom Linux 
                                 including the device-tree file necessary to 
                                 setup the GPIO lines. The shell script here 
                                 called 't' is what you generally run.
         
         pcb/<version>/
-                5370.pro        KiCAD project file
-                5370.sch        KiCAD schematic source
-                5370.brd        KiCAD PCB layout source
-                5370.gvp        Gerbv project file
-                5370.BOM.*      Bill-of-materials file: prices, part notes.
-                plot/5370-*.*   Gerber plots from KiCAD: 2-layer board, mask, 
+            5370.schematic.pdf  schematic as a PDF
+            5370.pro            KiCAD project file
+            5370.sch            KiCAD schematic source
+            5370.brd            KiCAD PCB layout source
+            5370.gvp            Gerbv (Gerber viewer) project file
+            5370.BOM.*          Bill-of-materials file: prices, part notes.
+            plot/5370-*.*       Gerber plots from KiCAD: 2-layer board, mask, 
                                 silkscreen and edge cut files.
-                plot/5370.drl   KiCAD drill file: Excellon format, inches,
+            plot/5370.drl       KiCAD drill file: Excellon format, inches,
                                 keep zeros, minimal header, absolute origin, 2:4
-                plot/makefile   Will zip all the files together.
+            plot/makefile       Will zip all the files together.
         
         pcb/data.sheets/        Cut sheets for all components.
         
