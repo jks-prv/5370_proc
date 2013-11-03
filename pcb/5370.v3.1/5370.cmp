@@ -1,4 +1,4 @@
-Cmp-Mod V01 Created by CvPcb (2013-mar-25)-stable date = Saturday, October 26, 2013 10:35:17 AM
+Cmp-Mod V01 Created by CvPcb (2013-mar-25)-stable date = Sunday, November 03, 2013 10:45:41 AM
 
 BeginCmp
 TimeStamp = /4E6A89DC;
@@ -9,14 +9,14 @@ EndCmp
 
 BeginCmp
 TimeStamp = /524C3344;
-Reference = C7;
+Reference = C2;
 ValeurCmp = 10nF;
 IdModule  = 5370-SM0805;
 EndCmp
 
 BeginCmp
 TimeStamp = /524C35BC;
-Reference = C8;
+Reference = C3;
 ValeurCmp = 10nF;
 IdModule  = 5370-SM0805;
 EndCmp
@@ -38,7 +38,7 @@ EndCmp
 BeginCmp
 TimeStamp = /4E6A89C7;
 Reference = FB1;
-ValeurCmp = 1KZ;
+ValeurCmp = 30Z;
 IdModule  = 5370-SM0805;
 EndCmp
 
@@ -60,19 +60,19 @@ BeginCmp
 TimeStamp = /4E342CB2;
 Reference = R1;
 ValeurCmp = 4K7;
-IdModule  = 5370-bourns-4816P;
+IdModule  = 5370-BOURNS-4816P;
 EndCmp
 
 BeginCmp
 TimeStamp = /5249BCEA;
-Reference = R3;
+Reference = R2;
 ValeurCmp = 150;
 IdModule  = 5370-SM0805;
 EndCmp
 
 BeginCmp
 TimeStamp = /5249CC15;
-Reference = R4;
+Reference = R3;
 ValeurCmp = 150;
 IdModule  = 5370-SM0805;
 EndCmp
@@ -86,7 +86,7 @@ EndCmp
 
 BeginCmp
 TimeStamp = /5249AD70;
-Reference = U4;
+Reference = U2;
 ValeurCmp = 74LVC4245;
 IdModule  = 5370-SO24;
 EndCmp

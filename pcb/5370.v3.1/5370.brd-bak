@@ -1,4 +1,4 @@
-PCBNEW-BOARD Version 2 date Saturday, October 26, 2013 01:40:18 PM
+PCBNEW-BOARD Version 2 date Saturday, October 26, 2013 03:14:31 PM
 
 # Created by Pcbnew(2013-mar-25)-stable
 
@@ -21,9 +21,9 @@ $EndGENERAL
 
 $SHEETDESCR
 Sheet A4 11693 8268
-Title ""
+Title "hp5370 processor replacement board"
 Date "26 oct 2013"
-Rev ""
+Rev "v3.1"
 Comp ""
 Comment1 ""
 Comment2 ""
@@ -74,7 +74,7 @@ Pad2MaskClearance 0.254
 SolderMaskMinWidth 0
 AuxiliaryAxisOrg 25.4 25.4
 VisibleElements FFFFFBBF
-PcbPlotParams (pcbplotparams (layerselection 284196865) (usegerberextensions true) (excludeedgelayer true) (linewidth 60) (plotframeref false) (viasonmask false) (mode 1) (useauxorigin false) (hpglpennumber 1) (hpglpenspeed 20) (hpglpendiameter 15) (hpglpenoverlay 0) (psnegative false) (psa4output false) (plotreference true) (plotvalue true) (plotothertext true) (plotinvisibletext false) (padsonsilk false) (subtractmaskfromsilk true) (outputformat 1) (mirror false) (drillshape 0) (scaleselection 1) (outputdirectory __plot/))
+PcbPlotParams (pcbplotparams (layerselection 284196865) (usegerberextensions true) (excludeedgelayer true) (linewidth 60) (plotframeref false) (viasonmask false) (mode 1) (useauxorigin false) (hpglpennumber 1) (hpglpenspeed 20) (hpglpendiameter 15) (hpglpenoverlay 0) (psnegative false) (psa4output false) (plotreference true) (plotvalue true) (plotothertext true) (plotinvisibletext false) (padsonsilk false) (subtractmaskfromsilk true) (outputformat 1) (mirror false) (drillshape 0) (scaleselection 1) (outputdirectory plot/))
 $EndSETUP
 
 $EQUIPOT
@@ -292,9 +292,9 @@ ViaDrill 0.508
 uViaDia 0.508
 uViaDrill 0.127
 $EndNCLASS
-$MODULE 5370-bourns-4816P
+$MODULE 5370-BOURNS-4816P
 Po 57.785 52.07 2700 15 4E6E644D 4E630408 ~~
-Li 5370-bourns-4816P
+Li 5370-BOURNS-4816P
 Cd BOURNS RESISTOR NETWORK
 Kw BOURNS RESISTOR NETWORK
 Sc 4E630408
@@ -420,7 +420,7 @@ At SMD N 00888000
 Ne 2 "+5V"
 Po -4.445 -3.4544
 $EndPAD
-$EndMODULE 5370-bourns-4816P
+$EndMODULE 5370-BOURNS-4816P
 $MODULE 5370-SM0805
 Po 95.885 87.249 2700 15 524EF138 4E630303 ~~
 Li 5370-SM0805
@@ -429,7 +429,7 @@ AR /5249BCEA
 Op 0 0 0
 .SolderMask 0.0762
 At SMD
-T0 0 1.778 0.635 0.635 2700 0.0889 N V 21 N "R3"
+T0 0 1.778 0.635 0.635 2700 0.0889 N V 21 N "R2"
 T1 0 -1.905 0.635 0.635 2700 0.0889 N V 21 N "150"
 DS -1.27 -1.143 1.27 -1.143 0.127 21
 DS -1.27 1.143 1.27 1.143 0.127 21
@@ -462,7 +462,7 @@ AR /5249CC15
 Op 0 0 0
 .SolderMask 0.0762
 At SMD
-T0 0 1.778 0.635 0.635 2700 0.0889 N V 21 N "R4"
+T0 0 1.778 0.635 0.635 2700 0.0889 N V 21 N "R3"
 T1 0 -1.905 0.635 0.635 2700 0.0889 N V 21 N "150"
 DS -1.27 -1.143 1.27 -1.143 0.127 21
 DS -1.27 1.143 1.27 1.143 0.127 21
@@ -1149,7 +1149,7 @@ AR /5249AD70
 Op 0 0 0
 .SolderMask 0.0762
 At SMD
-T0 0 7.62 1.27 1.27 2700 0.0889 N V 21 N "U4"
+T0 0 7.62 1.27 1.27 2700 0.0889 N V 21 N "U2"
 T1 0 -7.366 1.27 1.27 2700 0.0889 N V 21 N "74LVC4245"
 DC -6.985 2.286 -6.604 2.286 0.2032 21
 DS 7.874 -5.334 7.874 5.334 0.2032 21
@@ -1331,7 +1331,7 @@ AR /524C3344
 Op 0 0 0
 .SolderMask 0.0762
 At SMD
-T0 0 1.905 0.635 0.635 900 0.0889 N V 21 N "C7"
+T0 0 1.905 0.635 0.635 900 0.0889 N V 21 N "C2"
 T1 0 -1.778 0.635 0.635 900 0.0889 N V 21 N "10nF"
 DS -1.27 1.143 1.27 1.143 0.127 21
 DS -1.27 -1.143 1.27 -1.143 0.127 21
@@ -1364,7 +1364,7 @@ AR /524C35BC
 Op 0 0 0
 .SolderMask 0.0762
 At SMD
-T0 0 1.905 0.635 0.635 900 0.0889 N V 21 N "C8"
+T0 0 1.905 0.635 0.635 900 0.0889 N V 21 N "C3"
 T1 0 -1.778 0.635 0.635 900 0.0889 N V 21 N "10nF"
 DS -1.27 1.143 1.27 1.143 0.127 21
 DS -1.27 -1.143 1.27 -1.143 0.127 21

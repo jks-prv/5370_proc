@@ -1,0 +1,11 @@
+"Id";"Designator";"Package";"Quantity";"Designation";"Supplier and ref";
+1;"R1";"5370-BOURNS-4816P";1;"4K7";;;
+2;"R2,R3";"5370-SM0805";2;"150";;;
+3;"C1";"5370-SM1206-POL";1;"10uF";;;
+4;"FB1";"5370-SM0805";1;"30Z";;;
+5;"P1";"5370-CARD-EDGE-18";1;"P1A";;;
+6;"P2";"5370-CARD-EDGE-18";1;"P1B";;;
+7;"D2,D1";"5370-SOD-323";2;"DIODE_SCHOTTKY";;;
+8;"U2";"5370-SO24";1;"74LVC4245";;;
+9;"C2,C3";"5370-SM0805";2;"10nF";;;
+10;"U1";"5370-BEAGLEBONE_BLACK";1;"BEAGLEBONE_BLACK";;;

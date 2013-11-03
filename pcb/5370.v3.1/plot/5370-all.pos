@@ -1,0 +1,16 @@
+### Module positions - created on Sunday, November 03, 2013 10:47:57 AM ###
+### Printed by Pcbnew version pcbnew (2013-mar-25)-stable
+## Unit = inches, Angle = deg.
+## Side : All
+# Ref    Val                  Package         PosX       PosY        Rot     Side
+C1       10uF             5370-SM1206-POL     5.6250    -2.5150      90.0    Front
+C2       10nF             5370-SM0805         2.2750    -0.7000      90.0    Front
+C3       10nF             5370-SM0805         2.4500    -0.7000      90.0    Front
+D1       DIODE_SCHOTTKY   5370-SOD-323        2.7750    -1.8750      90.0    Front
+D2       DIODE_SCHOTTKY   5370-SOD-323        2.8750    -1.8750      90.0    Front
+FB1      30Z              5370-SM0805         5.9000    -2.6000     180.0    Front
+R1       4K7              5370-BOURNS-4816    1.2750    -1.0500     270.0    Front
+R2       150              5370-SM0805         2.7750    -2.4350     270.0    Front
+R3       150              5370-SM0805         3.0200    -2.4350     270.0    Front
+U2       74LVC4245        5370-SO24           2.3500    -1.1500     270.0    Front
+## End
