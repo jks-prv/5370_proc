@@ -11,10 +11,8 @@
 
 #define	VtoN(v)			((v) << 2)	// i.e. shift F_OVERFLOW bit to F_NEGATIVE position
 #define	CtoN(v)			((v) << 3)	// i.e. shift F_CARRY bit to F_NEGATIVE position
-#define	bit7			0x0080
-#define	bit15			0x8000
-#define bit7toV(b)		((b) >> 6)
-#define bit15toV(b)		((b) >> 14)
+#define bit7toV(b)		(((b) & 0x80) >> 6)
+#define bit15toV(b)		(((b) & 0x8000) >> 14)
 
 
 // surprisingly, negative and zero flags can be set more quickly by doing a lookup with an array
@@ -68,6 +66,8 @@ u1_t SET_NZ[256] = {
 #define	setH()		H = F_HALFCARRY;
 #define	getH()		(H)
 
+#define	clrCH()		C = 0; H = 0;
+
 #define	clrI()		IRQ = 0;
 #define	setI()		IRQ = F_IRQMASK;
 #define	getI()		(IRQ)
@@ -93,8 +93,8 @@ u1_t SET_NZ[256] = {
 #define SET_Vshift()		if (getN() ^ CtoN(getC())) { VNZ |= F_OVERFLOW; }
 #define SET_Ccond(cond)		if (cond) { C = F_CARRY; }
 #define SET_Zcond(cond)		if (cond) { VNZ |= F_ZERO; }
-#define SET_V8(a, b, r)		VNZ |= bit7toV((a ^ b ^ r ^ (r >> 1)) & bit7)
-#define SET_V16(a, b, r)	VNZ |= bit15toV((a ^ b ^ r ^ (r >> 1)) & bit15)
+#define SET_V8(a, b, r)		VNZ |= bit7toV(a ^ b ^ r ^ (r >> 1))
+#define SET_V16(a, b, r)	VNZ |= bit15toV(a ^ b ^ r ^ (r >> 1))
 #define SET_H8(a, b, r)		if ((a ^ b ^ r) & 0x10) { H |= F_HALFCARRY; }
 
 #define	setCC(cc8) \
@@ -131,15 +131,7 @@ u1_t SET_NZ[256] = {
 	   setZ(); \
 })
 
-#define	clrV_modcNZ()		
-#define	clrCV_modcNZ()		C = 0;
-#define	clrNlsrCVZ()		VNZ = 0; C = 0;
-
-#define	modcVNZ()			
-#define	modcCVNZ()			C = 0;
-#define	modcHCVNZ()			H = 0; C = 0;
-
-#define modsVNZ(reg) \
+#define clrVsetNZ(reg) \
 ({ \
-	VNZ = SET_NZ[reg]; \
+	VNZ = SET_NZ[reg];	/* V set zero as side-effect */ \
 })

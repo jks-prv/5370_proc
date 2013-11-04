@@ -16,8 +16,7 @@
 	\
 	d8++; \
 	\
-	modcVNZ(); \
-	modsVNZ(d8); \
+	clrVsetNZ(d8); \
 	SET_Vcond(d8 == 0x80); \
 	\
 	d8; \
@@ -29,8 +28,7 @@
 	\
 	d8--; \
 	\
-	modcVNZ(); \
-	modsVNZ(d8); \
+	clrVsetNZ(d8); \
 	SET_Vcond(d8 == 0x7f); \
 	\
 	d8; \
@@ -43,8 +41,8 @@
 	\
 	tS16 = (u2_t) d8_1 + (u2_t) d8_2; \
 	\
-	modcHCVNZ(); \
-	modsVNZ(tS16 & 0xff); \
+	clrCH(); \
+	clrVsetNZ(tS16 & 0xff); \
 	SET_C8(tS16); \
 	SET_V8(d8_1, d8_2, tS16); \
 	SET_H8(d8_1, d8_2, tS16); \
@@ -59,8 +57,8 @@
 	\
 	tS16 = (u2_t) d8_1 + (u2_t) d8_2 + getC(); \
 	\
-	modcHCVNZ(); \
-	modsVNZ(tS16 & 0xff); \
+	clrCH(); \
+	clrVsetNZ(tS16 & 0xff); \
 	SET_C8(tS16); \
 	SET_V8(d8_1, d8_2, tS16); \
 	SET_H8(d8_1, d8_2, tS16); \
@@ -75,8 +73,8 @@
 	\
 	tS16 = (u2_t) d8_1 - (u2_t) d8_2; \
 	\
-	modcCVNZ(); \
-	modsVNZ(tS16 & 0xff); \
+	clrC(); \
+	clrVsetNZ(tS16 & 0xff); \
 	SET_C8(tS16); \
 	SET_V8(d8_1, d8_2, tS16); \
 	\
@@ -90,8 +88,8 @@
 	\
 	tS16 = (u2_t) d8_1 - (u2_t) d8_2 - getC(); \
 	\
-	modcCVNZ(); \
-	modsVNZ(tS16 & 0xff); \
+	clrC(); \
+	clrVsetNZ(tS16 & 0xff); \
 	SET_C8(tS16); \
 	SET_V8(d8_1, d8_2, tS16); \
 	\
@@ -109,9 +107,8 @@
 	if (msn > 0x90 || getC()) cf |= 0x60; \
 	tU16 = cf + reg; \
 	\
-	modcCVNZ(); \
-	modsVNZ(tU16 & 0xff); \
-	SET_C8(tU16); \
+	if (msn > 0x90) setC(); \
+	clrVsetNZ(tU16 & 0xff); \
 	SET_V8(reg, cf, tU16); \
 	\
 	(u1_t) tU16; \
@@ -124,8 +121,8 @@
 	\
 	tS16 = (u2_t) d8_1 - (u2_t) d8_2; \
 	\
-	modcCVNZ(); \
-	modsVNZ(tS16 & 0xff); \
+	clrC(); \
+	clrVsetNZ(tS16 & 0xff); \
 	SET_C8(tS16); \
 	SET_V8(d8_1, d8_2, tS16); \
 })
@@ -155,7 +152,7 @@
 ({ \
 	u1_t d8 = p8; \
 	\
-	clrNlsrCVZ(); \
+	clrCVNZ(); \
 	/* if d0 = 1 then carry */ \
 	/* but since d7 (N) always = 0 due to shift-in then d0 = 1 means overflow too since V = N^C = 0^1 = 1 */ \
 	/* FIXME check that this is really cheaper to do! */ \
@@ -172,12 +169,12 @@
 ({ \
 	u1_t d8 = p8; \
 	\
-	modcCVNZ(); \
+	clrC(); \
 	SET_Ccond(d8 & 0x01); \
 	\
 	d8 = (d8 & 0x80) | (d8 >> 1); \
 	\
-	modsVNZ(d8); \
+	clrVsetNZ(d8); \
 	SET_Vshift(); \
 	\
 	d8; \
@@ -187,12 +184,12 @@
 ({ \
 	u1_t d8 = p8; \
 	\
-	modcCVNZ(); \
+	clrC(); \
 	SET_Ccond(d8 & 0x80); \
 	\
 	d8 <<= 1; \
 	\
-	modsVNZ(d8); \
+	clrVsetNZ(d8); \
 	SET_Vshift(); \
 	\
 	d8; \
@@ -206,12 +203,12 @@
 	u1_t uc; \
 	uc = getC(); /* preserve old carry flag */ \
 	\
-	modcCVNZ(); \
+	clrC(); \
 	SET_Ccond(d8 & 0x01); \
 	\
 	d8 = d8 >> 1 | uc << 7; \
 	\
-	modsVNZ(d8); \
+	clrVsetNZ(d8); \
 	SET_Vshift(); \
 	\
 	d8; \
@@ -225,12 +222,12 @@
 	\
 	uc = getC(); /* preserve old carry flag */ \
 	\
-	modcCVNZ(); \
+	clrC(); \
 	SET_Ccond(d8 & 0x80); \
 	\
 	d8 = d8 << 1 | uc; \
 	\
-	modsVNZ(d8); \
+	clrVsetNZ(d8); \
 	SET_Vshift(); \
 	\
 	d8; \
@@ -241,11 +238,9 @@
 	u1_t d8_1 = p8_1, d8_2 = p8_2; \
 	u1_t tU8; \
 	\
-	clrV_modcNZ(); \
-	\
 	tU8 = d8_1 ^ d8_2; \
 	\
-	modsVNZ(tU8); \
+	clrVsetNZ(tU8); \
 	\
 	tU8; \
 })
@@ -255,11 +250,9 @@
 	u1_t d8_1 = p8_1, d8_2 = p8_2; \
 	u1_t tU8; \
 	\
-	clrV_modcNZ(); \
-	\
 	tU8 = d8_1 | d8_2; \
 	\
-	modsVNZ(tU8); \
+	clrVsetNZ(tU8); \
 	\
 	tU8; \
 })
@@ -269,11 +262,9 @@
 	u1_t d8_1 = p8_1, d8_2 = p8_2; \
 	u1_t tU8; \
 	\
-	clrV_modcNZ(); \
-	\
 	tU8 = d8_1 & d8_2; \
 	\
-	modsVNZ(tU8); \
+	clrVsetNZ(tU8); \
 	\
 	tU8; \
 })
@@ -282,12 +273,11 @@
 ({ \
 	u1_t d8 = p8; \
 	\
-	clrV_modcNZ(); \
 	setC(); \
 	\
 	d8 = ~d8; \
 	\
-	modsVNZ(d8); \
+	clrVsetNZ(d8); \
 	\
 	d8; \
 })
@@ -317,8 +307,8 @@
 ({ \
 	u1_t d8 = p8; \
 	\
-	clrCV_modcNZ(); \
-	modsVNZ(d8); \
+	clrC(); \
+	clrVsetNZ(d8); \
 })
 
 #define clr() \
@@ -332,16 +322,14 @@
 #define xfer(dst, src) \
 ({ \
 	dst = src; \
-	clrV_modcNZ(); \
-	modsVNZ(dst); \
+	clrVsetNZ(dst); \
 })
 
 #define ld(reg) \
 ({ \
 	reg = tU8; \
 	\
-	clrV_modcNZ(); \
-	modsVNZ(reg); \
+	clrVsetNZ(reg); \
 })
 
 #define ld16(reg) \
@@ -356,8 +344,7 @@
 ({ \
 	tU8 = reg; \
 	\
-	clrV_modcNZ(); \
-	modsVNZ(tU8); \
+	clrVsetNZ(tU8); \
 })
 
 #define st16(reg) \
