@@ -48,6 +48,17 @@ void bus_write(u2_t addr, u1_t data)
 	bus_fast_write(addr, data);
 }
 
+#define BIT_AREG(reg)	(1 << ((RREG_ ## reg) - ADDR_ARM(0)))
+
+static u4_t dump_regs;
+
+#define DUMP_AREG(areg, addr, data) \
+({ \
+	u2_t a = RREG_ ## areg; \
+	u2_t bit = BIT_AREG(areg); \
+	if ((addr == a) && (dump_regs & bit)) { printf("%s 0x%x %d  ", # areg, data, data); dump_regs &= ~bit; if (!dump_regs) printf("\n"); } \
+})
+
 static u1_t shifted_key;
 
 u1_t handler_dev_arm_read(u2_t addr)
@@ -88,6 +99,12 @@ u1_t handler_dev_arm_read(u2_t addr)
 		}
 	}
 
+	DUMP_AREG(N0ST, addr, data);
+	DUMP_AREG(N1N2H, addr, data);
+	DUMP_AREG(N1N2L, addr, data);
+	DUMP_AREG(N0H, addr, data);
+	DUMP_AREG(N0L, addr, data);
+	
 	return data;
 }
 
@@ -282,6 +299,7 @@ char *sim_input()
 				"k [s1 .. s5]\temulate sample size key 1-5 press\n"
 				"k [o1 .. o6]\temulate \"other\" key 1-6 press (see code for mapping)\n"
 				"m\t\tcall measurement extension example code\n"
+				"r\t\tshow values of count-chain registers (one sample)\n"
 				"q\t\tquit\n\n"
 				);
 			return 0;
@@ -344,6 +362,11 @@ char *sim_input()
 			return 0;
 		}
 
+		if (*cp == 'r') {
+			dump_regs = BIT_AREG(N0ST) | BIT_AREG(N1N2H) | BIT_AREG(N1N2L) | BIT_AREG(N0H) | BIT_AREG(N0L);
+			return 0;
+		}
+		
 #ifdef HPIB_SIM_DEBUG
 		// emulate input of an HPIB command
 		// e.g. "h md2" "h mr" "h md1" "h tb1" "h tb0"
