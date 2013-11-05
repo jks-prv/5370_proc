@@ -119,6 +119,7 @@
 	GPIO_CLR(0) = BUS_LRW; \
 	GPIO_CLR(1) = BUS_LVMA; \
 	\
+	t = GPIO_IN(0); /* extra delay before read of bus */ \
 	t = GPIO_IN(0); \
 	data = ((t & BUS_LD0) >> 27) | ((t & BUS_LD3) >> 23) | ((t & BUS_LD4) >> 19); \
 	t = GPIO_IN(1); \
@@ -142,6 +143,7 @@
 	\
 	/* pulse the bus clock */ \
 	BUS_CLK_ASSERT(); \
+	GPIO_CLR(0) = g0_write[d]; /* extra delay while clk asserted */ \
 	BUS_CLK_DEASSERT();
 
 #ifdef DEBUG
@@ -268,7 +270,7 @@
 	\
 	GPIO_CLR(3) = BUS_LA0; /* bump address to avar|1 */ \
 	BUS_CLK_ASSERT(); \
-	t = GPIO_IN(0); /* need extra delay */ \
+	t = GPIO_IN(0); /* extra delay before read of bus */ \
 	t = GPIO_IN(0); \
 	data2 = ((t & BUS_LD0) >> 27) | ((t & BUS_LD3) >> 23) | ((t & BUS_LD4) >> 19); \
 	t = GPIO_IN(1); \
