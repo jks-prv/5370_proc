@@ -32,7 +32,7 @@ typedef struct {
 
 dev_io_t dev_io[DEV_SPACE_SIZE];
 
-	static int tty;
+static int tty;
 
 u1_t bus_read(u2_t addr)
 {
@@ -248,7 +248,9 @@ void handler_dev_write_bad(u2_t addr, u1_t data)
 
 #endif
 
-void sim_main()
+static bool background_mode;
+
+void sim_main(bool bg)
 {
 	u2_t i;
 
@@ -256,9 +258,13 @@ void sim_main()
 	printf("\nNote that there is currently a strange interaction between the 5370B firmware and keypress emulation ('k' command).\n"
 		"Configure to run the 5370A firmware if this is an issue for you.\n\n");
 #endif
+
+	background_mode = bg;
 	
-	tty = open("/dev/tty", O_RDONLY | O_NONBLOCK);
-	if (tty < 0) sys_panic("open tty");
+	if (!bg) {
+		tty = open("/dev/tty", O_RDONLY | O_NONBLOCK);
+		if (tty < 0) sys_panic("open tty");
+	}
 
 #ifdef BUS_TEST
 	printf("TESTING...\n\n");
@@ -353,6 +359,14 @@ char *sim_input()
 {
 	int n, e;
 	char *cp = ibuf;
+	static int bg_delay = 0;
+	static bool bg_start = FALSE;
+	
+	if (background_mode) {
+		if (bg_delay++ == 1024 && !bg_start) { bg_start = TRUE; find_bug(); }
+		fflush(stdout);
+		return 0;
+	}
 
 	n = read(tty, cp, sizeof(ibuf));
 	if (n >= 1) {

@@ -55,7 +55,7 @@ void find_bug()
 		//printf("N0 %ld N1N2 %ld 5ns %1.2f\n", n0, n1n2, ((double) n1n2 / 256.0) + (double) n0);
 		ti = (((double) n1n2 / 256.0) + (double) n0) * 5.0e-9;
 		bool rng = ((ti < 98.0e-9) || (ti > 101.1e+9))? TRUE:FALSE;
-		if (((i&0x3ffff)==0)) { printf("."); fflush(stdout); }
+		if (((i&0xffff)==0)) { printf("."); fflush(stdout); }
 
 		if (rng) {
 			check_pmux();

@@ -6,5 +6,5 @@ alias m="make"
 alias mc="make clean"
 alias d="dirs"
 alias pd="pushd"
+alias h="history"
 alias x="exit"
-
