@@ -255,8 +255,8 @@ void sim_main(bool bg)
 	u2_t i;
 
 #ifdef HP5370B
-	printf("\nNote that there is currently a strange interaction between the 5370B firmware and keypress emulation ('k' command).\n"
-		"Configure to run the 5370A firmware if this is an issue for you.\n\n");
+	printf("\nNote that there is currently a strange interaction between the HPIB hardware emulation with 5370B firmware and keypress emulation ('k' command).\n"
+		"Configure to run the 5370A firmware in the Makefile if this is an issue for you.\n\n");
 #endif
 
 	background_mode = bg;
