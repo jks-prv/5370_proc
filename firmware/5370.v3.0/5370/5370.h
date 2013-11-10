@@ -11,7 +11,7 @@
 #define	DEV_SPACE_SIZE	0x80
 
 #define	ROM_START	0x6000
-#define	ROM_MASK	0x7000
+#define	ROM_MASK	0x6000
 #define	ROM_SIZE	0x2000
 
 #define	RAM_START	0x0080
@@ -41,5 +41,7 @@ void bus_write(u2_t addr, u1_t data);
 
 void meas_extend_example_init();
 void meas_extend_example(u1_t key);
+
+void find_bug();
 
 #endif

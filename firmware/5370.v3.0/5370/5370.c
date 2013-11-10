@@ -61,6 +61,10 @@ static u4_t dump_regs;
 
 static u1_t shifted_key;
 
+char *arm_rreg[] = { "ldacsr", "1?", "switches", "in1", "status", "n0st", "n0h", "n0l", "n1n2h", "n1n2l", "n3h", "n3l" };
+
+#define PBIT(b)	if (data & (b)) printf("%s ", # b);
+
 u1_t handler_dev_arm_read(u2_t addr)
 {
 	u1_t data, key;
@@ -74,7 +78,28 @@ u1_t handler_dev_arm_read(u2_t addr)
 
 #ifdef DEBUG
 	if (iDump) {
-		printf("[ARM read @ 0x%x 0x%x] -------------------------\n", addr, data);
+		printf("ARM read %s @ 0x%x 0x%x <", arm_rreg[addr - ADDR_ARM(0)], addr, data);
+		switch (addr) {
+		case RREG_I1:
+			PBIT(I1_IRQ);
+			PBIT(I1_RTI_MASK);
+			PBIT(I1_RST_TEST);
+			PBIT(I1_SRATE);
+			PBIT(I1_LRMT);
+			PBIT(I1_LRTL);
+			PBIT(I1_MAN_ARM);
+			PBIT(I1_IO_FLO);
+			break;
+		case RREG_N0ST:
+			PBIT(N0ST_EOM);
+			PBIT(N0ST_ARMED);
+			PBIT(N0ST_PLL_OOL);
+			PBIT(N0ST_N0_OVFL);
+			break;
+		default:
+			break;
+		}
+		printf(">\n");
 	}
 #endif
 
@@ -108,12 +133,49 @@ u1_t handler_dev_arm_read(u2_t addr)
 	return data;
 }
 
+char *arm_wreg[] = { "spare", "ldaccw", "ldacstart", "ldacstop", "out2", "out1", "out3" };
+
 void handler_dev_arm_write(u2_t addr, u1_t data)
 {
 
 #ifdef DEBUG
 	if (iDump) {
-		printf("[ARM write @ 0x%x = 0x%x] ----------------------\n", addr, data);
+		printf("ARM write %s @ 0x%x 0x%x <", arm_wreg[addr - ADDR_ARM(0)], addr, data);
+		switch (addr) {
+		case WREG_O2:
+			PBIT(O2_FLAG);
+			PBIT(O2_SRATE_EN);
+			PBIT(O2_HTDGL);
+			PBIT(O2_LGATE);
+			PBIT(O2_HARMCT3);
+			PBIT(O2_LARMCT2);
+			PBIT(O2_HMNRM);
+			PBIT(O2_HRWEN_LRST);
+			break;
+		case WREG_O1:
+			PBIT(O1_LRM_MASK);
+			PBIT(O1_RTI_MASK);
+			PBIT(O1_LHLDEN);
+			PBIT(O1_STOPSW);
+			PBIT(O1_STARTSW);
+			PBIT(O1_HSET2);
+			PBIT(O1_HSET1);
+			PBIT(O1_HSTD);
+			break;
+		case WREG_O3:
+			PBIT(O3_SELF_CLR);
+			PBIT(O3_RST_TEST);
+			PBIT(O3_LARMRST);
+			PBIT(O3_LOLRST);
+			PBIT(O3_CLR_EVT_OVFL);
+			PBIT(O3_LORST);
+			PBIT(O3_HN3RST);
+			PBIT(O3_LCRST);
+			break;
+		default:
+			break;
+		}
+		printf(">\n");
 	}
 #endif
 
@@ -189,6 +251,11 @@ void handler_dev_write_bad(u2_t addr, u1_t data)
 void sim_main()
 {
 	u2_t i;
+
+#ifdef HP5370B
+	printf("\nNote that there is currently a strange interaction between the 5370B firmware and keypress emulation ('k' command).\n"
+		"Configure to run the 5370A firmware if this is an issue for you.\n\n");
+#endif
 	
 	tty = open("/dev/tty", O_RDONLY | O_NONBLOCK);
 	if (tty < 0) sys_panic("open tty");
@@ -276,9 +343,9 @@ void writeDev(u2_t addr, u1_t data)
 
 enum front_pnl_loc_e skey_func[] = { TI, TRG_LVL, FREQ, PERIOD };
 enum front_pnl_loc_e skey_gate[] = { _1_PER, _PT01_SEC, _PT1_SEC, _1_SEC };
-enum front_pnl_loc_e skey_math[] = { MEAN, STD_DEV, MIN, MAX, DSP_REF, CLR_REF, DSP_EVTS, SET_REF };
-enum front_pnl_loc_e skey_size[] = { PT1, _100, _1K, _10K, _100K };
-enum front_pnl_loc_e skey_othr[] = { P_TI_ONLY, P_M_TI, EXT_HOFF, PER_COMPL, EXT_ARM, MAN_RATE };
+enum front_pnl_loc_e skey_stat[] = { MEAN, STD_DEV, MIN, MAX, DSP_REF, CLR_REF, DSP_EVTS, SET_REF };
+enum front_pnl_loc_e skey_samp[] = { PT1, _100, _1K, _10K, _100K };
+enum front_pnl_loc_e skey_misc[] = { P_TI_ONLY, P_M_TI, EXT_HOFF, PER_COMPL, EXT_ARM, MAN_RATE };
 
 static char ibuf[32], dbuf[64];
 
@@ -292,16 +359,18 @@ char *sim_input()
 		if ((n == 1) || (*cp == '?') || (strcmp(cp, "help\n") == 0) || ((*cp == 'h') && (n == 2))) {
 			printf("commands:\n"
 				"d\t\tshow instrument display including unit and key LEDs\n"
-				"h [HPIB cmd]\temulate HPIB command input, e.g. \"h md2\"\n"
-				"k [f1 .. f4]\temulate function key 1-4 press, e.g. \"k f2\" is the \"trig lvl\" key\n"
-				"k [g1 .. g4]\temulate gate time key 1-4 press\n"
-				"k [m1 .. m8]\temulate math key 1-8 press\n"
-				"k [s1 .. s5]\temulate sample size key 1-5 press\n"
-				"k [o1 .. o6]\temulate \"other\" key 1-6 press (see code for mapping)\n"
-				"m\t\tcall measurement extension example code\n"
+				"h <HPIB cmd>\temulate HPIB command input, e.g. \"h md2\"\n"
+				"h?\t\tprints reminder list of HPIB commands\n"
+				"k <fn1 .. fn4>\temulate function key 1-4 press, e.g. \"k f2\" is the \"trig lvl\" key\n"
+				"k <gt1 .. gt4>\temulate gate time key 1-4 press\n"
+				"k <st1 .. st8>\temulate statistics key 1-8 press\n"
+				"k <ss1 .. ss5>\temulate sample size key 1-5 press\n"
+				"k <m1 .. m6>\temulate \"misc\" key 1-6 press\n"
+				"\t\t1 TI only, 2 +/- TI, 3 ext h.off, 4 per compl, 5 ext arm, 6 man rate\n"
+				"m\t\trun measurement extension example code\n"
 				"r\t\tshow values of count-chain registers (one sample)\n"
-				"q\t\tquit\n\n"
-				);
+				"q\t\tquit\n"
+				"\n");
 			return 0;
 		}
 		
@@ -311,6 +380,11 @@ char *sim_input()
 		
 		if (*cp == 'm') {
 			meas_extend_example(0);
+			return 0;
+		}
+		
+		if (*cp == 'b') {
+			find_bug();
 			return 0;
 		}
 		
@@ -330,25 +404,25 @@ char *sim_input()
 		if (*cp == 'k') {
 			e = 0;
 			
-			if (sscanf(cp, "k f%d", &n) == 1) {		// function keys 1..4
+			if (sscanf(cp, "k fn%d", &n) == 1) {	// function keys 1..4
 				if (n >= 1 && n <= 4)
 					e = skey_func[n-1];
 			} else
-			if (sscanf(cp, "k g%d", &n) == 1) {		// gate time keys 1..4
+			if (sscanf(cp, "k gt%d", &n) == 1) {	// gate time keys 1..4
 				if (n >= 1 && n <= 4)
 					e = skey_gate[n-1];
 			} else
-			if (sscanf(cp, "k m%d", &n) == 1) {		// math keys 1..8
+			if (sscanf(cp, "k st%d", &n) == 1) {	// statistics keys 1..8
 				if (n >= 1 && n <= 8)
-					e = skey_math[n-1];
+					e = skey_stat[n-1];
 			} else
-			if (sscanf(cp, "k s%d", &n) == 1) {		// sample size keys 1..5
+			if (sscanf(cp, "k ss%d", &n) == 1) {	// sample size keys 1..5
 				if (n >= 1 && n <= 5)
-					e = skey_size[n-1];
+					e = skey_samp[n-1];
 			} else
-			if (sscanf(cp, "k o%d", &n) == 1) {		// other keys 1..6
+			if (sscanf(cp, "k m%d", &n) == 1) {		// misc keys 1..6
 				if (n >= 1 && n <= 6)
-					e = skey_othr[n-1];
+					e = skey_misc[n-1];
 			}
 			
 			if (e) {
@@ -367,14 +441,31 @@ char *sim_input()
 			return 0;
 		}
 		
-#ifdef HPIB_SIM_DEBUG
 		// emulate input of an HPIB command
 		// e.g. "h md2" "h mr" "h md1" "h tb1" "h tb0"
 		if (*cp == 'h' && cp[1] == ' ') {
 			hpib_input(cp+2);	// presumes that hpib input is processed before another sim input
 			return 0;
 		}
-#endif
+
+		if (*cp == 'h' && cp[1] == '?') {
+			printf("HPIB command reminder list:\n"
+			"function: fn1 TI, fn2 trig lvl, fn3 freq, fn4 period\n"
+			"gate: gt1 single period, gt2 0.01s, gt3 0.1s, gt4 1s\n"
+			"statistics: st1 mean, st2 std dev, st3 min, st4 max, st5 dsp ref, st6 clr ref, st7 dsp evts, st8 set ref, st9 dsp all\n"
+			"sample sizes: ss1 1, ss2 100, ss3 1k, ss4 10k, ss5 100k, sb <4 bytes> (set size for binary xfer)\n"
+			"mode: md1 front pnl, md2 hold until \"mr\" cmd, md3 fast (only if addressed), md4 fast (wait until addressed)\n"
+			"input: in1 start+stop, in2 stop only, in3 start only, in4 start+stop swap\n"
+			"slope: sa1 start+, sa2 start-, s01 stop+, s02 stop-, sl slope local, sr slope remote\n"
+			"arm select: ar1 +TI only, ar2 +/-TI\n"
+			"ext arming: ea0 dis, ea1 ena, se1 slope+, se2 slope-, eh0 holdoff dis, eh1 holdoff ena\n"
+			"int arming: ia1 auto, ia2 start ch arm, ia3 stop ch arm\n"
+			"trigger: tl trig local, tr trig remote, ta <volts> start lvl, to <volts> stop lvl\n"
+			"binary mode: tb0 disable, tb1 enable, tb2 fast-mode enable (virtual cmd)\n"
+			"other: mr man rate, mi man input, pc period compl, te teach (store), ln learn (recall)\n"
+			"\n");
+			return 0;
+		}
 
 #ifdef HPIB_RECORD
 		if (*cp == 'h' && cp[1] == 'r') {

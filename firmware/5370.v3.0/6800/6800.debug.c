@@ -1,14 +1,34 @@
 #ifdef DEBUG
-	if (*cp == '*') {
-		irq_trace = 1;
+
+	if (*cp == '.') {
+		printf("rPC 0x%04x\n", rPC);
 	} else
 
+	// start history recording of instruction trace to be dumped by "snap" trigger later on
+	if (*cp == 't') {
+		iTrace ^= 1;
+		trace_clear();
+		printf("trace %d\n", iTrace);
+	} else
+
+	// dump tracing history buffer, if enabled, and trace a few instructions after
 	if (*cp == 'i') {
 		iSnap = 1;
 	} else
 
-	if (*cp == 'd') {
+	// trace all instructions from this point forward
+	if (*cp == 'x') {
 		iDump ^= TRUE;
+	} else
+
+	if (*cp == '*') {
+		irq_trace = 1;
+	} else
+
+	// slow down interpreter by some amount to debug timing effects
+	// (enable MEAS_IPS define to see how fast it's running)
+	if (sscanf(cp, "s %d", &ispeed) == 1) {
+		printf("ispeed %d\n", ispeed);
 	} else
 
 	#define APPEND_ADDR(per_line, addr) \
@@ -111,14 +131,5 @@
 	} else
 #endif
 
-	if (*cp == '.') {
-		printf("rPC 0x%04x\n", rPC);
-	} else
-
-	if (*cp == 't') {
-		itrace ^= 1;
-		itr ^= 1;
-		printf("trace %d\n", itrace);
-	} else
 #endif
 		printf("unknown command: %s", cp);

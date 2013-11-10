@@ -10,22 +10,27 @@
 // {HP5370A, HP5370B, HP5359A}
 // SETUP_*
 // CHIP_INCLUDE
+// DEBUG
+// INSN_TRACE
 
 
 // configuration options
-//#define BUS_TEST
-//#define INTERRUPTS				// real interrupts instead of polling (not fully working yet)
-//#define DBG_INTRS
-//#define FASTER_INTERRUPTS
 #define HPIB_SIM				// simulates the HPIB hardware board so the unmodified firmware can continue to work
-#define HPIB_SIM_DEBUG
+//#define INTERRUPTS			// real interrupts instead of polling (not fully working yet)
+//#define FASTER_INTERRUPTS
 #define HPIB_ENET_IO			// HPIB i/o redirected to tcp connection
 //#define HPIB_ECHO_INPUT
 #define HPIB_TELNET_TCP_PORT 0
 //#define MEAS_IP_HPIB_MEAS		// measure instructions-per-HPIB-measurement
 //#define MEAS_IPS				// measure instructions-interpreted-per-second
-//#define RECORD_IO_HIST
-//#define HPIB_RECORD			// record HPIB bus cycles for use in developing HPIB_SIM
+
+#ifdef DEBUG
+ //#define BUS_TEST
+ //#define DBG_INTRS
+ #define HPIB_SIM_DEBUG
+ //#define RECORD_IO_HIST
+ //#define HPIB_RECORD			// record HPIB bus cycles for use in developing HPIB_SIM
+#endif
 
 
 #ifdef HP5370A

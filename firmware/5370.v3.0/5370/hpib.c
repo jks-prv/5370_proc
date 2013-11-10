@@ -230,9 +230,7 @@ u1_t handler_dev_hpib_read(u2_t addr)
 #endif
 
 #ifdef DEBUG
-	if (iDump) {
-		printf("[HPIB read @ 0x%x 0x%x]\n", addr, d);
-	}
+	PFC(iTrace, "[HPIB read @ 0x%x 0x%x]\n", addr, d);
 #endif
 	
 #ifdef HPIB_RECORD
@@ -344,9 +342,7 @@ void handler_dev_hpib_write(u2_t addr, u1_t d)
 #endif
 
 #ifdef DEBUG
-	if (iDump) {
-		printf("[HPIB write @ 0x%x 0x%x]\n", addr, d);
-	}
+	PFC(iTrace, "[HPIB write @ 0x%x 0x%x]\n", addr, d);
 #endif
 	
 #ifdef HPIB_SIM

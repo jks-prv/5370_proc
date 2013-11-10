@@ -45,7 +45,7 @@
 #define	N0ST_HEXT			0x40		// ext freq std [hext]
 
 #define RREG_N0ST			ADDR_ARM(5)
-#define N0ST_MASK			0xfc
+#define N0ST_MASK			(~(N0ST_N0_POS | N0ST_N1N2) & 0xff)
 #define	N0ST_EVT_RNG		0x80		// event counter range (ovfl) flag [hn3or]
 #define	N0ST_EVT_RNG_GPIO	BUS_LD7
 #define	N0ST_EOM			0x40		// end-of-measurement [lproc]
@@ -77,9 +77,9 @@
 #define WREG_SPARE			ADDR_ARM(0)
 
 #define WREG_LDACCW			ADDR_ARM(1)
-#define	DCW_START_DAC_OE	0x80
-#define	DCW_STOP_DAC_OE		0x40
-#define	DCW_RELAY			0x20
+#define	DCW_START_DAC_OE_L	0x80
+#define	DCW_STOP_DAC_OE_L	0x40
+#define	DCW_RELAY			0x20		// 1 = DAC drives trig lvl (trig remote)
 #define	DCW_LOCK_FIX		0x10		// [lock fix]
 #define	DCW_SPARE			0x08
 #define	DCW_HRMT_SLOPE		0x04		// [hrmt slope]
@@ -90,7 +90,7 @@
 #define WREG_LDACSTOP		ADDR_ARM(3)
 
 // most of these are signals going to the A22 arming assembly
-#define WREG_O2				ADDR_ARM(4)		// A16-U3-U9
+#define WREG_O2				ADDR_ARM(4)	// A16-U3-U9
 #define O2_FLAG				0x80		// [flag]
 #define O2_SRATE_EN			0x40		// sample rate enable
 #define O2_HTDGL			0x20		// [htdgl]
@@ -101,7 +101,7 @@
 #define O2_HRWEN_LRST		0x01		// [hrmen/lrst]
 
 // most of these are signals going to the A22 arming assembly
-#define WREG_O1				ADDR_ARM(5)		// A16-U2-U7
+#define WREG_O1				ADDR_ARM(5)	// A16-U2-U7
 #define O1_LRM_MASK			0x80		// [lrm mask]
 #define O1_RTI_MASK			0x40		// 1 = enable RTI/IRQ (interrupt)
 #define O1_LHLDEN			0x20		// [lhlden]
@@ -111,7 +111,7 @@
 #define O1_HSET1			0x02		// [hset1]
 #define O1_HSTD				0x01		// [hstd]
 
-#define WREG_O3				ADDR_ARM(6)		// A16-U5-U11
+#define WREG_O3				ADDR_ARM(6)	// A16-U5-U11
 #define O3_SELF_CLR			0x80		// clear this reg on next phase-2 clk
 #define O3_RST_TEST			0x40		// loopback to I1_RST_TEST
 #define O3_LARMRST			0x20		// [larmrst] arm assy master reset (called preset on A22)

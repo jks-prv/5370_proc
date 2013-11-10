@@ -52,6 +52,21 @@ u4_t gpio_read[0x400];
 
 volatile u4_t *prcm, *pmux, *timer4;
 
+void check_pmux()
+{
+	pinmux_t *p;
+	u4_t pm;
+	int fail=0;
+	for (p=pins; p->pin; p++) {
+		pm = pmux[(0x800 + p->offset) >> 2];
+		if (pm != p->pinmux) {
+			printf("pin %d pinmux is 0x%x should be 0x%x\n", p->pin, pm, p->pinmux);
+			fail = 1;
+		}
+	}
+	if (fail) panic("check if cape-bone-5370 device tree loaded properly");
+}
+
 void bus_init()
 {
 	int i;
@@ -178,19 +193,9 @@ GPIO_IN(2) >> 0
 	PRCM_TIMER4 = MODMODE_ENA;
 	//printf("CLKS: t4 0x%x t5 0x%x t6 0x%x t7 0x%x\n",
 	//	PRCM_TIMER4, PRCM_TIMER5, PRCM_TIMER6, PRCM_TIMER7);
-	
-	pinmux_t *p;
-	u4_t pm;
-	int fail=0;
-	for (p=pins; p->pin; p++) {
-		pm = pmux[(0x800 + p->offset) >> 2];
-		if (pm != p->pinmux) {
-			printf("pin %d pinmux is 0x%x should be 0x%x\n", p->pin, pm, p->pinmux);
-			fail = 1;
-		}
-	}
-	if (fail) panic("check if cape-bone-5370 device tree loaded properly");
 
+	check_pmux();
+	
 	// FIXME: is BUS_OE default high when BBB is reset?
 	GPIO_SET(2) = BUS_OE;	// Z
 	GPIO_OUTPUT(2, BUS_OE);
@@ -246,6 +251,11 @@ void bus_fast_write(u4_t addr, u4_t data)
 	FAST_WRITE_EXIT();
 
 	BUS_CLK_START();
+}
+
+void bus_delay()
+{
+	PRCM_GPIO0 = MODMODE_ENA;
 }
 
 
@@ -325,11 +335,9 @@ u4_t hpib_fast_binary(s2_t *ibp, u4_t nloop)
 
 		// PLL_OOL latches, but is reset by HPIB_O3_RST, so check it each time through the loop.
 		// Checking this often doesn't slow down the transfer rate.
-		//if (n0st & (N0ST_PLL_OOL | N0ST_N0_OVFL | N0ST_EVT_RNG)) {
 		if (n0st & (N0ST_PLL_OOL | N0ST_N0_OVFL)) {
 			if (n0st & N0ST_PLL_OOL) printf("PLL UNLOCKED\n");
 			if (n0st & N0ST_N0_OVFL) printf("N0 OVFL\n");
-			//if (n0st & N0ST_EVT_RNG) printf("EVT RNG\n");
 		}
 		
 		// convert from 18-bit 2s complement

@@ -340,3 +340,6 @@
 	/* pulse the bus clock */ \
 	BUS_CLK_ASSERT(); \
 	BUS_CLK_DEASSERT();
+
+void check_pmux();
+

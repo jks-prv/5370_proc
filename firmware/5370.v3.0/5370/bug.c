@@ -1,34 +1,23 @@
-// an example of a measurement extension routine
-//
-// this code performs a number of TI measurements using the same technique as
-// found in the disassembled HPIB binary transfer mode firmware
-
 #include "boot.h"
 #include "front_panel.h"
 #include "5370_regs.h"
 #include "hpib.h"
+#include "chip.h"
 
 #include <string.h>
 #include <stdio.h>
 
-void meas_extend_example(u1_t key)
+void find_bug()
 {
-	int i;
+	int i, ok, bad;
 	u4_t n0st, n0st2, n1n2h, n1n2l, n0h, n0l;
 	s4_t n1n2, n0;
 	double ti;
 
-	printf("measurement extension example called\n");
-	dsp_7seg_str(2, "extend", TRUE);
-
-	if (key & KEY(LCL_RMT)) {
-		printf("LCL/RMT\n");
-	}
-
-#define N_TI	100000
-	printf("taking %d TI measurements\n", N_TI);
+	printf("looking for bug..\n");
+	i=1; ok=bad=0;
 	
-	for (i=0; i<N_TI; i++) {
+	while (i++) {
 		bus_write(WREG_O3, HPIB_O3_RST);
 		bus_write(WREG_O2, HPIB_O2_ENA);
 		bus_write(WREG_O2, HPIB_O2_ARM);
@@ -62,30 +51,26 @@ void meas_extend_example(u1_t key)
 			n0 = -n0;
 		}
 
+		//printf("n0st 0x%2x %d n1n2 %d %d n0 %d %d\n", n0st, n0st, n1n2h, n1n2l, n0h, n0l);
+		//printf("N0 %ld N1N2 %ld 5ns %1.2f\n", n0, n1n2, ((double) n1n2 / 256.0) + (double) n0);
 		ti = (((double) n1n2 / 256.0) + (double) n0) * 5.0e-9;
 		bool rng = ((ti < 98.0e-9) || (ti > 101.1e+9))? TRUE:FALSE;
+		if (((i&0x3ffff)==0)) { printf("."); fflush(stdout); }
 
 		if (rng) {
-			printf("meas %d, N0ST 0x%02x, out of range: ", i, n0st & N0ST_MASK);
-			if (ti < 1.0e-8) {
-				printf("%1.2f ns\n", ti * 1.0e8);
-			} else {
-				printf("%2.2f ns\n", ti * 1.0e9);
+			check_pmux();
+			if (ok) {
+				printf("ok %d BAD: ", ok); ok=0;
+				if (ti < 1.0e-8) {
+					printf("%1.2f ns\n", ti * 1.0e8);
+				} else {
+					printf("%2.2f ns\n", ti * 1.0e9);
+				}
 			}
+			bad++;
+		} else {
+			if (bad) { printf("bad %d\n", bad); bad=0; }
+			ok++;
 		}
 	}
-	
-	wait_key_release();
-
-	printf("measurement extension example returning\n");
-	dsp_7seg_str(0, "", TRUE);
-}
-
-void meas_extend_example_init()
-{
-	// Call us if MEAN and MIN pressed simultaneously or MEAN and LCL/RMT.
-	// See the comment in the register_key_callback() routine for details.
-	
-	register_key_callback(KEY(MEAN) | KEY(MIN), meas_extend_example);
-	register_key_callback(KEY(LCL_RMT) | KEY(MEAN), meas_extend_example);
 }

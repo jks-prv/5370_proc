@@ -63,14 +63,16 @@ INC += -I./6800
 INC += -I./arch
 INC += -I./arch/$(ARCH)
 INC += -I./support
+INC += -I./misc
 INC += -I./user
 
-RMT_SOURCE = 5370/5370.c 5370/test.c 5370/hpib.c main.c 6800/6800.c
-RMT_SOURCE += arch/sitara/bus.c arch/sitara/timer.c
+RMT_SOURCE = 5370/5370.c 5370/test.c 5370/hpib.c 5370/bug.c main.c 6800/6800.c 6800/6800.trace.c
+RMT_SOURCE += arch/$(ARCH)/bus.c arch/$(ARCH)/timer.c
 RMT_SOURCE += support/misc.c support/net.c support/front_panel.c user/example.c
 
-RMT_INCLUDES = config.h boot.h hpib.h sim.h 5370.h 6800.cc.h 6800.core.h 6800.insns.h
-RMT_INCLUDES += arch/chip.h arch/sitara/sitara.h arch/sitara/timer.h
+RMT_INCLUDES = config.h boot.h sim.h
+RMT_INCLUDES += 5370.h 5370_regs.h hpib.h 6800.h 6800.cc.h 6800.core.h 6800.insns.h
+RMT_INCLUDES += arch/chip.h arch/$(ARCH)/$(ARCH).h arch/$(ARCH)/timer.h
 RMT_INCLUDES += support/misc.h support/net.h support/front_panel.h
 
 RMT_BINARIES = hd h bc

@@ -15,6 +15,8 @@
 #include "front_panel.h"
 #include "chip.h"
 
+#include "6800.h"
+
 #include <stdio.h>
 #include <errno.h>
 #include <ctype.h>
@@ -39,86 +41,6 @@ u1_t rom_image[ROM_SIZE] = {
 };
 
 u1_t ram_image[RAM_SIZE];
-
-// for some reason defining readByte in the block-macro style fails at runtime!
-#define readByte(addr) \
-	(((addr & ROM_MASK) != 0)? (rom[addr]) : \
-	(((addr & RAM_MASK) != 0)? (ram[addr]) : \
-	readDev(addr)))
-
-// readByteNoROM helps optimize the following case: INSN(0x6c, inc, _08_IDX(0x0000); RMW_8(tU8 = inc(tU8)) ); et al.
-// i.e. _08_IDX means tAddr = rX + rom_const, which could point anywhere, but RMW means it can't be ROM due to the write.
-// So readByteNoROM is used in the implementation of RMW_8.
-// The -O3 optimizer can't catch this because tAddr isn't constant in the _08_IDX case.
-//
-// Normally -O3 can optimize readByte because tAddr is constant for the inline ROM code.
-
-#define readByteNoROM(addr) \
-	(((addr & RAM_MASK) != 0)? (ram[addr]) : \
-	readDev(addr))
-
-#define readWord(pAddr) \
-({ \
-	u2_t addr = pAddr; \
-	u1_t hi, lo; \
-	\
-	hi = readByte(addr); \
-	addr++; \
-	lo = readByte(addr); \
-	(hi << 8) | lo; \
-})
-
-// assumes push/pull always goes to RAM and never device space
-#define pullByte(addr) \
-	ram[addr]
-
-#define pullWord(pAddr) \
-({ \
-	u2_t addr = pAddr; \
-	u1_t hi, lo; \
-	\
-	hi = pullByte(addr); \
-	addr++; \
-	lo = pullByte(addr); \
-	(hi << 8) | lo; \
-})
-
-#define writeByte(addr, data) \
-	if (((addr) & RAM_MASK) != 0) { \
-		ram[addr] = data; \
-	} else { \
-		writeDev(addr, data); \
-	}
-
-#define writeWord(pAddr, p16) \
-({ \
-	u2_t addr = pAddr; \
-	u2_t d16 = p16; \
-	u1_t d8; \
-	\
-	d8 = d16 >> 8; \
-	writeByte(addr, d8); \
-	addr++; \
-	d8 = d16 & 0xff; \
-	writeByte(addr, d8); \
-})
-
-#define pushByte(addr, data) \
-	ram[addr] = data;
-
-#define pushWord(pAddr, p16) \
-({ \
-	u2_t addr = pAddr; \
-	u2_t d16 = p16; \
-	u1_t d8; \
-	\
-	d8 = d16 >> 8; \
-	pushByte(addr, d8); \
-	addr++; \
-	d8 = d16 & 0xff; \
-	pushByte(addr, d8); \
-})
-
 
 // used to measure histogram of instruction counts between i/o cycles
 #ifdef RECORD_IO_HIST
@@ -157,30 +79,6 @@ u1_t ram_image[RAM_SIZE];
 #endif
 
 
-#if defined(HPIB_RECORD) || defined(HPIB_SIM_DEBUG)
-
-	#undef readByte
-	
-	#define readByte(addr) \
-		(((addr & ROM_MASK) != 0)? (rom[addr]) : \
-		(((addr & RAM_MASK) != 0)? (ram[addr]) : \
-		readDev(addr, iCount, rPC, 0, getI())))
-	
-	#undef readByteNoROM
-	#define readByteNoROM(addr) readByte(addr)
-	
-	#undef writeByte
-	
-	#define writeByte(addr, data) \
-		if ((addr & RAM_MASK) != 0) { \
-			ram[addr] = data; \
-		} else { \
-			writeDev(addr, data, iCount, rPC, 0, getI()); \
-		}
-
-#endif
-
-
 //#define ROM_RAM_COVER
 #ifdef ROM_RAM_COVER
 	u1_t rom_coverage[ROM_SIZE];
@@ -210,109 +108,20 @@ u1_t ram_image[RAM_SIZE];
 #endif
 
 
-#if defined(DEBUG) || defined(INSN_TRACE)
+#define _6800_DOT_C_
+ #include "6800.cc.h"
+#undef _6800_DOT_C_
 
-#define N_OP		256
-#define N_LEGIT_OP	197
 
-char *deco[N_OP] = {
-/* 0 */	"x00", "nop", "x02", "x03", "x04", "x05", "tap", "tpa", "inx", "dex", "clv", "sev", "clc", "sec", "cli", "sei",
-/* 1 */	"sba", "cba", "x12", "x13", "x14", "x15", "tab", "tba", "x18", "daa", "x1a", "aba", "x1c", "x1d", "x1e", "x1f",
-/* 2 */	"bra", "x21", "bhi", "bls", "bcc", "bcs", "bne", "beq", "bvc", "bvs", "bpl", "bmi", "bge", "blt", "bgt", "ble",
-/* 3 */	"tsx", "ins", "pul-a", "pul-b", "des", "txs", "psh-a", "psh-b", "x38", "rts", "x3a", "rti", "x3c", "x3d", "wai", "swi",
-/* 4 */	"neg-a", "x41", "x42", "com-a", "lsr-a", "x45", "ror-a", "asr-a", "asl-a", "rol-a", "dec-a", "x4b", "inc-a", "tst-a", "x4e", "clr-a",
-/* 5 */	"neg-b", "x51", "x52", "com-b", "lsr-b", "x55", "ror-b", "asr-b", "asl-b", "rol-b", "dec-b", "x5b", "inc-b", "tst-b", "x5e", "clr-b",
-/* 6 */	"neg-x@", "x61", "x62", "com-x@", "lsr-x@", "x65", "ror-x@", "asr-x@", "asl-x@", "rol-x@", "dec-x@", "x6b", "inc-x@", "tst-x@", "jmp-x@", "clr-x@",
-/* 7 */	"neg-##", "x71", "x72", "com-##", "lsr-##", "x75", "ror-##", "asr-##", "asl-##", "rol-##", "dec-##", "x7b", "inc-##", "tst-##", "jmp-##", "clr-##",
-/* 8 */	"sub-a#", "cmp-a#", "sbc-a#", "x83", "and-a#", "bit-a#", "lda-a#", "x87", "eor-a#", "adc-a#", "ora-a#", "add-a#", "cpx-#", "bsr", "lds-#", "x8f",
-/* 9 */	"sub-a@", "cmp-a@", "sbc-a@", "x93", "and-a@", "bit-a@", "lda-a@", "sta-a@", "eor-a@", "adc-a@", "ora-a@", "add-a@", "cpx-@", "x9d", "lds-@", "sts-@",
-/* a */	"sub-ax@", "cmp-ax@", "sbc-ax@", "xa3", "and-ax@", "bit-ax@", "lda-ax@", "sta-ax@", "eor-ax@", "adc-ax@", "ora-ax@", "add-ax@", "cpx-x@", "jsr-x@", "lds-x@", "sts-x@",
-/* b */	"sub-a##", "cmp-a##", "sbc-a##", "xb3", "and-a##", "bit-a##", "lda-a##", "sta-a##", "eor-a##", "adc-a##", "ora-a##", "add-a##", "cpx-##", "jsr-##", "lds-##", "sts-##",
-/* c */	"sub-b#", "cmp-b#", "sbc-b#", "xc3", "and-b#", "bit-b#", "lda-b#", "xc7", "eor-b#", "adc-b#", "ora-b#", "add-b#", "xcc", "xcd", "ldx-#", "xcf",
-/* d */	"sub-b@", "cmp-b@", "sbc-b@", "xd3", "and-b@", "bit-b@", "lda-b@", "sta-b@", "eor-b@", "adc-b@", "ora-b@", "add-b@", "xdc", "xdd", "ldx-@", "stx-@",
-/* e */	"sub-bx@", "cmp-bx@", "sbc-bx@", "xe3", "and-bx@", "bit-bx@", "lda-bx@", "sta-bx@", "eor-bx@", "adc-bx@", "ora-bx@", "add-bx@", "xec", "xed", "ldx-x@", "stx-x@",
-/* f */	"sub-b##", "cmp-b##", "sbc-b##", "xf3", "and-b##", "bit-b##", "lda-b##", "sta-b##", "eor-b##", "adc-b##", "ora-b##", "add-b##", "xfc", "xfd", "ldx-##", "stx-##",
-};
-
-// most number of opcodes seen after instrument use, including (simple) HPIB, = 136
-// 6800 spec says 197 possible, so we've not interpreted (197 - 136) = 61 of them
-// output from the '@' command:
-
-//opcode coverage 136/197 61
-//not-interp: sba bhi bls tsx ins des txs wai asr-b neg-x@ com-x@ asl-x@ neg-## com-## ror-## asr-## asl-## rol-## sbc-a#
-//bit-a@ eor-a@ lds-@ sts-@ sub-ax@ sbc-ax@ and-ax@ bit-ax@ eor-ax@ ora-ax@ cpx-x@ lds-x@ sts-x@ sbc-a## and-a## bit-a## eor-a## adc-a## ora-a## cpx-## lds-## sts-##
-//sub-b# sbc-b# cmp-b@ bit-b@ ora-b@ sub-bx@ and-bx@ bit-bx@ eor-bx@ adc-bx@ add-bx@ stx-x@ sub-b## cmp-b## sbc-b## and-b## bit-b## adc-b## ora-b## add-b## 
-//61 remaining
-
-#endif
-
-#include "6800.cc.h"
+// core instruction code, without all the address mode variants
 #include "6800.core.h"
 
 
 #if defined(DEBUG) || defined(INSN_TRACE)
 
-int itrace = 0;
+int iTrace = 0;
 int itr = 0;
-
-void trace(u2_t pc, u1_t irq, u1_t a, u1_t b, u2_t x, u2_t sp)
-{
-	u1_t opcode, b2, b3, tU8;
-	u2_t tAddr, tU16;
-	u1_t *rom = &rom_image[0] - ROM_START;
-	
-	opcode = rom[pc];
-	b2 = rom[pc+1];
-	b3 = rom[pc+2];
-	printf("%04x%c A=%02x B=%02x X=%04x SP=%04x %02x %02x %02x %s ",
-		pc, irq? '*':' ', a, b, x, sp, opcode, b2, b3, deco[opcode]);
-	//printf("."); fflush(stdout);
-	
-	pc++;
-	
-	// imm 16-bit (_16_WIM)
-	if ((opcode == 0x8c) || (opcode == 0x8e) || (opcode == 0xce)) {
-			tU16 = rom[pc];
-			printf("#=%04x ", tU16);
-	} else {
-	
-		switch (opcode >> 4) {
-		
-		// imm
-		case 0x8:
-		case 0xc:
-			tU8 = rom[pc];
-			printf("#=%02x ", tU8);
-			break;
-	
-		// dir
-		case 0x9:
-		case 0xd:
-			tAddr = (u2_t) rom[pc];
-			printf("@=%02x ", tAddr);
-			break;
-		
-		// ext
-		case 0x7:
-		case 0xb:
-		case 0xf:
-			tAddr = (rom[pc] << 8) | rom[pc+1];
-			printf("@=%04x ", tAddr);
-			break;
-		
-		// idx
-		case 0x6:
-		case 0xa:
-		case 0xe:
-			tAddr = x + (u2_t) rom[pc];
-			printf("@=%04x(rX+%02x) ", tAddr, (u2_t) rom[pc]);
-			break;
-			
-		}
-	}
-	
-	printf("\n");
-}
+int iSnap = 0;
 
 #endif
 
@@ -320,8 +129,8 @@ static int IRQs = 0;
 
 #ifdef DEBUG
 	bool iDump;
-	int iSnap = 0;
 	int irq_trace = 0;
+	int ispeed = 0;
 	
 	u4_t op_coverage[N_OP];
 	
@@ -394,6 +203,7 @@ void sim_processor()
 
 #ifdef DBG_INTRS
 	u4_t i_level = 0, i_latched = 0;
+	u4_t dintr = 1;
 #endif
 
 #ifdef FASTER_INTERRUPTS
@@ -463,6 +273,8 @@ branch_taken:
 	}
 #endif
 
+// remember: interrupts are level (not edge) sensitive on the 6800
+// one consequence is that the interrupt is never taken if the level disappears before interrupt disable is unmasked
 checkpending:
 
 #if	defined(DEBUG) || defined(INSN_TRACE)
@@ -476,7 +288,7 @@ checkpending:
 
 	if (CHECK_NMI()) {	// FIXME interrupt routine could set IRQs directly with proper locking
 		#ifdef DBG_INTRS
-			printf("*NMI*\n");
+			PFC(dintr, "*NMI*\n");
 		#endif
 		IRQs |= INT_NMI;
 	} else {
@@ -495,7 +307,7 @@ checkpending:
 	if (CHECK_IRQ() || sim_key) {
 #endif
 		#ifdef DBG_INTRS
-			if (iPendCt == 0) printf("*IRQ* msk? %s " , getI()? "YES":"NO");
+			if (iPendCt == 0) PFC(dintr, "*IRQ* msk? %s\n" , getI()? "YES":"NO");
 		#endif
 		IRQs |= INT_IRQ;
 	} else {
@@ -505,10 +317,10 @@ checkpending:
 #ifdef HPIB_SIM
 	if (hpib_causeIRQ) {
 		#ifdef DBG_INTRS
-			printf("*HIRQ*\n");
+			PFC(dintr, "*HIRQ*\n");
 		#endif
 		#ifdef HPIB_SIM_DEBUG
-			if (hps) printf("----HPIB IRQ\n");
+			PFC(hps, "----HPIB IRQ\n");
 		#endif
 		IRQs |= INT_IRQ;
 	}
@@ -566,10 +378,11 @@ checkpending:
 	#endif
 #endif
 #ifdef DBG_INTRS
-			if (iPendCt)
-				printf("[TAKE iPEND=%d --->]\n", iPendCt);
-			else
-				printf("TAKE--->\n");
+			if (iPendCt) {
+				PFC(dintr, "[TAKE iPEND=%d --->]\n", iPendCt);
+			} else {
+				PFC(dintr, "TAKE--->\n");
+			}
 			iPendCt = 0;
 			iPendPrint = PEND_PRINT;
 			i_latched = 0;
@@ -582,13 +395,12 @@ checkpending:
 	if (IRQs & INT_IRQ) {
 		iPendCt++;
 		if (iPendCt == iPendPrint) {
-			//printf("iPEND-%d ", iPendCt); fflush(stdout);
-			printf("iPEND-%d ", iPendCt);
+			PFC(dintr, "iPEND-%d\n", iPendCt);
 			iPendPrint <<= 2;
 		}
 	} else {
 		if (iPendCt) {
-			printf("[GONE iPEND=%d msk? %s]\n", iPendCt, getI()? "YES":"NO");
+			PFC(dintr, "[GONE iPEND=%d msk? %s]\n", iPendCt, getI()? "YES":"NO");
 			iPendCt = 0;
 			iPendPrint = PEND_PRINT;
 		}
@@ -616,10 +428,10 @@ doexecute: ;
 		itr |= 1;
 	}
 	
-	if (iSnap && (iSnap++ < 16)) {
-		itr |= 1;
-	} else {
-		iSnap = 0;
+	if (iSnap) {
+		if (iSnap == 1) { trace_dump(); printf("---- snap ----------------\n"); }
+		iSnap++;
+		if (iSnap == 16) { iSnap = 0; trace_clear(); } else itr |= 1;
 	}
 
 	if (iDump) {
@@ -627,13 +439,15 @@ doexecute: ;
 	}
 
 	#ifdef INSN_TRACE
-		if (itrace) {
+		if (iTrace) {
 			itr |= 1;
 		}
 	#endif
 	
 	// don't print trace when in this particular delay loop
 	if ((itr == 0) || ((rPC >= 0x6064) && (rPC <= 0x606f))) inh = 1; else inh = 0;
+	
+	int i; if (ispeed) for (i=0; i<ispeed; i++) bus_delay();
 
 #endif
 
@@ -687,7 +501,7 @@ doexecute: ;
 			break;
 
 #ifdef INSN_TRACE
-	if (itr) trace(rPC, getI(), rA, rB, rX, rSP);
+	if (itr) trace(rPC, getI(), rA, rB, rX, rSP, C, VNZ);
 #endif
 
 	opcode = rom[rPC];

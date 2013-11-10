@@ -14,41 +14,46 @@
 #define bit7toV(b)		(((b) & 0x80) >> 6)
 #define bit15toV(b)		(((b) & 0x8000) >> 14)
 
-
-// surprisingly, negative and zero flags can be set more quickly by doing a lookup with an array
-
-#define Z	F_ZERO
-#define N	F_NEGATIVE
-
-u1_t SET_NZ[256] = {
-      Z,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,          /* 00-0F */
-      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,          /* 10-1F */
-      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,          /* 20-2F */
-      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,          /* 30-3F */
-      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,          /* 40-4F */
-      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,          /* 50-5F */
-      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,          /* 60-6F */
-      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,          /* 70-7F */
-      N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,          /* 80-8F */
-      N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,          /* 90-9F */
-      N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,          /* A0-AF */
-      N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,          /* B0-BF */
-      N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,          /* C0-CF */
-      N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,          /* D0-DF */
-      N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,          /* E0-EF */
-      N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N           /* F0-FF */
-};
-
-#undef Z
-#undef N
+#ifdef _6800_DOT_C_
+	// surprisingly, negative and zero flags can be set more quickly by doing a lookup with an array
+	
+	#define Z	F_ZERO
+	#define N	F_NEGATIVE
+	
+	u1_t SET_NZ[256] = {
+		  Z,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,          /* 00-0F */
+		  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,          /* 10-1F */
+		  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,          /* 20-2F */
+		  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,          /* 30-3F */
+		  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,          /* 40-4F */
+		  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,          /* 50-5F */
+		  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,          /* 60-6F */
+		  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,          /* 70-7F */
+		  N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,          /* 80-8F */
+		  N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,          /* 90-9F */
+		  N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,          /* A0-AF */
+		  N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,          /* B0-BF */
+		  N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,          /* C0-CF */
+		  N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,          /* D0-DF */
+		  N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,          /* E0-EF */
+		  N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N           /* F0-FF */
+	};
+	
+	#undef Z
+	#undef N
+#else
+	extern u1_t SET_NZ[];
+#endif
 
 // this is the heart of the speed optimization:
 // best to treat VNZ in a single variable, and IRQ, H and C separately
 #define declareCC()	u1_t IRQ, H, C, VNZ;
 
 #define	clrZ()		VNZ &= ~F_ZERO;
-#define	clrZN()		VNZ &= ~(F_ZERO | F_NEGATIVE);
 #define	setZ()		VNZ |= F_ZERO;
+#define	getZ()		(VNZ & F_ZERO)
+
+#define	clrZN()		VNZ &= ~(F_ZERO | F_NEGATIVE);
 #define	setZC()		VNZ |= F_ZERO; C = F_CARRY;
 
 #define	setN()		VNZ |= F_NEGATIVE;
@@ -56,6 +61,7 @@ u1_t SET_NZ[256] = {
 
 #define	clrV()		VNZ &= ~F_OVERFLOW;
 #define	setV()		VNZ |= F_OVERFLOW;
+#define	getV()		(VNZ & F_OVERFLOW)
 
 #define	clrC()		C = 0;
 #define	setC()		C = F_CARRY;

@@ -18,6 +18,16 @@ void sim_processor();
 u4_t sim_insn_count();
 char *sim_input();
 
+#define	PF(...)		tr_printf(sprintf(tr_s(), __VA_ARGS__))
+#define	PFC(c, ...)	if (c) tr_printf(sprintf(tr_s(), __VA_ARGS__))
+
+void trace(u2_t pc, u1_t irq, u1_t a, u1_t b, u2_t x, u2_t sp, u1_t C, u1_t VNZ);
+void trace_dump();
+void trace_clear();
+char *tr_s();
+void tr_printf(int ignore);
+
 extern bool iDump;
+extern int iSnap, iTrace;
 
 #endif
