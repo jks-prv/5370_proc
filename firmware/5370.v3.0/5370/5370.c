@@ -60,6 +60,7 @@ static u4_t dump_regs;
 })
 
 static u1_t shifted_key;
+static bool force_EOM = FALSE;
 
 char *arm_rreg[] = { "ldacsr", "1?", "switches", "in1", "status", "n0st", "n0h", "n0l", "n1n2h", "n1n2l", "n3h", "n3l" };
 
@@ -68,6 +69,10 @@ char *arm_rreg[] = { "ldacsr", "1?", "switches", "in1", "status", "n0st", "n0h",
 u1_t handler_dev_arm_read(u2_t addr)
 {
 	u1_t data, key;
+
+	assert (addr == RREG_LDACSR || addr == RREG_A16_SWITCHES || addr == RREG_I1 || addr == RREG_ST ||
+		addr == RREG_N0ST || addr == RREG_N0H || addr == RREG_N0L || addr == RREG_N1N2H || addr == RREG_N1N2L ||
+		addr == RREG_N3H || addr == RREG_N3L);
 
 	data = bus_read(addr);
 
@@ -122,6 +127,11 @@ u1_t handler_dev_arm_read(u2_t addr)
 				sim_key_intr = 1;
 			}
 		}
+	}
+	
+	if (addr == RREG_N0ST && force_EOM) {
+		force_EOM = FALSE;
+		data &= ~N0ST_EOM;
 	}
 
 	DUMP_AREG(N0ST, addr, data);
@@ -178,6 +188,9 @@ void handler_dev_arm_write(u2_t addr, u1_t data)
 		printf(">\n");
 	}
 #endif
+
+	assert (addr == WREG_LDACCW || addr == WREG_LDACSTART || addr == WREG_LDACSTOP ||
+		addr == WREG_O2 || addr == WREG_O1 || addr == WREG_O3);
 
 	bus_write(addr, data);
 }
@@ -360,10 +373,12 @@ char *sim_input()
 	int n, e;
 	char *cp = ibuf;
 	static int bg_delay = 0;
-	static bool bg_start = FALSE;
 	
 	if (background_mode) {
-		if (bg_delay++ == 1024 && !bg_start) { bg_start = TRUE; find_bug(); }
+		if (bg_delay == 1000) hpib_input("tr\n");
+		if (bg_delay == 2000) hpib_input("ta+0.05\n");
+		if (bg_delay == 3000) find_bug();
+		if (bg_delay <  5000) bg_delay++;
 		fflush(stdout);
 		return 0;
 	}
@@ -452,6 +467,11 @@ char *sim_input()
 
 		if (*cp == 'r') {
 			dump_regs = BIT_AREG(N0ST) | BIT_AREG(N1N2H) | BIT_AREG(N1N2L) | BIT_AREG(N0H) | BIT_AREG(N0L);
+			return 0;
+		}
+		
+		if (*cp == 'z') {
+			force_EOM = TRUE;
 			return 0;
 		}
 		
