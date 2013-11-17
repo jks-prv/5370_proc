@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
     printf("compiled: %s %s\n", __DATE__, __TIME__);
 
 	int i;
-	bool bg = FALSE;
+	bool bg = FALSE, bug = FALSE;
 	app_state_e app_state;
 	bool save_cfg = FALSE;
 	bool change_settings_ui(u1_t key, bool *skip_first, cfg_t *cfg);
@@ -71,6 +71,7 @@ int main(int argc, char *argv[])
 	
 	for (i=1; i<argc; i++) {
 		if (strcmp(argv[i], "-bg") == 0) bg = TRUE;
+		if (strcmp(argv[i], "-bug") == 0) bug = TRUE;
 	}
 	
 reset:
@@ -130,6 +131,7 @@ reset:
 	} else {
 		panic("eth0 not configured?");
 	}
+	pclose(efp);
 
 	// place a call here to setup your measurement extension code
 	meas_extend_example_init();
@@ -191,7 +193,7 @@ reset:
 
 		if (app_state == APP_START) {
 			preempt_reset_key(FALSE);
-			sim_main(bg);
+			sim_main(bg, bug);
 			printf("main returned\n");
 			panic("can't reset until bss zeroed\n");
 			goto reset;

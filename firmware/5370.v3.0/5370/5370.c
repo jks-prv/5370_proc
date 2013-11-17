@@ -261,9 +261,9 @@ void handler_dev_write_bad(u2_t addr, u1_t data)
 
 #endif
 
-static bool background_mode;
+static bool background_mode, bug_mode;
 
-void sim_main(bool bg)
+void sim_main(bool bg, bool bug)
 {
 	u2_t i;
 
@@ -273,6 +273,7 @@ void sim_main(bool bg)
 #endif
 
 	background_mode = bg;
+	bug_mode = bug;
 	
 	if (!bg) {
 		tty = open("/dev/tty", O_RDONLY | O_NONBLOCK);
@@ -375,10 +376,12 @@ char *sim_input()
 	static int bg_delay = 0;
 	
 	if (background_mode) {
-		if (bg_delay == 1000) hpib_input("tr\n");
-		if (bg_delay == 2000) hpib_input("ta+0.05\n");
-		if (bg_delay == 3000) find_bug();
-		if (bg_delay <  5000) bg_delay++;
+		if (bug_mode) {
+			if (bg_delay == 1000) hpib_input("tr\n");
+			if (bg_delay == 2000) hpib_input("ta+0.05\n");
+			if (bg_delay == 3000) find_bug();
+			if (bg_delay <  5000) bg_delay++;
+		}
 		fflush(stdout);
 		return 0;
 	}

@@ -13,7 +13,7 @@
 
 extern u1_t sim_key, sim_key_intr;
 
-void sim_main(bool bg);
+void sim_main(bool bg, bool bug);
 void sim_processor();
 u4_t sim_insn_count();
 char *sim_input();
