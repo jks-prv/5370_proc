@@ -1,7 +1,7 @@
 # Makefile for compiling 5370 project
 
-INSTRUMENT = HP5370A
-#INSTRUMENT = HP5370B
+#INSTRUMENT = HP5370A
+INSTRUMENT = HP5370B
 #INSTRUMENT = HP5359A
 
 # Chip & board & setup used for compilation
