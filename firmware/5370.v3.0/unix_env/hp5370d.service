@@ -1,0 +1,11 @@
+[Unit]
+Description=hp5370 daemon
+After=network.target
+
+[Service]
+Type=forking
+ExecStart=/etc/init.d/hp5370d start
+ExecStop=/etc/init.d/hp5370d stop
+
+[Install]
+WantedBy=multi-user.target
