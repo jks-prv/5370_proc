@@ -25,7 +25,8 @@
 	u2_t rb_addr = rb_pAddr; \
 	u1_t rb_data; \
 	\
-	if ((rb_addr & ROM_MASK) == ROM_START) rb_data = rom[rb_addr]; else \
+	/* & 0x7fff because 5370B std dev firmware references ROM with bit 15 set */ \
+	if ((rb_addr & ROM_MASK) == ROM_START) rb_data = rom[rb_addr & 0x7fff]; else \
 	if ((rb_addr & RAM_MASK) != 0) rb_data = ram[rb_addr]; else \
 	rb_data = READDEV(rb_addr); \
 	rb_data; \
