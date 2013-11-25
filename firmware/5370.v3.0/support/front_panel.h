@@ -18,8 +18,6 @@ void dsp_7seg_num(u4_t lsd_pos, u4_t n, u4_t field_width, bool msd_first, bool z
 
 void dsp_7seg_init(void);
 u1_t dsp_7seg_2_char(char *s);
-void dsp_7seg_save(void);
-void dsp_7seg_restore(void);
 
 u1_t dsp_key_leds_2_char(char *s);
 

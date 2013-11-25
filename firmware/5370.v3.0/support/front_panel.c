@@ -7,6 +7,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <ctype.h>
 
 scan_code front_pnl_key[] = {
 //	LCL_RMT,	TI,			TRG_LVL,	MEAN,		STD_DEV,	PT1,		_100,		P_TI_ONLY,	P_M_TI,
@@ -63,67 +64,71 @@ scan_code front_pnt_units[] = {
 #define BR	0x04
 #define DP	0x80	// decimal point
 
-#define SEG7_EQUALS		(M|B)
-#define SEG7_DASH		(M)
-#define SEG7_UNDER		(B)
-#define SEG7_QUESTION	(T|TR|M|BL)
-#define SEG7_MU			(TL|TR|M|BL)
-#define SEG7_ALL		(T|TL|TR|M|B|BL|BR|DP)
+#define SEG7_ALL	(T|TL|TR|M|B|BL|BR|DP)
 
-u1_t seg7[36] = {
-	/* 0 */		(T|TL|TR|B|BL|BR),
-	/* 1 */		(TR|BR),
-	/* 2 */		(T|TR|M|B|BL),
-	/* 3 */		(T|TR|M|B|BR),
-	/* 4 */		(TL|TR|M|BR),
-	/* 5 */		(T|TL|M|B|BR),
-	/* 6 */		(T|TL|M|B|BL|BR),
-	/* 7 */		(T|TR|BR),
-	/* 8 */		(T|TL|TR|M|B|BL|BR),
-	/* 9 */		(T|TL|TR|M|B|BR),
+typedef struct {
+	char c;
+	u1_t segs;
+} seg7_t;
 
-	/* a */		(T|TL|TR|M|BL|BR),
-	/* b */		(TL|M|B|BL|BR),
-	/* c */		(M|B|BL),
-	/* d */		(TR|M|B|BL|BR),
-	/* e */		(T|TL|M|B|BL),
-	/* f */		(T|TL|BL|M),
-	/* g */		(T|TL|TR|M|B|BR),
-	/* h */		(TL|M|BL|BR),
-	/* i */		(TR|BR),
-	/* j */		(B|BR),
-	/* k */		(T|TL|M|BL|BR),
-	/* l */		(TL|B|BL),
-	/* m */		(T|TL|TR|B),
-	/* n */		(M|BL|BR),
-	/* o */		(M|B|BL|BR),
-	/* p */		(T|TL|TR|M|BL),
-	/* q */		(T|TL|TR|M|BR),
-	/* r */		(M|BL),
-	/* s */		(T|TL|M|B|BR),
-	/* t */		(TL|M|B|BL),
-	/* u */		(B|BL|BR),
-	/* v */		(TL|TR|B),
-	/* w */		(TL|TR|M|B),
-	/* x */		(T|M|B),
-	/* y */		(TL|TR|M|B|BR),
-	/* z */		(T|TR|M|B|BL),
+seg7_t seg7[] = {
+	{ '0',		(T|TL|TR|B|BL|BR) },
+	{ '1',		(TR|BR) },
+	{ '2',		(T|TR|M|B|BL) },
+	{ '3',		(T|TR|M|B|BR) },
+	{ '4',		(TL|TR|M|BR) },
+	{ '5',		(T|TL|M|B|BR) },
+	{ '6',		(T|TL|M|B|BL|BR) },
+	{ '7',		(T|TR|BR) },
+	{ '8',		(T|TL|TR|M|B|BL|BR) },
+	{ '9',		(T|TL|TR|M|B|BR) },
+
+	{ 'a',		(T|TL|TR|M|BL|BR) },
+	{ 'b',		(TL|M|B|BL|BR) },
+	{ 'c',		(M|B|BL) },
+	{ 'd',		(TR|M|B|BL|BR) },
+	{ 'e',		(T|TL|M|B|BL) },
+	{ 'f',		(T|TL|BL|M) },
+	{ 'g',		(T|TL|TR|M|B|BR) },
+	{ 'h',		(TL|M|BL|BR) },
+	{ 'i',		(TR|BR) },
+	{ 'j',		(B|BR) },
+	{ 'k',		(T|TL|M|BL|BR) },
+	{ 'l',		(TL|B|BL) },
+	{ 'm',		(T|TL|TR|B) },
+	{ 'n',		(M|BL|BR) },
+	{ 'o',		(M|B|BL|BR) },
+	{ 'p',		(T|TL|TR|M|BL) },
+	{ 'q',		(T|TL|TR|M|BR) },
+	{ 'r',		(M|BL) },
+	{ 's',		(T|TL|M|B|BR) },
+	{ 't',		(TL|M|B|BL) },
+	{ 'u',		(B|BL|BR) },
+	{ 'v',		(TL|TR|B) },
+	{ 'w',		(TL|TR|M|B) },
+	{ 'x',		(T|M|B) },
+	{ 'y',		(TL|TR|M|B|BR) },
+	{ 'z',		(T|TR|M|B|BL) },
+	
+	{ '=',		(M|B) },
+	{ '-',		(M) },
+	{ '_',		(B) },
+	{ '?',		(T|TR|M|BL) },
+	{ ' ',		0 },
+	{ '.',		DP },
+	{ CHAR_MU,	(TL|TR|M|BL) },
 };
 
-static u1_t seg7_2_char[10];
+#define TS_SEG7	(sizeof seg7 / sizeof seg7[0])
+
 static u1_t dsp_7seg_cache[N_7SEG];
-static u1_t dsp_7seg_buf[N_7SEG];
 static char dsp_char_cache[N_7SEG];
-static char dsp_char_buf[N_7SEG];
 static u1_t dsp_leds_cache[N_LEDS];
 
 bool dsp_7seg_ok;
 
 void dsp_7seg_init(void)
 {
-	int i;
-	
-	for (i=0; i<10; i++) seg7_2_char[i] = seg7[i];
 	dsp_7seg_ok = TRUE;
 }
 
@@ -137,6 +142,7 @@ u1_t dsp_7seg_2_char(char *s)
 	char cc;
 	bool numeric = TRUE;
 	scan_code *u;
+	seg7_t *s7;
 
 	for (i=0; i<N_7SEG; i++) {
 		cc = dsp_char_cache[i];
@@ -155,18 +161,16 @@ u1_t dsp_7seg_2_char(char *s)
 			*s = cc & ~DP;
 		} else {
 			if (sc & DP) { *s++ = '.'; n++; }
-			for (j=0; j<10; j++) {
-				if ((sc & ~DP) == seg7_2_char[j]) {
-					*s = '0'+j;
+			sc &= ~DP;
+			for (j=0; j < TS_SEG7; j++) {
+				s7 = &seg7[j];
+				if (sc == s7->segs) {
+					*s = s7->c;
 					break;
 				}
 			}
-			if (j == 10) {
-				if ((sc & ~DP) == SEG7_DASH) {
-					*s = '-';
-				} else {
-					*s = ' ';
-				}
+			if (j == TS_SEG7) {
+				s += sprintf(s, " ?%02x? ", sc);
 			}
 		}
 		s++;
@@ -249,60 +253,20 @@ u4_t dsp_leds_write(u4_t a, u1_t d)
 	return 0;
 }
 
-void dsp_7seg_save(void)
-{
-	int i;
-	
-	for (i=0; i<N_7SEG; i++) {
-		dsp_7seg_buf[i] = dsp_7seg_cache[i];
-		dsp_char_buf[i] = dsp_char_cache[i];
-	}
-}
-
-void dsp_7seg_restore(void)
-{
-	int i;
-	
-	for (i=0; i<N_7SEG; i++) {
-		bus_write(ADDR_7SEG(i), dsp_7seg_buf[i]);
-		dsp_7seg_cache[i] = dsp_7seg_buf[i];
-		dsp_char_cache[i] = dsp_char_buf[i];
-	}
-}
-
 void dsp_7seg_chr(u4_t pos, char c)
 {
+	int i;
 	u1_t d;
+	seg7_t *s7;
 	
-	if ((c >= '0') && (c <= '9')) {
-		d = seg7[c-'0'];
-	} else
-	if ((c >= 'a') && (c <= 'z')) {
-		d = seg7[c-'a'+10];
-	} else
-	if (c == ' ') {
-		d = 0;
-	} else
-	if (c == '=') {
-		d = SEG7_EQUALS;
-	} else
-	if (c == '-') {
-		d = SEG7_DASH;
-	} else
-	if (c == '_') {
-		d = SEG7_UNDER;
-	} else
-	if (c == '?') {
-		d = SEG7_QUESTION;
-	} else
-	if (c == '.') {
-		d = DP;
-	} else
-	if (c == CHAR_MU) {
-		d = SEG7_MU;
-	} else {
-		d = SEG7_ALL;
+	c = tolower(c);
+	
+	for (i=0; i < TS_SEG7; i++) {
+		s7 = &seg7[i];
+		if (c == s7->c) { d = s7->segs; break; }
 	}
+	
+	if (i == TS_SEG7) d = SEG7_ALL;
 	
 	dsp_7seg_write(pos, c, d);
 }
