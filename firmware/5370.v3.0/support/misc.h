@@ -23,6 +23,7 @@
 	#define assert_exit(e)
 #endif
 
+void lprintf(char *fmt, ...);
 void panic(char *str);
 void sys_panic(char *str);
 void xit(int err);

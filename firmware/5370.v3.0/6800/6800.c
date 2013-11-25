@@ -116,19 +116,16 @@ u1_t ram_image[RAM_SIZE];
 // core instruction code, without all the address mode variants
 #include "6800.core.h"
 
-
 #if defined(DEBUG) || defined(INSN_TRACE)
-
-int iTrace = 0;
-int itr = 0;
-int iSnap = 0;
-
+	int iTrace = 0;
+	int itr = 0;
+	int iSnap = 0;
+	bool iDump;
 #endif
 
 static int IRQs = 0;
 
 #ifdef DEBUG
-	bool iDump;
 	int irq_trace = 0;
 	int ispeed = 0;
 	
@@ -140,29 +137,18 @@ static int IRQs = 0;
 	} sorted[N_OP];
 #endif
 
-#if defined(RECORD_IO_HIST) || defined(DEBUG) || defined(HPIB_RECORD) || defined(HPIB_SIM_DEBUG) || defined(MEAS_IPS) || defined(MEAS_IP_HPIB_MEAS)
-	#define ICOUNT
-	#define INT_ICOUNT
-	#define iCount (ciCount + iiCount)
-	#define INLINE_ICOUNT()	ciCount++
-	#define INTERP_ICOUNT() iiCount++
-#else
-	#define iCount 0
-	#define INLINE_ICOUNT()
-	#define INTERP_ICOUNT()
-#endif
-
-#if defined(ICOUNT) && (defined(MEAS_IP_HPIB_MEAS) || defined(HPIB_SIM_DEBUG))
-	#undef INT_ICOUNT
+#if defined(MEAS_IP_HPIB_MEAS) || defined(HPIB_SIM_DEBUG)
 	#define EXT_ICOUNT
+#else
+	#define INT_ICOUNT
 #endif
 
 #ifdef EXT_ICOUNT
-	static u4_t ciCount, iiCount;
+	static u4_t iCount;
 	
 	u4_t sim_insn_count()
 	{
-		return ciCount + iiCount;
+		return iCount;
 	}
 #endif
 
@@ -188,7 +174,7 @@ void sim_processor()
 	u1_t opcode;
 
 #ifdef INT_ICOUNT
-	u4_t ciCount, iiCount;
+	u4_t iCount;
 #endif
 
 #if defined(DEBUG) || defined(DBG_INTRS)
@@ -197,7 +183,6 @@ void sim_processor()
 #endif
 
 #ifdef DEBUG
-	u1_t inh;
 	u4_t inIRQ = 0;
 #endif
 
@@ -211,10 +196,9 @@ void sim_processor()
 #endif
 
 D_STMT(reset:)
-	D_STMT(inh = 0);
 	
 #ifdef INT_ICOUNT
-	ciCount = iiCount = 0;
+	iCount = 0;
 #endif
 
 #ifdef ROM_RAM_COVER
@@ -418,7 +402,6 @@ doexecute: ;
 #endif
 
 #ifdef DEBUG
-	
 	inIRQ = !getI();
 
 	opcode = rom[rPC];
@@ -428,6 +411,10 @@ doexecute: ;
 		itr |= 1;
 	}
 	
+	int i; if (ispeed) for (i=0; i<ispeed; i++) bus_delay();
+#endif
+
+#if defined(DEBUG) || defined(INSN_TRACE)
 	if (iSnap) {
 		if (iSnap == 1) { trace_dump(); printf("---- snap ----------------\n"); }
 		iSnap++;
@@ -438,42 +425,21 @@ doexecute: ;
 		itr |= 1;
 	}
 
-	#ifdef INSN_TRACE
-		if (iTrace) {
-			itr |= 1;
-		}
-	#endif
-	
-	// don't print trace when in this particular delay loop
-	if ((itr == 0) || ((rPC >= 0x6064) && (rPC <= 0x606f))) inh = 1; else inh = 0;
-	
-	int i; if (ispeed) for (i=0; i<ispeed; i++) bus_delay();
-
+	if (iTrace) {
+		itr |= 1;
+	}
 #endif
 
 #ifdef MEAS_IPS
 	{
 		u4_t now;
-		static u4_t last, last_ciCount, last_iiCount, last_iCount;
+		static u4_t last, last_iCount;
 
 		now = sys_now();
 		if (time_diff(now, last) >= 1000) {
-			u4_t cic, iic;
-			char *cicu=" ", *iicu=" ";
-			u4_t icnt = ciCount + iiCount;
-			if ((cic = ciCount-last_ciCount) > 1024) {
-				cic /= 1024;
-				cicu = "K";
-			}
-			if ((iic = iiCount-last_iiCount) > 1024) {
-				iic /= 1024;
-				iicu = "K";
-			}
-			printf("%4d%s + %4d%s = %4dK i/sec\n", cic, cicu, iic, iicu, (icnt-last_iCount)/1024);
+			printf("%4dK i/sec\n", (iCount-last_iCount)/1024);
 			last = now;
-			last_ciCount = ciCount;
-			last_iiCount = iiCount;
-			last_iCount = icnt;
+			last_iCount = iCount;
 		}
 	}
 #endif
@@ -501,12 +467,12 @@ doexecute: ;
 			break;
 
 #ifdef INSN_TRACE
-	if (itr) trace(rPC, getI(), rA, rB, rX, rSP, C, VNZ);
+	if (itr) trace(iCount, rPC, getI(), rA, rB, rX, rSP, C, VNZ);
 #endif
 
 	opcode = rom[rPC];
 	rPC++;
-	INTERP_ICOUNT();
+	iCount++;
 
 	switch (opcode) {
 

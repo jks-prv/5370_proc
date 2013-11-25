@@ -53,7 +53,7 @@ char *deco[N_OP] = {
 
 
 #define	NTRB	1024
-static char trbuf[NTRB][128];
+static char trbuf[NTRB][256];
 static int trbi = 0;
 
 void trace_dump()
@@ -74,6 +74,13 @@ void trace_clear()
 	
 	for (i = 0; i < NTRB; i++)
 		trbuf[i][0] = 0;
+	trbi = 0;
+}
+
+void trace_on()
+{
+	iTrace = 1;
+	trace_clear();
 }
 
 static char *last_s;
@@ -85,7 +92,7 @@ char *tr_s()
 		last_s += strlen(last_s);
 	} else {
 		last_s = &trbuf[trbi++][0];
-		if (trbi > NTRB) trbi=0;
+		if (trbi >= NTRB) trbi=0;
 	}
 	
 	return last_s;
@@ -93,7 +100,9 @@ char *tr_s()
 
 void tr_printf(int ignore)
 {
-	if (!iTrace || iSnap || iDump) printf("%s", last_s);
+	if (!iTrace || iSnap || iDump) {
+		printf("%s", last_s);
+	}
 }
 
 typedef enum { W_RAM, W_READ, W_WRITE, W_LABEL, W_RANGE, W_END } what_e;
@@ -159,7 +168,7 @@ static what_t what[] = {
 	0, 0, W_END, ""
 };
 
-void trace(u2_t pc, u1_t irq, u1_t a, u1_t b, u2_t x, u2_t sp, u1_t C, u1_t VNZ)
+void trace(u4_t ict, u2_t pc, u1_t irq, u1_t a, u1_t b, u2_t x, u2_t sp, u1_t C, u1_t VNZ)
 {
 	int i, store, imm;
 	u1_t opcode, b2, b3, tU8;
@@ -174,8 +183,8 @@ void trace(u2_t pc, u1_t irq, u1_t a, u1_t b, u2_t x, u2_t sp, u1_t C, u1_t VNZ)
 	// skip delay loops, etc.
 	if ((pc >= 0x6064) && (pc <= 0x606c)) return;
 
-	PF("%04x%c A=%02x B=%02x X=%04x SP=%04x %c%c%c%c %02x %02x %02x %s ",
-		pc, irq? '*':' ', a, b, x, sp,
+	PF("%d %04x%c A=%02x B=%02x X=%04x SP=%04x %c%c%c%c %02x %02x %02x %s ",
+		ict, pc, irq? '*':' ', a, b, x, sp,
 		getC()?'C':'c', getV()?'V':'v', getN()?'N':'n', getZ()?'Z':'z',
 		opcode, b2, b3, deco[opcode]);
 	

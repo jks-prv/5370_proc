@@ -1,4 +1,4 @@
-#ifdef DEBUG
+#if defined(DEBUG) || defined(INSN_TRACE)
 
 	if (*cp == '.') {
 		printf("rPC 0x%04x\n", rPC);
@@ -19,16 +19,6 @@
 	// trace all instructions from this point forward
 	if (*cp == 'x') {
 		iDump ^= TRUE;
-	} else
-
-	if (*cp == '*') {
-		irq_trace = 1;
-	} else
-
-	// slow down interpreter by some amount to debug timing effects
-	// (enable MEAS_IPS define to see how fast it's running)
-	if (sscanf(cp, "s %d", &ispeed) == 1) {
-		printf("ispeed %d\n", ispeed);
 	} else
 
 	#define APPEND_ADDR(per_line, addr) \
@@ -65,6 +55,17 @@
 		printf("RAM coverage %d/%d\n", j, RAM_SIZE);
 	} else
 #endif
+
+#ifdef DEBUG
+	if (*cp == '*') {
+		irq_trace = 1;
+	} else
+
+	// slow down interpreter by some amount to debug timing effects
+	// (enable MEAS_IPS define to see how fast it's running)
+	if (sscanf(cp, "s %d", &ispeed) == 1) {
+		printf("ispeed %d\n", ispeed);
+	} else
 
 	if (*cp == '!') {
 		int i;
@@ -121,6 +122,7 @@
 		}
 		printf("\n%d remaining\n", j);
 	} else
+#endif
 
 #ifdef RECORD_IO_HIST
 	if (*cp == 'o') {
@@ -132,4 +134,6 @@
 #endif
 
 #endif
+	{
 		printf("unknown command: %s", cp);
+	}

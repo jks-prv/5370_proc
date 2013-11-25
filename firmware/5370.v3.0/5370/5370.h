@@ -42,6 +42,7 @@ void bus_write(u2_t addr, u1_t data);
 void meas_extend_example_init();
 void meas_extend_example(u1_t key);
 
+extern bool background_mode;
 void find_bug();
 
 #endif

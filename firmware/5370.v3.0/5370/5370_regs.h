@@ -22,8 +22,8 @@
 // read-only registers
 #define RREG_KEY_SCAN		ADDR_DSP(0)
 
-#define	RREG_LDACSR			ADDR_ARM(0)
-#define	DSR_TRIG_LVL_STOP	0x8
+#define	RREG_LDACSR			ADDR_ARM(1)	// code always seems to use (1) instead of (0)
+#define	DSR_TRIG_LVL_STOP	0x8			// both decode to same register
 #define	DSR_TRIG_LVL_START	0x4
 #define	DSR_SPARE			0x2			// loopback of DCW_SPARE
 #define	DSR_VOK				0x1			// power supply voltages check

@@ -201,6 +201,8 @@ u1_t handler_dev_display_read(u2_t addr)
 {
 	u1_t data;
 
+	assert (addr == RREG_KEY_SCAN);
+
 	data = bus_read(addr);
 
 #if 0
@@ -242,8 +244,9 @@ void handler_dev_display_write(u2_t addr, u1_t data)
 	} else
 	if ((addr & ~0xf) == ADDR_LEDS(0xf)) {	// remember ADDR_LEDS() is reversed
 		dsp_leds_write(0xf - (addr - ADDR_LEDS(0xf)), data);
-	} else
+	} else {
 		bus_write(addr, data);
+	}
 }
 
 #ifdef DEBUG
@@ -261,16 +264,12 @@ void handler_dev_write_bad(u2_t addr, u1_t data)
 
 #endif
 
-static bool background_mode, bug_mode;
+bool background_mode;
+static bool bug_mode;
 
 void sim_main(bool bg, bool bug)
 {
 	u2_t i;
-
-#ifdef HP5370B
-	printf("\nNote that there is currently a strange interaction between the HPIB hardware emulation with 5370B firmware and keypress emulation ('k' command).\n"
-		"Configure to run the 5370A firmware in the Makefile if this is an issue for you.\n\n");
-#endif
 
 	background_mode = bg;
 	bug_mode = bug;
@@ -330,6 +329,7 @@ u1_t readDev(u2_t addr)
 
 #ifdef DEBUG
 	if (addr >= DEV_SPACE_SIZE) {
+		printf("addr 0x%x\n", addr);
 		panic("too big");
 	}
 #endif
@@ -367,7 +367,7 @@ enum front_pnl_loc_e skey_stat[] = { MEAN, STD_DEV, MIN, MAX, DSP_REF, CLR_REF, 
 enum front_pnl_loc_e skey_samp[] = { PT1, _100, _1K, _10K, _100K };
 enum front_pnl_loc_e skey_misc[] = { P_TI_ONLY, P_M_TI, EXT_HOFF, PER_COMPL, EXT_ARM, MAN_RATE };
 
-static char ibuf[32], dbuf[64];
+static char ibuf[32], dbuf[256];
 
 char *sim_input()
 {
@@ -388,6 +388,7 @@ char *sim_input()
 
 	n = read(tty, cp, sizeof(ibuf));
 	if (n >= 1) {
+		cp[n] = 0;
 		if ((n == 1) || (*cp == '?') || (strcmp(cp, "help\n") == 0) || ((*cp == 'h') && (n == 2))) {
 			printf("commands:\n"
 				"d\t\tshow instrument display including unit and key LEDs\n"

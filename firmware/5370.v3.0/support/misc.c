@@ -10,6 +10,9 @@
 #include <errno.h>
 #include <setjmp.h>
 #include <ctype.h>
+#include <syslog.h>
+#include <stdlib.h>
+#include <stdarg.h>
 
 void xit(int err)
 {
@@ -21,7 +24,11 @@ void xit(int err)
 
 void panic(char *str)
 {
-	printf("PANIC: %s\n", str);
+	if (background_mode) {
+		syslog(LOG_ERR, "PANIC: %s\n", str);
+	} else {
+		printf("PANIC: %s\n", str);
+	}
 
 #ifndef CLIENT_SIDE
 	if (dsp_7seg_ok) {
@@ -35,8 +42,31 @@ void panic(char *str)
 
 void sys_panic(char *str)
 {
-	perror(str);
+	if (background_mode) {
+		syslog(LOG_ERR, "%s: %m\n", str);
+	} else {
+		perror(str);
+	}
 	panic("sys_panic");
+}
+
+void lprintf(char *fmt, ...)
+{
+	char *s;
+	va_list ap;
+	
+	if ((s = malloc(256)) == NULL)
+		panic("log malloc");
+
+	va_start(ap, fmt);
+	vsnprintf(s, 256, fmt, ap);
+	va_end(ap);
+
+	if (background_mode) {
+		syslog(LOG_INFO, "%s", s);
+	} else {
+		printf("%s", s);
+	}
 }
 
 // assumes no phase wrap between t1 & t2

@@ -54,8 +54,8 @@ char lbuf[LBUF];
 
 int main(int argc, char *argv[])
 {
-	printf("HP%s v%d.%d\n", INST_STR, FIRMWARE_VER_MAJ, FIRMWARE_VER_MIN);
-    printf("compiled: %s %s\n", __DATE__, __TIME__);
+	lprintf("HP%s v%d.%d\n", INST_STR, FIRMWARE_VER_MAJ, FIRMWARE_VER_MIN);
+    lprintf("compiled: %s %s\n", __DATE__, __TIME__);
 
 	int i;
 	bool bg = FALSE, bug = FALSE;
@@ -126,7 +126,7 @@ reset:
 		for (i=0; i<4; i++) {
 			cfg->ip[3-i] = ip[i]; cfg->nm[3-i] = nm[i];
 		}
-		printf("ip %d.%d.%d.%d  mask %d.%d.%d.%d\n",
+		lprintf("ip %d.%d.%d.%d  mask %d.%d.%d.%d\n",
 			ip[3], ip[2], ip[1], ip[0], nm[3], nm[2], nm[1], nm[0]);
 	} else {
 		panic("eth0 not configured?");
