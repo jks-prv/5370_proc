@@ -52,13 +52,12 @@ typedef enum { APP_START, APP_BAD, APP_WAIT } app_state_e;
 #define LBUF 256
 char lbuf[LBUF];
 
+bool background_mode = FALSE;
+
 int main(int argc, char *argv[])
 {
-	lprintf("HP%s v%d.%d\n", INST_STR, FIRMWARE_VER_MAJ, FIRMWARE_VER_MIN);
-    lprintf("compiled: %s %s\n", __DATE__, __TIME__);
-
 	int i;
-	bool bg = FALSE, bug = FALSE;
+	bool bug = FALSE;
 	app_state_e app_state;
 	bool save_cfg = FALSE;
 	bool change_settings_ui(u1_t key, bool *skip_first, cfg_t *cfg);
@@ -70,10 +69,13 @@ int main(int argc, char *argv[])
 	cfg_t *cfg = &cfg_buf;
 	
 	for (i=1; i<argc; i++) {
-		if (strcmp(argv[i], "-bg") == 0) bg = TRUE;
+		if (strcmp(argv[i], "-bg") == 0) background_mode = TRUE;
 		if (strcmp(argv[i], "-bug") == 0) bug = TRUE;
 	}
 	
+	lprintf("HP%s v%d.%d\n", INST_STR, FIRMWARE_VER_MAJ, FIRMWARE_VER_MIN);
+    lprintf("compiled: %s %s\n", __DATE__, __TIME__);
+
 reset:
 	app_state = APP_START;
 	bus_init();
@@ -193,7 +195,7 @@ reset:
 
 		if (app_state == APP_START) {
 			preempt_reset_key(FALSE);
-			sim_main(bg, bug);
+			sim_main(bug);
 			printf("main returned\n");
 			panic("can't reset until bss zeroed\n");
 			goto reset;

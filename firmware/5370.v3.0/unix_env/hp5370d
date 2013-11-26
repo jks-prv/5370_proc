@@ -40,6 +40,7 @@ case "$1" in
 	if ! grep -q 5370 $SLOTS ; then
 		echo "load 5370 device tree";
 		echo "cape-bone-5370" > $SLOTS;
+		sleep 2;
 	fi
     echo -n "Start hp5370d: "
     start-stop-daemon --start --background --exec $HP5370D_EXEC -- $HP5370D_ARGS

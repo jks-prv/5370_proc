@@ -13,7 +13,7 @@
 
 extern u1_t sim_key, sim_key_intr;
 
-void sim_main(bool bg, bool bug);
+void sim_main(bool bug);
 void sim_processor();
 u4_t sim_insn_count();
 char *sim_input();
@@ -30,5 +30,6 @@ void tr_printf(int ignore);
 
 extern bool iDump;
 extern int iSnap, iTrace;
+extern bool background_mode;
 
 #endif

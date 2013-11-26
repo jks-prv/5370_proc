@@ -54,6 +54,7 @@ void lprintf(char *fmt, ...)
 {
 	char *s;
 	va_list ap;
+	char b[256];
 	
 	if ((s = malloc(256)) == NULL)
 		panic("log malloc");
@@ -63,10 +64,10 @@ void lprintf(char *fmt, ...)
 	va_end(ap);
 
 	if (background_mode) {
-		syslog(LOG_INFO, "%s", s);
-	} else {
-		printf("%s", s);
+		syslog(LOG_INFO, "hp5370d: %s", s);
 	}
+
+	printf("%s", s);
 }
 
 // assumes no phase wrap between t1 & t2

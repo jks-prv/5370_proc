@@ -56,7 +56,7 @@ int net_connect(net_type_e cs, char *host, char *port)
 		if (bind(sfd, (struct sockaddr*) &addr, sizeof addr) < 0) sys_panic("bind");
 		if (listen(sfd, 1) < 0) sys_panic("listen");
 		if (fcntl(sfd, F_SETFL, O_NONBLOCK) < 0) sys_panic("socket non-block");
-		printf("listening for TCP connection on port %d..\n", HPIB_TCP_PORT);
+		lprintf("listening for TCP connection on port %d..\n", HPIB_TCP_PORT);
 		return sfd;
 	}
 	

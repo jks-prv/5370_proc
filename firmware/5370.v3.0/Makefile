@@ -102,6 +102,12 @@ install: h
 	install -D -o root -g root -m 0644 unix_env/.profile /usr/local/etc/.profile
 	systemctl enable hp5370d
 
+enable disable start stop status:
+	systemctl $@ hp5370d
+
+log:
+	journalctl -b | grep 5370
+
 # client code example of transfering HPIB binary data over a TCP connection
 bc:	$(RMT_DEPENDS) 5370/hpib_client.c
 	cc -O3 -DCLIENT_SIDE $(RMT_FLAGS) 5370/hpib_client.c support/misc.c support/net.c $(RMT_DIRS) -o $@

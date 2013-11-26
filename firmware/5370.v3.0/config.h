@@ -35,19 +35,19 @@
 
 #ifdef HP5370A
 	#define ROM_CODE_H		"rom_5370a.h"
-	#define INST_STR		"5370a"
+	#define INST_STR		"5370A"
 	#define INST_NAME		"HP 5370A Universal Time Interval Counter"
 #endif
 
 #ifdef HP5370B
 	#define ROM_CODE_H		"rom_5370b.h"
-	#define INST_STR		"5370b"
+	#define INST_STR		"5370B"
 	#define INST_NAME		"HP 5370B Universal Time Interval Counter"
 #endif
 
 #ifdef HP5359A
 	#define ROM_CODE_H		"rom_5359a.h"
-	#define INST_STR		"5359a"
+	#define INST_STR		"5359A"
 	#define INST_NAME		"HP 5359A Time Synthesizer"
 #endif
 

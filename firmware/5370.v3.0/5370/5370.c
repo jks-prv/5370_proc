@@ -264,17 +264,15 @@ void handler_dev_write_bad(u2_t addr, u1_t data)
 
 #endif
 
-bool background_mode;
 static bool bug_mode;
 
-void sim_main(bool bg, bool bug)
+void sim_main(bool bug)
 {
 	u2_t i;
 
-	background_mode = bg;
 	bug_mode = bug;
 	
-	if (!bg) {
+	if (!background_mode) {
 		tty = open("/dev/tty", O_RDONLY | O_NONBLOCK);
 		if (tty < 0) sys_panic("open tty");
 	}
