@@ -10,7 +10,9 @@
 HP5370D=hp5370d
 HP5370D_EXEC=/usr/local/bin/$HP5370D
 HP5370D_ARGS=-bg
-CAPE=cape-bone-5370-00A0
+DEV=5370
+#DEV=test
+CAPE=cape-bone-${DEV}-00A0
 SLOTS=`ls /sys/devices/bone_capemgr.*/slots`
 
 [ -x $HP5370D_EXEC ] || exit 1
@@ -33,23 +35,25 @@ case "$1" in
 		(echo "start NTP"; /usr/bin/ntpdate-sync silent);
 	fi
 	if test ! -f /lib/firmware/${CAPE}.dts; then
-		echo "create 5370 device tree";
+		echo create ${DEV} device tree;
 		cp /usr/local/etc/${CAPE}.dts /lib/firmware;
 		dtc -O dtb -o /lib/firmware/${CAPE}.dtbo -b 0 -@ /lib/firmware/${CAPE}.dts;
 	fi
-	if ! grep -q 5370 $SLOTS ; then
-		echo "load 5370 device tree";
-		echo "cape-bone-5370" > $SLOTS;
+	if ! grep -q ${DEV} $SLOTS ; then
+		echo load ${DEV} device tree;
+		echo cape-bone-${DEV} > $SLOTS;
 		sleep 2;
 	fi
-    echo -n "Start hp5370d: "
-    start-stop-daemon --start --background --exec $HP5370D_EXEC -- $HP5370D_ARGS
-    RETVAL=$?
-    if [ $RETVAL -eq 0 ] ; then
-        echo "OK"
-    else
-        echo "FAIL"
-    fi
+	if [ $DEV != "test" ] ; then
+		echo -n "Start hp5370d: "
+		start-stop-daemon --start --background --exec $HP5370D_EXEC -- $HP5370D_ARGS
+		RETVAL=$?
+		if [ $RETVAL -eq 0 ] ; then
+			echo "OK"
+		else
+			echo "FAIL"
+		fi
+	fi
     # have to do something here that returns zero status, otherwise systemd immediately stops us. Why?
     date
     ;;
@@ -58,14 +62,16 @@ case "$1" in
         echo "User has insufficient privilege."
         exit 1
     fi
-    echo -n "Stopping hp5370d: "
-    start-stop-daemon --stop --name $HP5370D
-    RETVAL=$?
-    if [ $RETVAL -eq 0 ] ; then
-        echo "OK"
-    else
-        echo "FAIL"
-    fi
+	if [ $DEV != "test" ] ; then
+		echo -n "Stopping hp5370d: "
+		start-stop-daemon --stop --name $HP5370D
+		RETVAL=$?
+		if [ $RETVAL -eq 0 ] ; then
+			echo "OK"
+		else
+			echo "FAIL"
+		fi
+	fi
     ;;
   status)
     if [ -n "`/bin/pidof $HP5370D`" ] ; then

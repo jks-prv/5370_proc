@@ -1,0 +1,67 @@
+/*
+ * Cape for hp 5370 processor board v3, test fixture
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "ti,beaglebone", "ti,beaglebone-black";
+
+	/* identification */
+	part-number = "cape-bone-test";
+	version = "00A0";
+
+	fragment@0 {
+		target = <&am33xx_pinmux>;
+		__overlay__ {
+			cape_test_pins: pinmux_cape_test_pins {
+				pinctrl-single,pins = <
+								/* 0x20=rx, 0x10=pu, 0x08=pdis */
+					0x090 0x37	/* p807 clk io: rx pu m7 */
+					0x098 0x2f	/* p810 ld7 io: rx pdis m7 */
+					0x034 0x2f	/* p811 ld6 io: rx pdis m7 */
+					0x030 0x2f	/* p812 ld5 io: rx pdis m7 */
+					0x024 0x2f	/* p813 ld4 io: rx pdis m7 */
+					0x028 0x2f	/* p814 ld3 io: rx pdis m7 */
+					0x03c 0x2f	/* p815 ld2 io: rx pdis m7 */
+					0x038 0x2f	/* p816 ld1 io: rx pdis m7 */
+					0x02c 0x2f	/* p817 ld0 io: rx pdis m7 */
+					0x08c 0x0f	/* p818 oe out: pdis m7 */
+					0x020 0x0f	/* p819 dir out: pdis m7 */
+					0x07c 0x37	/* p826 lvma io: rx pu m7 */
+
+					0x070 0x37	/* p911 lrst io: rx pu m7 */
+					0x04c 0x2f	/* p916 lnmi in: rx pdis m7 */
+					0x15c 0x2f	/* p917 lirq in: rx pdis m7 */
+					0x158 0x37	/* p918 lrw io: rx pu m7 */
+					0x154 0x37	/* p921 la6 io: rx pu m7 */
+					0x150 0x37	/* p922 la5 io: rx pu m7 */
+					0x044 0x37	/* p923 la4 io: rx pu m7 */
+					0x184 0x37	/* p924 la3 io: rx pu m7 */
+					0x180 0x37	/* p926 la2 io: rx pu m7 */
+					0x1a4 0x37	/* p927 la1 io: rx pu m7 */
+					0x198 0x37	/* p930 la0 io: rx pu m7 */
+				>;
+			};
+		};
+	};
+
+	fragment@1 {
+		target = <&ocp>;
+		__overlay__ {
+			cape_test_pinmux_helper {
+				compatible = "bone-pinmux-helper";
+				status = "okay";
+
+				pinctrl-names = "default";
+				pinctrl-0 = <&cape_test_pins>;
+			};
+
+		};
+
+	};
+};

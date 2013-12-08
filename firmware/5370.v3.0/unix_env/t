@@ -1,7 +1,8 @@
 #!/bin/sh
 
 VER=5370.v3.0
-CAPE=cape-bone-5370-00A0
+DEV=5370
+CAPE=cape-bone-${DEV}-00A0
 SLOTS=`ls /sys/devices/bone_capemgr.*/slots`
 
 if test ! -f .profile; then
@@ -15,16 +16,18 @@ fi
 
 if date | grep -q 2000; then (echo start NTP; systemctl reload-or-restart ntpdate); fi
 
-# setup 5370 device tree before running interpreter
+# setup device tree before running interpreter
 if test ! -f /lib/firmware/${CAPE}.dts; then
-	echo create 5370 device tree;
+	echo create ${DEV} device tree;
 	cp $VER/unix_env/${CAPE}.dts /lib/firmware;
 	(cd /lib/firmware; dtc -O dtb -o ${CAPE}.dtbo -b 0 -@ ${CAPE}.dts);
 fi
 
-if ! grep -q 5370 $SLOTS ; then
-	echo load 5370 device tree;
-	echo cape-bone-5370 > $SLOTS;
+if ! grep -q ${DEV} $SLOTS ; then
+	echo load ${DEV} device tree;
+	echo cape-bone-${DEV} > $SLOTS;
 fi
 
-$VER/h
+if [ $DEV != "test" ] ; then
+	$VER/h;
+fi

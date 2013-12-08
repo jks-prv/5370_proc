@@ -91,6 +91,7 @@ h:	$(RMT_DEPENDS)
 	cc -O3 $(RMT_FLAGS) $(RMT_SOURCE) $(RMT_DIRS) -o $@
 
 CAPE=cape-bone-5370-00A0
+TEST=cape-bone-test-00A0
 
 install: h
 	cp h hp5370d
@@ -98,6 +99,7 @@ install: h
 	install -o root -g root unix_env/hp5370d /etc/init.d
 	install -o root -g root unix_env/hp5370d.service /etc/systemd/system
 	install -D -o root -g root -m 0644 unix_env/${CAPE}.dts /usr/local/etc/${CAPE}.dts
+	install -D -o root -g root -m 0644 unix_env/${TEST}.dts /usr/local/etc/${TEST}.dts
 	install -D -o root -g root -m 0644 unix_env/ntpdate /usr/local/etc/ntpdate
 	install -D -o root -g root -m 0644 unix_env/.profile /usr/local/etc/.profile
 	systemctl enable hp5370d
