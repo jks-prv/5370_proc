@@ -130,10 +130,14 @@ reset:
 		}
 		lprintf("ip %d.%d.%d.%d  mask %d.%d.%d.%d\n",
 			ip[3], ip[2], ip[1], ip[0], nm[3], nm[2], nm[1], nm[0]);
+		dsp_7seg_str(0, "ip", TRUE);
+		display_ipaddr(cfg->ip);
 	} else {
-		panic("eth0 not configured?");
+		lprintf("eth0 not configured?");
+		dsp_7seg_str(0, "enet config?", TRUE);
 	}
 	pclose(efp);
+	delay(2000);
 
 	// place a call here to setup your measurement extension code
 	meas_extend_example_init();
