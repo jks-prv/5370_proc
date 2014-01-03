@@ -99,10 +99,12 @@ install: h
 	install -o root -g root unix_env/hp5370d /etc/init.d
 	install -o root -g root unix_env/hp5370d.service /etc/systemd/system
 	install -D -o root -g root -m 0644 unix_env/${CAPE}.dts /usr/local/etc/${CAPE}.dts
-	install -D -o root -g root -m 0644 unix_env/${TEST}.dts /usr/local/etc/${TEST}.dts
+#	install -D -o root -g root -m 0644 unix_env/${TEST}.dts /usr/local/etc/${TEST}.dts
 	install -D -o root -g root -m 0644 unix_env/ntpdate /usr/local/etc/ntpdate
 	install -D -o root -g root -m 0644 unix_env/.profile /usr/local/etc/.profile
 	systemctl enable hp5370d
+# disable Gnome display manager (on HDMI port) to improve real-time response and decrease boot time
+	systemctl disable gdm
 
 enable disable start stop status:
 	systemctl $@ hp5370d
