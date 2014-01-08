@@ -128,7 +128,7 @@ reset:
 		for (i=0; i<4; i++) {
 			cfg->ip[3-i] = ip[i]; cfg->nm[3-i] = nm[i];
 		}
-		lprintf("ip %d.%d.%d.%d  mask %d.%d.%d.%d\n",
+		lprintf("Ethernet: ip %d.%d.%d.%d mask %d.%d.%d.%d\n",
 			ip[3], ip[2], ip[1], ip[0], nm[3], nm[2], nm[1], nm[0]);
 		dsp_7seg_str(0, "ip", TRUE);
 		display_ipaddr(cfg->ip);

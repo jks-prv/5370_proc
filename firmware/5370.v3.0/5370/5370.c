@@ -78,7 +78,7 @@ u1_t handler_dev_arm_read(u2_t addr)
 
 //#define SELF_TEST
 #ifdef SELF_TEST
-	if (addr == ADDR_ARM(2)) data = 0;	// force self-test mode (simulate all switches down)
+	if (addr == RREG_A16_SWITCHES) data = 0;	// force self-test mode (simulate all switches down)
 #endif
 
 #ifdef DEBUG
@@ -282,6 +282,11 @@ void sim_main(bool bug)
 	void bus_test();
 	bus_test();
 #endif
+
+	if ((bus_read(RREG_LDACSR) | bus_read(RREG_KEY_SCAN) | bus_read(RREG_N0ST)) == 0) {
+		printf("no 5370 detected?\n");
+		panic("no 5370");
+	}
 	
 	for (i = 0; i < DEV_SPACE_SIZE; i++) {
 		dev_io_t *devp = &dev_io[i];

@@ -75,26 +75,28 @@ RMT_INCLUDES += 5370.h 5370_regs.h hpib.h 6800.h 6800.cc.h 6800.core.h 6800.insn
 RMT_INCLUDES += arch/chip.h arch/$(ARCH)/$(ARCH).h arch/$(ARCH)/timer.h
 RMT_INCLUDES += support/misc.h support/net.h support/front_panel.h
 
-RMT_BINARIES = hd h bc
+RMT_BINARIES = hd.bin h.bin bc
 RMT_DEPENDS = $(RMT_SOURCE) $(RMT_INCLUDES) Makefile 6800.debug.c
 RMT_FLAGS = $(SIM_FLAGS)
 RMT_DIRS += -L/usr/local/lib -I/usr/local/include $(INC)
 
-all: hd h
+all: hd.bin h.bin
+h: h.bin
+hd: hd.bin
 
 # interpreter with debugging enabled
-hd:	$(RMT_DEPENDS)
+hd.bin:	$(RMT_DEPENDS)
 	cc -DDEBUG -DINSN_TRACE -g $(RMT_FLAGS) $(RMT_SOURCE) $(RMT_DIRS) -o $@
 
 # full -O3 optimization
-h:	$(RMT_DEPENDS)
+h.bin:	$(RMT_DEPENDS)
 	cc -O3 $(RMT_FLAGS) $(RMT_SOURCE) $(RMT_DIRS) -o $@
 
 CAPE=cape-bone-5370-00A0
 TEST=cape-bone-test-00A0
 
-install: h
-	cp h hp5370d
+install: h.bin
+	cp h.bin hp5370d
 	install -D -s -o root -g root hp5370d /usr/local/bin/hp5370d
 	install -o root -g root unix_env/hp5370d /etc/init.d
 	install -o root -g root unix_env/hp5370d.service /etc/systemd/system
@@ -116,5 +118,13 @@ log:
 bc:	$(RMT_DEPENDS) 5370/hpib_client.c
 	cc -O3 -DCLIENT_SIDE $(RMT_FLAGS) 5370/hpib_client.c support/misc.c support/net.c $(RMT_DIRS) -o $@
 
+tar:
+	make clean
+	tar cf ../5370.tar ../5370.v3.0
+
+BBB_IP = 192.168.2.6
+scp:
+	scp ../5370.tar root@$(BBB_IP):/home/root
+
 clean:
-	-rm -rf $(RMT_BINARIES) *.dSYM
+	-rm -rf $(RMT_BINARIES) *.dSYM ../5370.tar
