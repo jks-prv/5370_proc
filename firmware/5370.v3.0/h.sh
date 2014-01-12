@@ -1,18 +1,15 @@
 #!/bin/sh
+# wrapper for running the 5370 app
 
-DEV=5370
-CAPE=cape-bone-${DEV}-00A0
-SLOTS=`ls /sys/devices/bone_capemgr.*/slots`
-
-echo $1
+# hack to see if we're running on a BBB
 if test ! -d /lib/firmware; then
 	./$1
 	exit 0
 fi
 
-if test ! -f .profile; then
-        cp unix_env/.profile .;
-fi
+DEV=5370
+CAPE=cape-bone-${DEV}-00A0
+SLOTS=`ls /sys/devices/bone_capemgr.*/slots`
 
 # out-of-the-box BBB doesn't seem to have NTP configured
 if grep -q 'NTPSERVERS=""' /etc/default/ntpdate ; then
@@ -21,11 +18,10 @@ fi
 
 if date | grep -q 2000; then (echo start NTP; systemctl reload-or-restart ntpdate); fi
 
-# setup device tree before running interpreter
-if test ! -f /lib/firmware/${CAPE}.dts; then
-	echo create ${DEV} device tree;
-	cp unix_env/${CAPE}.dts /lib/firmware;
+if [ /lib/firmware/${CAPE}.dts -nt /lib/firmware/${CAPE}.dtbo ] ; then
+	echo compile ${DEV} device tree;
 	(cd /lib/firmware; dtc -O dtb -o ${CAPE}.dtbo -b 0 -@ ${CAPE}.dts);
+# don't unload old slot because this is known to cause panics; must reboot
 fi
 
 if ! grep -q ${DEV} $SLOTS ; then
@@ -33,6 +29,4 @@ if ! grep -q ${DEV} $SLOTS ; then
 	echo cape-bone-${DEV} > $SLOTS;
 fi
 
-if [ $DEV != "test" ] ; then
-	./$1
-fi
+./$1

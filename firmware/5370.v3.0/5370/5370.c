@@ -283,11 +283,6 @@ void sim_main(bool bug)
 	bus_test();
 #endif
 
-	if ((bus_read(RREG_LDACSR) | bus_read(RREG_KEY_SCAN) | bus_read(RREG_N0ST)) == 0) {
-		printf("no 5370 detected?\n");
-		panic("no 5370");
-	}
-	
 	for (i = 0; i < DEV_SPACE_SIZE; i++) {
 		dev_io_t *devp = &dev_io[i];
 		
@@ -397,7 +392,7 @@ char *sim_input()
 				"d\t\tshow instrument display including unit and key LEDs\n"
 				"h <HPIB cmd>\temulate HPIB command input, e.g. \"h md2\"\n"
 				"h?\t\tprints reminder list of HPIB commands\n"
-				"k <fn1 .. fn4>\temulate function key 1-4 press, e.g. \"k f2\" is the \"trig lvl\" key\n"
+				"k <fn1 .. fn4>\temulate function key 1-4 press, e.g. \"k fn1\" is TI key\n"
 				"k <gt1 .. gt4>\temulate gate time key 1-4 press\n"
 				"k <st1 .. st8>\temulate statistics key 1-8 press\n"
 				"k <ss1 .. ss5>\temulate sample size key 1-5 press\n"

@@ -92,24 +92,25 @@ hd.bin:	$(RMT_DEPENDS)
 h.bin:	$(RMT_DEPENDS)
 	cc -O3 $(RMT_FLAGS) $(RMT_SOURCE) $(RMT_DIRS) -o $@
 
-CAPE=cape-bone-5370-00A0
-TEST=cape-bone-test-00A0
+CAPE = cape-bone-5370-00A0
+TEST = cape-bone-test-00A0
 
-install: h.bin
+install: hd.bin h.bin
 	cp h.bin hp5370d
 	install -D -s -o root -g root hp5370d /usr/local/bin/hp5370d
 	install -o root -g root unix_env/hp5370d /etc/init.d
 	install -o root -g root unix_env/hp5370d.service /etc/systemd/system
-	install -D -o root -g root -m 0644 unix_env/${CAPE}.dts /usr/local/etc/${CAPE}.dts
-#	install -D -o root -g root -m 0644 unix_env/${TEST}.dts /usr/local/etc/${TEST}.dts
+	install -D -o root -g root -m 0644 unix_env/$(CAPE).dts /lib/firmware/$(CAPE).dts
+#	install -D -o root -g root -m 0644 unix_env/$(TEST).dts /lib/firmware/$(TEST).dts
 	install -D -o root -g root -m 0644 unix_env/ntpdate /usr/local/etc/ntpdate
-	install -D -o root -g root -m 0644 unix_env/.profile /usr/local/etc/.profile
+	install -D -o root -g root -m 0644 unix_env/.bashrc /home/root/.bashrc
+	install -D -o root -g root -m 0644 unix_env/.profile /home/root/.profile
 	systemctl enable hp5370d
 # disable Gnome display manager (on HDMI port) to improve real-time response and decrease boot time
 	systemctl disable gdm
 
 enable disable start stop status:
-	systemctl $@ hp5370d
+	systemctl --lines=100 $@ hp5370d
 
 log:
 	journalctl -b | grep 5370
@@ -118,13 +119,15 @@ log:
 bc:	$(RMT_DEPENDS) 5370/hpib_client.c
 	cc -O3 -DCLIENT_SIDE $(RMT_FLAGS) 5370/hpib_client.c support/misc.c support/net.c $(RMT_DIRS) -o $@
 
+DIST = 5370.v3.0
+BBB_IP = $(IP_BBB_5370)
+
 tar:
 	make clean
-	tar cf ../5370.tar ../5370.v3.0
+	tar cfz ../$(DIST).tgz ../$(DIST)
 
-BBB_IP = 192.168.2.6
-scp:
-	scp ../5370.tar root@$(BBB_IP):/home/root
+scp: tar
+	scp ../$(DIST).tgz root@$(BBB_IP):/home/root
 
 clean:
-	-rm -rf $(RMT_BINARIES) *.dSYM ../5370.tar
+	-rm -rf $(RMT_BINARIES) *.dSYM ../$(DIST).tgz

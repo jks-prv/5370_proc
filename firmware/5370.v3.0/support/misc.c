@@ -19,6 +19,7 @@ void xit(int err)
 	void exit(int);
 	
 	fflush(stdout);
+	delay(1000);	// needed for syslog messages to be properly recorded
 	exit(err);
 }
 

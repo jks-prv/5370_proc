@@ -1,4 +1,13 @@
-PATH=$PATH:.
+# ~/.profile: executed by Bourne-compatible login shells.
+
+if [ -f ~/.bashrc ]; then
+  . ~/.bashrc
+fi
+
+# path set by /etc/profile
+# export PATH
+
+export PATH=.:$PATH
 
 alias la="ls -la"
 alias lt="ls -lt"
@@ -26,3 +35,6 @@ alias x="exit"
 alias al="alias"
 alias soc="source ~/.profile"
 alias ntp="systemctl reload-or-restart ntpdate"
+alias xt="rm -rf \${DIST}; tar xfz \${DIST}.tgz; rm \${DIST}.tgz; cd \${DIST}"
+alias log="journalctl | tail -200"
+alias pubip="curl ident.me; echo"

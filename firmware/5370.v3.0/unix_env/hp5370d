@@ -18,32 +18,36 @@ SLOTS=`ls /sys/devices/bone_capemgr.*/slots`
 [ -x $HP5370D_EXEC ] || exit 1
 
 case "$1" in
+
   start)
     if [ $UID -ne 0 ] ; then
         echo "User has insufficient privilege."
         exit 1
     fi
     echo "Starting hp5370d"
-	if test ! -f /home/root/.profile; then
-			cp /usr/local/etc/.profile /home/root;
-	fi
+
 	if grep -q 'NTPSERVERS=""' /etc/default/ntpdate ; then
 		cp /usr/local/etc/ntpdate /etc/default;
 	fi
+
 	if date | grep -q 2000; then
 #		(echo "start NTP"; systemctl reload-or-restart ntpdate);
 		(echo "start NTP"; /usr/bin/ntpdate-sync silent);
 	fi
-	if test ! -f /lib/firmware/${CAPE}.dts; then
-		echo create ${DEV} device tree;
-		cp /usr/local/etc/${CAPE}.dts /lib/firmware;
+
+	if [ /lib/firmware/${CAPE}.dts -nt /lib/firmware/${CAPE}.dtbo ] ; then
+		echo compile ${DEV} device tree;
 		dtc -O dtb -o /lib/firmware/${CAPE}.dtbo -b 0 -@ /lib/firmware/${CAPE}.dts;
+# don't unload old slot because this is known to cause panics; must reboot
 	fi
+
 	if ! grep -q ${DEV} $SLOTS ; then
 		echo load ${DEV} device tree;
 		echo cape-bone-${DEV} > $SLOTS;
 		sleep 2;
 	fi
+
+# the test fixture is started separately by the Cloud9 IDE
 	if [ $DEV != "test" ] ; then
 		echo -n "Start hp5370d: "
 		start-stop-daemon --start --background --exec $HP5370D_EXEC -- $HP5370D_ARGS
@@ -54,14 +58,17 @@ case "$1" in
 			echo "FAIL"
 		fi
 	fi
+
     # have to do something here that returns zero status, otherwise systemd immediately stops us. Why?
     date
     ;;
+
   stop)
     if [ $UID -ne 0 ] ; then
         echo "User has insufficient privilege."
         exit 1
     fi
+
 	if [ $DEV != "test" ] ; then
 		echo -n "Stopping hp5370d: "
 		start-stop-daemon --stop --name $HP5370D
@@ -73,6 +80,7 @@ case "$1" in
 		fi
 	fi
     ;;
+
   status)
     if [ -n "`/bin/pidof $HP5370D`" ] ; then
         echo "hp5370d is running."
@@ -80,12 +88,15 @@ case "$1" in
         echo "hp5370d is not running."
     fi
     ;;
+
   restart)
     $0 stop && sleep 1 && $0 start
     ;;
+
   *)
     echo "Usage: /etc/init.d/hp5370d {start|stop|status|restart}"
     exit 1
+
 esac
 
 exit 0

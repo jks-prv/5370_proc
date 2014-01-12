@@ -56,7 +56,8 @@ bool background_mode = FALSE;
 
 int main(int argc, char *argv[])
 {
-	int i;
+	int i, n;
+	
 	bool bug = FALSE;
 	app_state_e app_state;
 	bool save_cfg = FALSE;
@@ -79,6 +80,12 @@ int main(int argc, char *argv[])
 reset:
 	app_state = APP_START;
 	bus_init();
+
+	if ((bus_read(RREG_LDACSR) | bus_read(RREG_KEY_SCAN) | bus_read(RREG_N0ST)) == 0) {
+		lprintf("no 5370 detected?\n");
+		panic("no 5370");
+	}
+	
     dsp_7seg_init();
 
 	// display firmware version
@@ -112,19 +119,28 @@ reset:
 
 	// for now just accept whatever address eth0 has
 	addr_mode = AM_DHCP;
-	if ((efp = popen("ifconfig eth0", "r")) == NULL) sys_panic("ifconfig eth0");
-	char *lp = lbuf;
 	int ip[4], nm[4], bc[4];
 
-	i=0;
-	while (fgets(lp, LBUF, efp)) {
-		if ((i = sscanf(lp, "%*[ ]inet addr:%d.%d.%d.%d Bcast:%d.%d.%d.%d Mask:%d.%d.%d.%d",
-			&ip[3], &ip[2], &ip[1], &ip[0],
-			&bc[3], &bc[2], &bc[1], &bc[0],
-			&nm[3], &nm[2], &nm[1], &nm[0])) == 12)
-			break;
+#define ENET_RETRY 10
+
+	for (i=0; i<ENET_RETRY; i++) {
+		if ((efp = popen("ifconfig eth0", "r")) == NULL) sys_panic("ifconfig eth0");
+		char *lp = lbuf;
+	
+		n=0;
+		while (fgets(lp, LBUF, efp)) {
+			if ((n = sscanf(lp, "%*[ ]inet addr:%d.%d.%d.%d Bcast:%d.%d.%d.%d Mask:%d.%d.%d.%d",
+				&ip[3], &ip[2], &ip[1], &ip[0],
+				&bc[3], &bc[2], &bc[1], &bc[0],
+				&nm[3], &nm[2], &nm[1], &nm[0])) == 12)
+				break;
+		}
+		pclose(efp);
+		if (n == 12) break;
+		delay(1000);
 	}
-	if (i == 12) {
+	
+	if (i != ENET_RETRY) {
 		for (i=0; i<4; i++) {
 			cfg->ip[3-i] = ip[i]; cfg->nm[3-i] = nm[i];
 		}
@@ -136,7 +152,6 @@ reset:
 		lprintf("eth0 not configured?");
 		dsp_7seg_str(0, "enet config?", TRUE);
 	}
-	pclose(efp);
 	delay(2000);
 
 	// place a call here to setup your measurement extension code
