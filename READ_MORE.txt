@@ -9,11 +9,11 @@ Disabling app auto-start at boot time:
 You'll probably want to stop the app from auto-starting at boot time while
 running it manually during development. To do this use these "make" command variants:
 
-	"m disable"		prevent future auto-starting of app
-	"m enable"		allow future auto-starting of app
-	"m stop"		stop the currently auto-started app (if there is one)
-	"m start"		start the app using auto-start mechanism (for testing)
-	"m status"		show auto-start status and log from last activation
+	"m disable"     prevent future auto-starting of app
+	"m enable"      allow future auto-starting of app
+	"m stop"        stop the currently auto-started app (if there is one)
+	"m start"       start the app using auto-start mechanism (for testing)
+	"m status"      show auto-start status and log from last activation
 
 If auto-starting is enabled the app will run in the background at the next boot.
 
@@ -46,11 +46,11 @@ NOTES ABOUT THE BEAGLEBONE BLACK
 BBB resources:
 There are many resources on the web with info about the BBB.
 
-	BBB Wiki: http://elinux.org/Beagleboard:BeagleBoneBlack
-	Adafruit tutorials: http://learn.adafruit.com/category/beaglebone
-	List of BBB distributors: http://beagleboard.org/Products
-	BBB login help:	http://elinux.org/Beagleboard:Terminal_Shells
-	ssh using USB: http://learn.adafruit.com/ssh-to-beaglebone-black-over-usb
+	BBB Wiki:  http://elinux.org/Beagleboard:BeagleBoneBlack
+	Adafruit tutorials:  http://learn.adafruit.com/category/beaglebone
+	List of BBB distributors:  http://beagleboard.org/Products
+	BBB login help:  http://elinux.org/Beagleboard:Terminal_Shells
+	ssh using USB:  http://learn.adafruit.com/ssh-to-beaglebone-black-over-usb
 
 USB ad-hoc networking:
 One way to ssh to the BBB is by using a USB cable as an ad-hoc network connection.
@@ -123,7 +123,7 @@ We all know stuff breaks when using different versions of things. All the BBBs
 used in testing have been hardware revision "A5C" and "A6" boards. The software
 distribution of Angstrom Linux used was "2013.06.20" and "2013.09.04" found by doing:
 
-		mkdir -p /mnt/boot
+        mkdir -p /mnt/boot
         mount /dev/mmcblk0p1 /mnt/boot
         more /mnt/boot/ID.txt
 
