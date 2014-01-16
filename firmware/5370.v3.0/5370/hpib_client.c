@@ -42,6 +42,8 @@ void net_hpib(int sfd, char *cmd, bool reply)
 // measure with and without the overhead of the post-transfer calculation
 #define DO_CALC
 
+bool background_mode = FALSE;
+
 int main(int argc, char *argv[])
 {
 	int i, j, sfd, e;
