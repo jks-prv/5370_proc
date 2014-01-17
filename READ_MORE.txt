@@ -1,6 +1,38 @@
-[edited 1/17/2014]
+[edited 1/18/2014]
 
 This file elaborates on the Quick Start guide in the "README.txt" file.
+
+
+USING GIT TO TRACK SOFTWARE CHANGES
+
+The BBB is delivered with (or you have installed) the software in the
+/home/root/5370.v3.0 build directory. But it might be a good idea to use the
+version control system "git" to track changes made on the GitHub repository
+github.com/jks-prv/5370_proc where the latest changes are always available.
+There are several ways to configure git depending on your goals. If you expect to
+contribute changes to the software then you should setup an account on github.com
+and configure git on the BBB with your account information. You should also do this
+if you want to be notified by email when changes are made to the repository.
+There is info on the web about how to setup git and it won't be repeated here.
+
+If you just want to use git to manually get changes then only a few commands are needed.
+To clone the repository initially:
+
+	cd
+	git clone git://github.com/jks-prv/5370_proc.git
+
+To periodically update your copy with changes on GitHub:
+
+	cd ~/5370_proc
+	git pull
+
+If you have made local changes to the software then pulling updates like this will
+fail if you have changed a file git is trying to update. In this case you must
+first configure git to establish a proper "branch" of the repository rather than
+just a simple clone (see web info). After that git will try to merge repository
+changes with your local changes and complain if it is unable to do so.
+
+Note that the build directory 5370.v3.0 is in ~/5370_proc/firmware/ of the git clone.
 
 
 MANUALLY RUNNING THE APP
