@@ -1,4 +1,4 @@
-[edited 1/17/2014]
+[edited 1/18/2014]
 
 This document describes the HP 5370 processor replacement board project.
 
@@ -24,7 +24,8 @@ The file "READ_MORE.txt" elaborates on the information given here.
 
 6. Your instrument should now respond as usual although you will notice it is somewhat faster. Before powering off the instrument it is strongly recommended you first login and halt Linux and then wait ten seconds to avoid possible unrecoverable filesystem corruption (although this is unlikely). Definitely do not power off during the booting process when lots of filesystem writes are occurring.
 
-7. Look at the file "READ_MORE.txt" to learn about how to use, modify and re-compile the app.
+7. Look at the file "READ_MORE.txt" to learn about how to use, modify and re-compile the app. This file also discusses using "git" to track changes to the released software.
+
 
 8. Installing your own BBB and software:
 The software is designed to work with the Angstrom Linux distribution installed on a new BBB. If you've installed something else (e.g. Ubuntu) then things probably won't work.
