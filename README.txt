@@ -51,7 +51,7 @@ The current Angstrom distribution doesn't do a good job of starting NTP if the I
 Now type the following to fetch and install the software:
 
 	cd /home/root (if you're not there already)
-	curl -o 5370.tgz jks.com/5370/5370.v3.0.tgz
+	curl -o 5370.tgz www.jks.com/5370/5370.v3.0.tgz
 	tar xfz 5370.tgz
 	cd 5370.v3.0
 	make install
