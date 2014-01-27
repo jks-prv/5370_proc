@@ -13,7 +13,7 @@
 
 extern u1_t sim_key, sim_key_intr;
 
-void sim_main(bool bug);
+void sim_main(int argc, char *argv[]);
 void sim_processor();
 u4_t sim_insn_count();
 char *sim_input();
@@ -21,14 +21,17 @@ char *sim_input();
 #define	PF(...)		tr_printf(sprintf(tr_s(), __VA_ARGS__))
 #define	PFC(c, ...)	if (c) tr_printf(sprintf(tr_s(), __VA_ARGS__))
 
-void trace(u4_t ict, u2_t pc, u1_t irq, u1_t a, u1_t b, u2_t x, u2_t sp, u1_t C, u1_t VNZ);
+void trace(u4_t iCount, u2_t rPC, u1_t IRQ, u1_t a, u1_t b, u2_t x, u2_t sp, u1_t C, u1_t VNZ, u1_t tU8, u2_t tU16);
+void trace_iSnap(int _iSnap);
+void trace_iDump(int _iDump);
+void trace_init();
 void trace_dump();
 void trace_clear();
 void trace_on();
 char *tr_s();
 void tr_printf(int ignore);
 
-extern bool iDump;
+extern bool iDump, holdoff;
 extern int iSnap, iTrace;
 extern bool background_mode;
 
