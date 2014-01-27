@@ -145,7 +145,9 @@ void net_poll()
 		}
 
 		if (n) {
+#ifdef HPIB_SIM
 			hpib_input(nbuf);
+#endif
 		} else {
 			close(srv_sock);
 			srv_sock = 0;
