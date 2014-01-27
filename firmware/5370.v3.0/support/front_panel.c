@@ -134,15 +134,19 @@ void dsp_7seg_init(void)
 
 #define N_UNITS_SHOW sizeof(front_pnt_units) / sizeof(front_pnt_units[0])
 
-// return string of 7 segment display contents plus units LEDs
-u1_t dsp_7seg_2_char(char *s)
+// return string of 7 segment display contents plus units LEDs (also decode any numeric value)
+void dsp_7seg_translate(char *s, double *fval)
 {
-	int i, j, k, n = N_7SEG;
+	int i, j;
 	u1_t sc;
-	char cc;
+	char c, cc;
 	bool numeric = TRUE;
 	scan_code *u;
 	seg7_t *s7;
+	static char fnum[32], *fp;
+	bool saw_pt=FALSE;
+	
+	fp = fnum; *fp = 0;
 
 	for (i=0; i<N_7SEG; i++) {
 		cc = dsp_char_cache[i];
@@ -151,68 +155,70 @@ u1_t dsp_7seg_2_char(char *s)
 
 	for (i=0; i<N_7SEG; i++) {
 		// simulate spacing of 7-segment leds when displaying non-strings
-		if (numeric && (i==2 || i==5 || i==8 || i==11 || i==14)) { *s++ = ' '; n++; }
+		if (numeric && (i==2 || i==5 || i==8 || i==11 || i==14)) *s++ = ' ';
 	
 		sc = dsp_7seg_cache[i];
 		cc = dsp_char_cache[i];
 		
 		if (cc) {
-			if (cc & DP) { *s++ = '.'; n++; }
+			if (cc & DP) *s++ = '.';
 			*s = cc & ~DP;
 		} else {
-			if (sc & DP) { *s++ = '.'; n++; }
+			if (sc & DP) { *s++ = *fp++ = '.'; saw_pt=TRUE; }
 			sc &= ~DP;
 			for (j=0; j < TS_SEG7; j++) {
 				s7 = &seg7[j];
 				if (sc == s7->segs) {
-					*s = s7->c;
+					c = s7->c;
+					*s = c;
+					if (isdigit(c)) *fp++ = c;
 					break;
 				}
 			}
+			//if (*s == ' ') *s = '_';
 			if (j == TS_SEG7) {
 				s += sprintf(s, " ?%02x? ", sc);
 			}
 		}
 		s++;
 	}
+	
+	*s++ = ' ';
+	if (saw_pt==FALSE) *fp++ = '.';
+	*fp++ = 0;
+	if (fval) sscanf(fnum, "%lf", fval);
 
 	for (j=0; j<=2; j++) {
 		for (i=0; i<N_UNITS_SHOW; i++) {
 			u = &front_pnt_units[i];
 			if ((u->order == j) && (dsp_leds_cache[u->drive] & u->sense)) {
 				strcpy(s, u->name);
-				k = strlen(u->name);
-				s += k;
-				n += k;
+				s += strlen(u->name);
 			}
 		}
 	}
-	
-	return n;
 }
 
 #define N_KLEDS_SHOW sizeof(front_pnl_led) / sizeof(front_pnl_led[0])
 
 // return names of keys that have lit LEDs
-u1_t dsp_key_leds_2_char(char *s)
+void dsp_key_leds_translate(char *s)
 {
-	int i, j, k, n;
+	int i, j;
 	scan_code *u;
 
+	*s = 0;
+	
 	for (j=0; j<=6; j++) {
 		for (i=0; i<N_KLEDS_SHOW; i++) {
 			u = &front_pnl_led[i];
 			if ((u->order == j) && (dsp_leds_cache[u->drive] & u->sense)) {
 				strcpy(s, u->name);
 				strcat(s, " ");
-				k = strlen(u->name);
-				s += k+1;
-				n += k+1;
+				s += strlen(u->name)+1;
 			}
 		}
 	}
-	
-	return n;
 }
 
 u4_t dsp_7seg_dp(u4_t pos)

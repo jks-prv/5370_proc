@@ -17,9 +17,9 @@ void dsp_7seg_str(u4_t pos, char *str, bool clear);
 void dsp_7seg_num(u4_t lsd_pos, u4_t n, u4_t field_width, bool msd_first, bool zero_fill);
 
 void dsp_7seg_init(void);
-u1_t dsp_7seg_2_char(char *s);
+void dsp_7seg_translate(char *s, double *fval);
 
-u1_t dsp_key_leds_2_char(char *s);
+void dsp_key_leds_translate(char *s);
 
 void display_ipaddr(u1_t *ipaddr);
 
