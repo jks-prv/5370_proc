@@ -58,7 +58,6 @@ int main(int argc, char *argv[])
 {
 	int i, n;
 	
-	bool bug = FALSE;
 	app_state_e app_state;
 	bool save_cfg = FALSE;
 	bool change_settings_ui(u1_t key, bool *skip_first, cfg_t *cfg);
@@ -71,7 +70,6 @@ int main(int argc, char *argv[])
 	
 	for (i=1; i<argc; i++) {
 		if (strcmp(argv[i], "-bg") == 0) background_mode = TRUE;
-		if (strcmp(argv[i], "-bug") == 0) bug = TRUE;
 	}
 	
 	lprintf("HP%s v%d.%d\n", INST_STR, FIRMWARE_VER_MAJ, FIRMWARE_VER_MIN);
@@ -79,7 +77,7 @@ int main(int argc, char *argv[])
 
 reset:
 	app_state = APP_START;
-	bus_init();
+	bus_setup();
 
 	if ((bus_read(RREG_LDACSR) | bus_read(RREG_KEY_SCAN) | bus_read(RREG_N0ST)) == 0) {
 		lprintf("no 5370 detected?\n");
@@ -214,7 +212,7 @@ reset:
 
 		if (app_state == APP_START) {
 			preempt_reset_key(FALSE);
-			sim_main(bug);
+			sim_main(argc, argv);
 			printf("main returned\n");
 			panic("can't reset until bss zeroed\n");
 			goto reset;
