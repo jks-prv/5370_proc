@@ -20,6 +20,7 @@
 #include "hpib.h"
 #include "net.h"
 #include "chip.h"
+#include "misc.h"
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -47,50 +48,6 @@
 	static char hpib_regs[8][16] = {
 		"R0_data_in", "R1_state", "R2_state", "R3_status", "W0_data_out", "W1_status", "W2_ctrl", "W3_not_used"
 	};
-#endif
-
-#if defined(HPIB_RECORD) || defined(HPIB_SIM_DEBUG)
-
-typedef struct {
-	u4_t iCount;
-	u2_t rPC;
-	u1_t n_irq;
-	u4_t irq_masked;
-} t_hr_stamp;
-
-typedef struct {
-	t_hr_stamp stamp;
-	u2_t addr;
-	u1_t data;
-	u1_t rwn;
-	u4_t dup;
-} t_hr_buf;
-
-#define NHP 1024
-
-t_hr_buf hr_buf[NHP], *hp = hr_buf;
-int nhp = 0;
-t_hr_stamp hr_stamp;
-u4_t last_iCount = 0;
-
-// stamp the recorded hpib bus cycles with additional info
-void hpib_stamp(int write, u4_t iCount, u2_t rPC, u1_t n_irq, u4_t irq_masked)
-{
-	hr_stamp.iCount = iCount;
-	hr_stamp.rPC = rPC;
-	hr_stamp.n_irq = n_irq;
-	hr_stamp.irq_masked = irq_masked;
-	
-	// record interrupt events
-	if (write && n_irq) {
-		if (nhp < NHP) {
-			hp->stamp = hr_stamp;
-			hp++;
-			nhp++;
-		}
-	}
-}
-
 #endif
 
 #define TST(lbl) \
@@ -234,23 +191,7 @@ u1_t handler_dev_hpib_read(u2_t addr)
 #endif
 	
 #ifdef HPIB_RECORD
-	if (nhp < NHP) {
-		if ((nhp > 0) && (addr == (hp-1)->addr) && (d == (hp-1)->data) && ((hp-1)->rwn == 1)) {
-			(hp-1)->dup++;
-		} else {
-			hp->stamp = hr_stamp;
-			hp->addr = addr;
-			hp->rwn = 1;
-			hp->data = d;
-			hp->dup = 1;
-			hp++;
-			nhp++;
-		}
-	}
-	if (nhp == NHP) {
-		printf("R NHP %d\n", NHP);
-		nhp++;
-	}
+	reg_record(REG_READ, addr, d);
 #endif
 
 #ifdef HPIB_DECODE
@@ -355,23 +296,7 @@ void handler_dev_hpib_write(u2_t addr, u1_t d)
 #endif
 	
 #ifdef HPIB_RECORD
-	if (nhp < NHP) {
-		if ((nhp > 0) && (addr == (hp-1)->addr) && (d == (hp-1)->data) && ((hp-1)->rwn == 0)) {
-			(hp-1)->dup++;
-		} else {
-			hp->stamp = hr_stamp;
-			hp->addr = addr;
-			hp->rwn = 0;
-			hp->data = d;
-			hp->dup = 1;
-			hp++;
-			nhp++;
-		}
-	}
-	if (nhp == NHP) {
-		printf("W NHP %d\n", NHP);
-		nhp++;
-	}
+	reg_record(REG_WRITE, addr, d);
 #endif
 
 #ifdef HPIB_DECODE
@@ -380,32 +305,6 @@ void handler_dev_hpib_write(u2_t addr, u1_t d)
 #endif
 
 }
-
-
-#ifdef HPIB_RECORD
-
-void hpib_dump()
-{
-	t_hr_buf *p;
-	
-	for (p = hr_buf; p != hp; p++) {
-		printf("%07d +%5d @%04x%c #%4d ", p->stamp.iCount, p->stamp.iCount - last_iCount, p->stamp.rPC,
-			p->stamp.irq_masked? '*':' ', p->dup);
-		last_iCount = p->stamp.iCount;
-		if (p->stamp.n_irq) {
-			printf("---- IRQ ----\n");
-		} else {
-			if (p->rwn)
-				hpib_rdecode(p->addr, p->data, 0);
-			else
-				hpib_wdecode(p->addr, p->data, 0);
-			
-			printf("\n");
-		}
-	}
-}
-
-#endif
 
 
 #ifdef HPIB_SIM
@@ -566,6 +465,7 @@ typedef enum { S_INIT, S_IDLE, S_LISTEN_INIT, S_LISTEN, S_TALK_INIT, S_TALKING, 
 
 #ifdef HPIB_SIM_DEBUG
 	char *states[NSTATES] = { "init", "idle", "listen_init", "listen", "talk_init", "talking" };
+	static u4_t last_iCount = 0;
 #endif
 
 
@@ -594,10 +494,14 @@ static u1_t hpib_sim(u2_t addr, u1_t wdata)
 	u1_t rdata = 0;
 
 #ifdef HPIB_SIM_DEBUG
-	if (hps) printf("%07d +%4d @%04x%c ",
-		hr_stamp.iCount, hr_stamp.iCount - last_iCount, hr_stamp.rPC,
-		hr_stamp.irq_masked? '*':' ');
-	last_iCount = hr_stamp.iCount;
+	if (hps) {
+		t_hr_stamp *hs = reg_get_stamp();
+		
+		printf("%07d +%4d @%04x%c ",
+			hs->iCount, hs->iCount - last_iCount, hs->rPC,
+			hs->irq_masked? '*':' ');
+		last_iCount = hs->iCount;
+	}
 #endif
 
 	D_HPIB(if (hps) printf("%s ", states[state]));

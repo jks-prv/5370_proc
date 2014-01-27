@@ -74,13 +74,6 @@ W1_status	clocks srq FF
 #define HPIB_BYTES_PER_FAST_MEAS	2
 #define HPIB_MEAS_PER_FAST_PKT		(HPIB_BYTES_PER_PKT / HPIB_BYTES_PER_FAST_MEAS)
 
-#define HPIB_O3_RST		(O3_RST_TEST | O3_LOLRST | O3_CLR_EVT_OVFL | O3_HN3RST)
-
-#define HPIB_O2_IDLE	(O2_FLAG | O2_LGATE | O2_LARMCT2)
-#define HPIB_O2_ENA		(O2_FLAG | O2_LGATE | O2_LARMCT2 | O2_HRWEN_LRST)
-#define HPIB_O2_ARM		(O2_FLAG | O2_LGATE | O2_LARMCT2 | O2_HRWEN_LRST | O2_HMNRM)
-
-
 extern bool hpib_causeIRQ, hps;
 
 u4_t hpib_recv(void *conn, char *buf);
@@ -89,9 +82,5 @@ void hpib_fast_binary_init();
 u4_t hpib_fast_binary(s2_t *ibp, u4_t nloop);
 u1_t handler_dev_hpib_read(u2_t addr);
 void handler_dev_hpib_write(u2_t addr, u1_t d);
-
-#if defined(HPIB_RECORD) || defined(HPIB_SIM)
-	void hpib_stamp(int write, u4_t iCount, u2_t rPC, u1_t n_irq, u4_t irq_masked);
-#endif
 
 #endif
