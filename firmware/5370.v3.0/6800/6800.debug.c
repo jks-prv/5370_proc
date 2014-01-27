@@ -4,7 +4,7 @@
 		printf("rPC 0x%04x\n", rPC);
 	} else
 
-	// start history recording of instruction trace to be dumped by "snap" trigger later on
+	// start history recording of instruction trace to be dumped by "snap" (or dump) trigger later on
 	if (*cp == 't') {
 		iTrace ^= 1;
 		trace_clear();
@@ -13,12 +13,12 @@
 
 	// dump tracing history buffer, if enabled, and trace a few instructions after
 	if (*cp == 'i') {
-		iSnap = 1;
+		trace_iSnap(1);
 	} else
 
 	// trace all instructions from this point forward
 	if (*cp == 'x') {
-		iDump ^= TRUE;
+		trace_iDump(iDump^1);
 	} else
 
 	#define APPEND_ADDR(per_line, addr) \

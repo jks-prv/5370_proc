@@ -2,14 +2,6 @@
 // implementation of the core instructions
 // these are combined with the various addressing modes to generate the specific opcodes
 
-// instruction operand shorthand
-#define IMM(x)		x;
-#define R8(x)		tU8 = readByte(tAddr); x;
-#define W8(x)		x; writeByte(tAddr, tU8);
-#define RMW_8(x)	tU8 = readByteNoROM(tAddr); x; writeByte(tAddr, tU8);
-#define R16(x)		tU16 = readWord(tAddr); x;
-#define W16(x)		x; writeWord(tAddr, tU16);
-
 #define inc(p8) \
 ({ \
 	u1_t d8 = p8; \
@@ -398,18 +390,13 @@
 	((hi << 8) | lo); \
 })
 
-#define _3branch(dummy_dest_addr) \
+#define branch() \
 ({ \
 	rPC += tS16; \
 	BRANCH_TAKEN(); \
 })
 
 #define computed_goto(addr) \
-({ \
-	rPC = addr; \
-	BRANCH_ALWAYS(); \
-})
-#define _5goto(dummy_dest_addr, addr) \
 ({ \
 	rPC = addr; \
 	BRANCH_ALWAYS(); \

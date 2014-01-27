@@ -12,7 +12,7 @@
 // Written this way to facilitate insertion of debugging code.
 // The -O3 optimizer does a good job of making all of this fast.
 
-#if defined(HPIB_RECORD) || defined(HPIB_SIM_DEBUG)
+#ifdef REG_RECORD
  #define READDEV(a) readDev(a, iCount, rPC, 0, getI())
  #define WRITEDEV(a,d) writeDev(a, d, iCount, rPC, 0, getI())
 #else
@@ -116,6 +116,7 @@
 })
 
 extern u1_t rom_image[ROM_SIZE];
+extern u1_t ram_image[RAM_SIZE];
 
 #if defined(DEBUG) || defined(INSN_TRACE)
  extern char *deco[N_OP];

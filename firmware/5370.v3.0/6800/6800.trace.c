@@ -52,7 +52,62 @@ char *deco[N_OP] = {
 //61 remaining
 
 
-#define	NTRB	1024
+// build a table of properties for each opcode from (gross misuse of) insn set definition
+#define	_R		0x0001
+#define	_W		0x0002
+#define	_RMW	0x0004
+#define	_8		0x0008
+#define	_16		0x0010
+#define	_R8		0x0020
+#define	_W8		0x0040
+#define	_RMW_8	0x0080
+#define	_R16	0x0100
+#define	_W16	0x0200
+#define	_WIM	0x0400
+#define	_CALL	0x0800
+#define	_RTN	0x1000
+
+#define _08_REL()
+#define _08_IMM()
+#define _16_WIM()	f |= _WIM
+#define _08_DIR()
+#define _16_EXT()
+#define _08_IDX()
+
+#define	MA(ma)		f |= ma
+
+#define NA(x)		MA(0)
+#define CALL(x)		MA(_CALL)
+#define RTN(x)		MA(_RTN)
+#define IMM(x)		MA(0)
+#define R8(x)		MA(_R | _8 | _R8)
+#define W8(x)		MA(_W | _8 | _W8)
+#define RMW_8(x)	MA(_R | _RMW | _8 | _RMW_8)
+#define R16(x)		MA(_R | _16 | _R16)
+#define W16(x)		MA(_W | _16 | _W16)
+
+#define INSN(opc, opn, x) 	 opcode = opc; f=0; x; mem_access[opcode] = f;
+
+u2_t mem_access[N_OP];
+
+void trace_init()
+{
+	u1_t opcode;
+	u2_t f;
+	
+	#include "6800.insns.h"
+
+#if 1	
+	// check that it really works
+	int i;
+	for (i=0; i<256; i++)
+		if (mem_access[i] & _WIM) printf("%02x ", i);
+	printf("\n");
+#endif
+}
+
+
+#define	NTRB	1024	// how many insns in trace buffer
 static char trbuf[NTRB][256];
 static int trbi = 0;
 
@@ -160,6 +215,15 @@ static what_t what[] = {
 	RAM(0xb1, "accum trg lvl"),
 	RAM(0xb8, "DAC start"),
 	RAM(0xb9, "DAC stop"),
+	RAM(0xb4, "N0_OVFL-H"),
+	RAM(0xb5, "N0_OVFL-L"),
+	RAM(0xc4, "N0_OVFL_COM-H"),
+	RAM(0xc5, "N0_OVFL_COM-L"),
+	RAM(0xc9, "N0_OVFL_TMP-H"),
+	RAM(0xca, "N0_OVFL_TMP-L"),
+	RAM(0xcb, "N012_TMP-H"),
+	RAM(0xcc, "N012_TMP-L"),
+	RAM(0xeb, "16b event count thresh?"),
 	
 	// ROM
 	LABEL(0x76f6, "B = @b1 * 10"),
@@ -168,35 +232,34 @@ static what_t what[] = {
 	0, 0, W_END, ""
 };
 
-void trace(u4_t ict, u2_t pc, u1_t irq, u1_t a, u1_t b, u2_t x, u2_t sp, u1_t C, u1_t VNZ)
+void trace(u4_t iCount, u2_t rPC, u1_t IRQ, u1_t a, u1_t b, u2_t x, u2_t sp, u1_t C, u1_t VNZ, u1_t tU8, u2_t tU16)
 {
-	int i, store, imm;
-	u1_t opcode, b2, b3, tU8;
-	u2_t tAddr, tU16;
+	int i, ma, store, imm;
+	u1_t opcode, b2, b3;
+	u2_t tAddr;
 	u1_t *rom = &rom_image[0] - ROM_START;
+	u1_t *ram = &ram_image[0] - RAM_START;
 	what_t *w;
 	
-	opcode = rom[pc];
-	b2 = rom[pc+1];
-	b3 = rom[pc+2];
+	opcode = rom[rPC];
+	ma = mem_access[opcode];
+	store = ma & _W;
+	b2 = rom[rPC+1];
+	b3 = rom[rPC+2];
 	
 	// skip delay loops, etc.
-	if ((pc >= 0x6064) && (pc <= 0x606c)) return;
+	if ((rPC >= 0x6064) && (rPC <= 0x606c)) return;
 
 	PF("%d %04x%c A=%02x B=%02x X=%04x SP=%04x %c%c%c%c %02x %02x %02x %s ",
-		ict, pc, irq? '*':' ', a, b, x, sp,
+		iCount, rPC, IRQ? '*':' ', a, b, x, sp,
 		getC()?'C':'c', getV()?'V':'v', getN()?'N':'n', getZ()?'Z':'z',
 		opcode, b2, b3, deco[opcode]);
 	
-	pc++;
+	rPC++;
 	imm = 1;
 
-#define	CMPX_WIM	0x8c
-#define	LDS_WIM		0x8e
-#define LDX_WIM		0xce
-	
 	// imm 16-bit (_16_WIM)
-	if ((opcode == CMPX_WIM) || (opcode == LDS_WIM) || (opcode == LDX_WIM)) {
+	if (ma & _WIM) {
 			tU16 = (b2 << 8) | b3;
 			PF("#=%04x ", tU16);
 	} else {
@@ -215,6 +278,10 @@ void trace(u4_t ict, u2_t pc, u1_t irq, u1_t a, u1_t b, u2_t x, u2_t sp, u1_t C,
 		case 0xd:
 			tAddr = (u2_t) b2;
 			PF("@=%02x ", tAddr);
+			if (ma & _R8) PF("read8=%02x ", tU8);
+			if (ma & _R16) PF("read16=%04x ", tU16);
+			if (ma & _W8) PF("write8=%02x ", tU8);
+			if (ma & _W16) PF("write16=%04x ", tU16);
 			imm = 0;
 			break;
 		
@@ -224,6 +291,10 @@ void trace(u4_t ict, u2_t pc, u1_t irq, u1_t a, u1_t b, u2_t x, u2_t sp, u1_t C,
 		case 0xf:
 			tAddr = (b2 << 8) | b3;
 			PF("@=%04x ", tAddr);
+			if (ma & _R8) PF("read8=%02x ", tU8);
+			if (ma & _R16) PF("read16=%04x ", tU16);
+			if (ma & _W8) PF("write8=%02x ", tU8);
+			if (ma & _W16) PF("write16=%04x ", tU16);
 			imm = 0;
 			break;
 		
@@ -233,6 +304,10 @@ void trace(u4_t ict, u2_t pc, u1_t irq, u1_t a, u1_t b, u2_t x, u2_t sp, u1_t C,
 		case 0xe:
 			tAddr = x + (u2_t) b2;
 			PF("@=%04x(rX+%02x) ", tAddr, (u2_t) b2);
+			if (ma & _R8) PF("read8=%02x ", tU8);
+			if (ma & _R16) PF("read16=%04x ", tU16);
+			if (ma & _W8) PF("write8=%02x ", tU8);
+			if (ma & _W16) PF("write16=%04x ", tU16);
 			imm = 0;
 			break;
 			
@@ -242,14 +317,6 @@ void trace(u4_t ict, u2_t pc, u1_t irq, u1_t a, u1_t b, u2_t x, u2_t sp, u1_t C,
 	// lookup symbolic names of memory addresses from "what" table above
 	// includes device registers (distinguishes reads from writes), labeled ram & rom locations
 	if (!imm) {
-		u1_t oph, opl;
-		opl = opcode & 0xf;
-		oph = opcode >> 8;
-		
-		// decode which opcodes do stores
-		if (((opl == 0x7) && ("1110111000000000"[oph]=='1')) ||
-			((opl == 0xf) && ("1110111011000000"[oph]=='1'))) store=1; else store=0;
-
 		for (i=0; w=&what[i], w->type != W_END; i++) {
 			if (((w->type == W_RAM) || ((w->type == W_READ) && !store) || ((w->type == W_WRITE) && store)) &&
 				((!w->addr2 && w->addr == tAddr) || (tAddr >= w->addr && tAddr <= w->addr2))) {
@@ -265,25 +332,40 @@ void trace(u4_t ict, u2_t pc, u1_t irq, u1_t a, u1_t b, u2_t x, u2_t sp, u1_t C,
 		}
 	}
 
-#define	SWI		0x3f
-#define	RTI		0x3b
-#define	RTS		0x39
-#define	JSR		0xbd
-#define	JSR_IDX	0xad
-#define	BSR		0x8d
-
 	// annotate subroutine & interrupt blocks, add labels
-	if (opcode == SWI || opcode == RTI) PF("\n-------------------------------------\n"); else
-	if (opcode == RTS || opcode == JSR || opcode == JSR_IDX || opcode == BSR) PF("\n\n"); else
+	if (ma & _RTN) PF("\n-------------------------------------\n"); else
+	if (ma & _CALL) PF("\n\n"); else
 		{
 			for (i=0; w=&what[i], w->type != W_END; i++) {
-				if (w->type == W_LABEL && w->addr == (pc-1)) {
+				if (w->type == W_LABEL && w->addr == (rPC-1)) {
 					PF("%s\n", w->name);
 					break;
 				}
 			}
 			if (w->type == W_END) PF("\n");
 		}
+}
+
+void trace_iSnap(int _iSnap)
+{
+	iSnap = _iSnap;
+	
+	if (iSnap == 1) {
+		trace_dump(); printf("---- snap ----------------\n");
+	} else {
+		trace_clear();
+	}
+}
+
+void trace_iDump(int _iDump)
+{
+	iDump = _iDump;
+	
+	if (iDump == 1) {
+		trace_dump(); printf("---- dump ----------------\n");
+	} else {
+		trace_clear();
+	}
 }
 
 #endif

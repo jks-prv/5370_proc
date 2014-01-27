@@ -154,6 +154,8 @@ static int IRQs = 0;
 
 #define PEND_PRINT	8
 
+bool holdoff;
+
 void sim_processor()
 {
 	u1_t rA, rB;
@@ -195,6 +197,15 @@ void sim_processor()
 	extern volatile bool got_irq;
 #endif
 
+#if defined(DEBUG) || defined(INSN_TRACE)
+	u4_t t_iCount;
+	u1_t t_rA, t_rB;
+	u2_t t_rX, t_rSP, t_rPC;
+	u1_t t_IRQ, t_C, t_VNZ;
+
+	trace_init();
+#endif
+
 D_STMT(reset:)
 	
 #ifdef INT_ICOUNT
@@ -217,7 +228,7 @@ D_STMT(reset:)
 	rA = rB = 0;
 	rX = rSP = 0;
 	
-#if defined(HPIB_RECORD) || defined(HPIB_SIM_DEBUG)
+#ifdef REG_RECORD
 	rPC = IRQ = 0;		// avoid compiler uninitialized warning
 #endif
 
@@ -228,15 +239,14 @@ D_STMT(reset:)
 	setI();	// no IRQ in initially
 
 next_insn:
-branch_taken:
 
-	if ((iCount & SIM_POLL_NET_COUNT) == 0) net_poll();
-
-	char *cp;
-	if (((iCount & SIM_POLL_INPUT_COUNT) == 0) && ((cp = sim_input()) != 0)) {
-
-#include "6800.debug.c"
-
+	if (!holdoff) {
+		if ((iCount & SIM_POLL_NET_COUNT) == 0) net_poll();
+	
+		char *cp;
+		if (((iCount & SIM_POLL_INPUT_COUNT) == 0) && ((cp = sim_input()) != 0)) {
+			#include "6800.debug.c"
+		}
 	}
 
 //#define SHOW_INTERP
@@ -312,6 +322,8 @@ checkpending:
 
 	if (IRQs) {
 
+if (holdoff) printf("IRQ during holdoff?\n");
+
 		if (IRQs & INT_NMI) {	// NMI is highest priority
 			pushW(rPC);
 			pushW(rX);
@@ -357,9 +369,9 @@ checkpending:
 #endif
 #ifdef DEBUG
 			//printf("IRQ@0x%x ", rPC); fflush(stdout);
-	#ifdef HPIB_RECORD
+ #ifdef REG_RECORD
 			writeDev(0, 0, iCount, rPC, 1, getI());		// record the interrupt event
-	#endif
+ #endif
 #endif
 #ifdef DBG_INTRS
 			if (iPendCt) {
@@ -416,9 +428,8 @@ doexecute: ;
 
 #if defined(DEBUG) || defined(INSN_TRACE)
 	if (iSnap) {
-		if (iSnap == 1) { trace_dump(); printf("---- snap ----------------\n"); }
 		iSnap++;
-		if (iSnap == 16) { iSnap = 0; trace_clear(); } else itr |= 1;
+		if (iSnap == 16) trace_iSnap(0); else itr |= 1;
 	}
 
 	if (iDump) {
@@ -454,11 +465,8 @@ doexecute: ;
 
 	// interpreter
 
-	#define _4CALL(dummy_dest)		goto branch_taken;
 	#define BRANCH_ALWAYS()			goto branch_taken;
 	#define BRANCH_TAKEN()			goto branch_taken;
-	#define _2RESTORE_PC(pc)		
-	#define CAPTURE_PC()		
 	
 	#define INSN(opc, opn, x) \
 			case opc: \
@@ -467,7 +475,17 @@ doexecute: ;
 			break;
 
 #ifdef INSN_TRACE
-	if (itr) trace(iCount, rPC, getI(), rA, rB, rX, rSP, C, VNZ);
+	if (itr) {
+		t_iCount = iCount;
+		t_rPC = rPC;
+		t_rA = rA;
+		t_rB = rB;
+		t_rX = rX;
+		t_rSP = rSP;
+		t_IRQ = IRQ;
+		t_C = C;
+		t_VNZ = VNZ;
+	}
 #endif
 
 	opcode = rom[rPC];
@@ -478,38 +496,49 @@ doexecute: ;
 
 		#ifdef ROM_RAM_COVER
 		
-			#define _08_REL(rom_const)		tS16 = (s2_t) (s1_t) rom[rPC]; rPC++; \
-											if (cover_sampling) rom_coverage[rPC-1-ROM_START] = 0xee;
+			#define _08_REL()		tS16 = (s2_t) (s1_t) rom[rPC]; rPC++; \
+									if (cover_sampling) rom_coverage[rPC-1-ROM_START] = 0xee;
 			
-			#define _08_IMM(rom_const)		tU8 = rom[rPC]; rPC++; \
-											if (cover_sampling) rom_coverage[rPC-1-ROM_START] = 0xee;
+			#define _08_IMM()		tU8 = rom[rPC]; rPC++; \
+									if (cover_sampling) rom_coverage[rPC-1-ROM_START] = 0xee;
 			
-			#define _16_WIM(rom_const)		tU16 = (rom[rPC] << 8) | rom[rPC+1]; rPC += 2; \
-											if (cover_sampling) rom_coverage[rPC-2-ROM_START] = 0xee; \
-											if (cover_sampling) rom_coverage[rPC-1-ROM_START] = 0xee;
+			#define _16_WIM()		tU16 = (rom[rPC] << 8) | rom[rPC+1]; rPC += 2; \
+									if (cover_sampling) rom_coverage[rPC-2-ROM_START] = 0xee; \
+									if (cover_sampling) rom_coverage[rPC-1-ROM_START] = 0xee;
 			
-			#define _08_DIR(rom_const)		tAddr = (u2_t) rom[rPC]; rPC++; \
-											if (cover_sampling) rom_coverage[rPC-1-ROM_START] = 0xee;
+			#define _08_DIR()		tAddr = (u2_t) rom[rPC]; rPC++; \
+									if (cover_sampling) rom_coverage[rPC-1-ROM_START] = 0xee;
 			
-			#define _16_EXT(rom_const)		tAddr = (rom[rPC] << 8) | rom[rPC+1]; rPC += 2; \
-											if (cover_sampling) rom_coverage[rPC-2-ROM_START] = 0xee; \
-											if (cover_sampling) rom_coverage[rPC-1-ROM_START] = 0xee;
+			#define _16_EXT()		tAddr = (rom[rPC] << 8) | rom[rPC+1]; rPC += 2; \
+									if (cover_sampling) rom_coverage[rPC-2-ROM_START] = 0xee; \
+									if (cover_sampling) rom_coverage[rPC-1-ROM_START] = 0xee;
 			
-			#define _08_IDX(rom_const)		tAddr = rX + (u2_t) rom[rPC]; rPC++; \
-											if (cover_sampling) rom_coverage[rPC-1-ROM_START] = 0xee;
+			#define _08_IDX()		tAddr = rX + (u2_t) rom[rPC]; rPC++; \
+									if (cover_sampling) rom_coverage[rPC-1-ROM_START] = 0xee;
 		
 		#else
 		
 			// definition of the various addressing modes
-			#define _08_REL(rom_const)		tS16 = (s2_t) (s1_t) rom[rPC]; rPC++;
-			#define _08_IMM(rom_const)		tU8 = rom[rPC]; rPC++;
-			#define _16_WIM(rom_const)		tU16 = (rom[rPC] << 8) | rom[rPC+1]; rPC += 2;
-			#define _08_DIR(rom_const)		tAddr = (u2_t) rom[rPC]; rPC++;
-			#define _16_EXT(rom_const)		tAddr = (rom[rPC] << 8) | rom[rPC+1]; rPC += 2;
-			#define _08_IDX(rom_const)		tAddr = rX + (u2_t) rom[rPC]; rPC++;
+			#define _08_REL()		tS16 = (s2_t) (s1_t) rom[rPC]; rPC++;
+			#define _08_IMM()		tU8 = rom[rPC]; rPC++;
+			#define _16_WIM()		tU16 = (rom[rPC] << 8) | rom[rPC+1]; rPC += 2;
+			#define _08_DIR()		tAddr = (u2_t) rom[rPC]; rPC++;
+			#define _16_EXT()		tAddr = (rom[rPC] << 8) | rom[rPC+1]; rPC += 2;
+			#define _08_IDX()		tAddr = rX + (u2_t) rom[rPC]; rPC++;
 		
 		#endif
 		
+		// instruction operand shorthand
+		#define NA(x)		x
+		#define CALL(x)		x
+		#define RTN(x)		x
+		#define IMM(x)		x;
+		#define R8(x)		tU8 = readByte(tAddr); x;
+		#define W8(x)		x; writeByte(tAddr, tU8);
+		#define RMW_8(x)	tU8 = readByteNoROM(tAddr); x; writeByte(tAddr, tU8);
+		#define R16(x)		tU16 = readWord(tAddr); x;
+		#define W16(x)		x; writeWord(tAddr, tU16);
+
 		// code implementing the interpretation of the instruction set is inserted here
 		#include "6800.insns.h"
 	
@@ -518,6 +547,14 @@ doexecute: ;
 			panic("bad opcode");
 			break;
 	}
+
+branch_taken:
+
+#ifdef INSN_TRACE
+	if (itr) {
+		trace(t_iCount, t_rPC, t_IRQ, t_rA, t_rB, t_rX, t_rSP, t_C, t_VNZ, tU8, tU16);
+	}
+#endif
 
 	if (!sys_reset) goto next_insn;
 }
