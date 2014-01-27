@@ -18,6 +18,7 @@
 #define	RAM_MASK	0x0180
 #define	RAM_SIZE	384
 
+#define	ADDR_DEV(o)		((o) & 0xf0)
 #define	ADDR_HPIB(o)	(0x0000 + (o))		// r/w 0x00..0x03
 #define	ADDR_SVC(o)		(0x0008 + (o))		// 0x08..?
 #define	ADDR_ARM(o)		(0x0050 + (o))		// 0x50..0x5f
@@ -28,10 +29,11 @@
 #define	ADDR_ROM(o)		(0x6000 + (o))		// 0x6000..0x7fff
 #define	ADDR_ROM2(o)	(0xC000 + (o))		// 0xc000..0xdfff
 
+void bus_setup();
 u1_t bus_read(u2_t addr);
 void bus_write(u2_t addr, u1_t data);
 
-#if defined(HPIB_RECORD) || defined(HPIB_SIM_DEBUG)
+#ifdef REG_RECORD
 	u1_t readDev(u2_t addr, u4_t iCount, u2_t rPC, u1_t n_irq, u4_t irq_masked);
 	void writeDev(u2_t addr, u1_t data, u4_t iCount, u2_t rPC, u1_t n_irq, u4_t irq_masked);
 #else
