@@ -114,10 +114,10 @@
 #define FAST_READ_CYCLE(addr, data) \
     SET_ADDR(addr); \
 	\
-	BUS_CLK_ASSERT(); \
 	GPIO_SET(0) = BUS_DIR; \
 	GPIO_CLR(0) = BUS_LRW; \
 	GPIO_CLR(1) = BUS_LVMA; \
+	BUS_CLK_ASSERT(); \
 	\
 	t = GPIO_IN(0); /* extra delay before read of bus */ \
 	t = GPIO_IN(0); \
@@ -128,8 +128,8 @@
 	data |= ((t & BUS_LD7) << 3); \
 	data = ~data & 0xff; /* remember: have to invert LDn */ \
 	\
-	GPIO_SET(1) = BUS_LVMA; \
-	BUS_CLK_DEASSERT();
+	BUS_CLK_DEASSERT(); \
+	GPIO_SET(1) = BUS_LVMA;
 
 // remember: data bus is inverted (LDn) so sense of SET/CLR is reversed here
 #define FAST_WRITE_CYCLE(addr, d) \
