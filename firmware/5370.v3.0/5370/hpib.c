@@ -477,7 +477,6 @@ bool hpib_causeIRQ;		// ask simulator for an IRQ
 bool hps = FALSE;
 
 static int state;
-static bool init;
 static int loopct;
 static u1_t r3 = 0;
 static u1_t irqFF = 0;
@@ -509,10 +508,6 @@ static u1_t hpib_sim(u2_t addr, u1_t wdata)
 	switch (state) {
 	
 	case S_INIT:
-		if (!init) {
-			hpib_fast_binary_init();
-			init = TRUE;
-		}
 		
 		switch (addr) {
 			RTN_REG(R0_data_in, 0x00);

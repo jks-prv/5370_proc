@@ -78,7 +78,6 @@ extern bool hpib_causeIRQ, hps;
 
 u4_t hpib_recv(void *conn, char *buf);
 void hpib_input(char *buf);
-void hpib_fast_binary_init();
 u4_t hpib_fast_binary(s2_t *ibp, u4_t nloop);
 u1_t handler_dev_hpib_read(u2_t addr);
 void handler_dev_hpib_write(u2_t addr, u1_t d);
