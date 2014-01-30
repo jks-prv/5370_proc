@@ -29,24 +29,24 @@ void meas_extend_example(u1_t key)
 	printf("taking %d TI measurements\n", N_TI);
 	
 	for (i=0; i<N_TI; i++) {
-		bus_write(WREG_O3, HPIB_O3_RST);
-		bus_write(WREG_O2, HPIB_O2_ENA);
-		bus_write(WREG_O2, HPIB_O2_ARM);
+		bus_write(WREG_O3, WREG_O3_RST);
+		bus_write(WREG_O2, WREG_O2_ENA);
+		bus_write(WREG_O2, WREG_O2_ARM);
 		
 		// wait for end-of-measurement
 		do {
 			n0st = bus_read(RREG_N0ST);
-		} while (n0st & N0ST_EOM);
+		} while (isInactive(N0ST_EOM, n0st));
 
-		bus_write(WREG_O2, HPIB_O2_IDLE);
+		bus_write(WREG_O2, WREG_O2_IDLE);
 
 		n0st = bus_read(RREG_N0ST);
 		n1n2h = bus_read(RREG_N1N2H);
 		n1n2l = bus_read(RREG_N1N2L);
 		n1n2 = ((n0st & N0ST_N1N2) << 16) | (n1n2h << 8) | n1n2l;
 
-		if (n0st & N0ST_PLL_OOL) printf("PLL UNLOCKED\n");
-		if (n0st & N0ST_N0_OVFL) printf("N0 OVFL\n");
+		if (isActive(N0ST_PLL_OOL, n0st)) printf("PLL UNLOCKED\n");
+		if (isActive(N0ST_N0_OVFL, n0st)) printf("N0 OVFL\n");
 
 		// convert from 18-bit 2s complement
 		if (n1n2 >= 0x20000) {
@@ -66,7 +66,7 @@ void meas_extend_example(u1_t key)
 		bool rng = ((ti < 98.0e-9) || (ti > 101.1e+9))? TRUE:FALSE;
 
 		if (rng) {
-			printf("meas %d, N0ST 0x%02x, out of range: ", i, n0st & N0ST_MASK);
+			printf("meas %d, N0ST 0x%02x, out of range: ", i, n0st & N0ST_STATUS);
 			if (ti < 1.0e-8) {
 				printf("%1.2f ns\n", ti * 1.0e8);
 			} else {

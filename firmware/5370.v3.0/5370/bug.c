@@ -7,6 +7,8 @@
 #include <string.h>
 #include <stdio.h>
 
+#ifdef DEBUG
+
 void find_bug()
 {
 	int i, ok, bad;
@@ -18,24 +20,24 @@ void find_bug()
 	i=1; ok=bad=0;
 	
 	while (i++) {
-		bus_write(WREG_O3, HPIB_O3_RST);
-		bus_write(WREG_O2, HPIB_O2_ENA);
-		bus_write(WREG_O2, HPIB_O2_ARM);
+		bus_write(WREG_O3, WREG_O3_RST);
+		bus_write(WREG_O2, WREG_O2_ENA);
+		bus_write(WREG_O2, WREG_O2_ARM);
 		
 		// wait for end-of-measurement
 		do {
 			n0st = bus_read(RREG_N0ST);
-		} while (n0st & N0ST_EOM);
+		} while (isInactive(N0ST_EOM, n0st));
 
-		bus_write(WREG_O2, HPIB_O2_IDLE);
+		bus_write(WREG_O2, WREG_O2_IDLE);
 
 		n0st = bus_read(RREG_N0ST);
 		n1n2h = bus_read(RREG_N1N2H);
 		n1n2l = bus_read(RREG_N1N2L);
 		n1n2 = ((n0st & N0ST_N1N2) << 16) | (n1n2h << 8) | n1n2l;
 
-		if (n0st & N0ST_PLL_OOL) printf("PLL UNLOCKED\n");
-		if (n0st & N0ST_N0_OVFL) printf("N0 OVFL\n");
+		if (isActive(N0ST_PLL_OOL, n0st)) printf("PLL UNLOCKED\n");
+		if (isActive(N0ST_N0_OVFL, n0st)) printf("N0 OVFL\n");
 
 		// convert from 18-bit 2s complement
 		if (n1n2 >= 0x20000) {
@@ -74,3 +76,5 @@ void find_bug()
 		}
 	}
 }
+
+#endif

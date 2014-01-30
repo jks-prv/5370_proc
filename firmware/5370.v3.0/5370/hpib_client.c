@@ -117,8 +117,8 @@ int main(int argc, char *argv[])
 				e=0;
 				n0st = s[0]; n1n2h = s[1]; n1n2l = s[2]; n0h = s[3]; n0l = s[4];
 				s += 5;
-				if (n0st & N0ST_PLL_OOL) { printf("PLL OOL\n"); e=1; }
-				if (n0st & N0ST_N0_OVFL) { printf("N0 OVFL\n"); e=1; }
+				if (isActive(N0ST_PLL_OOL, n0st)) { printf("PLL UNLOCKED\n"); e=1; }
+				if (isActive(N0ST_N0_OVFL, n0st)) { printf("N0 OVFL\n"); e=1; }
 				
 				n1n2 = ((n0st & N0ST_N1N2) << 16) | (n1n2h << 8) | n1n2l;
 				
@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
 				
 				ti = (((double) n1n2 / 256.0) + (double) n0) * 5.0e-9;
 				rng = ((ti < 99.0e-9) || (ti > 99.9e+9))? TRUE:FALSE;
-				if (rng) { printf("out of range: 0x%02x\n", n0st & N0ST_MASK); e=1; }
+				if (rng) { printf("out of range: 0x%02x\n", n0st & N0ST_STATUS); e=1; }
 
 				if (rng) {
 					if (ti < 1.0e-8) {
