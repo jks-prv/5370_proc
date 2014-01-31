@@ -347,13 +347,10 @@ void handler_dev_arm_write(u2_t addr, u1_t data)
 		}
 	}
 
-#ifdef DEBUG
 	// ignore WREG_O3 writes to clear overflow bits while PRU is doing it
 	if (use_pru && hold_off && (addr == WREG_O3)) {
-		//printf("WREG_O3: n0_ovfl 0x%x/0x%x n3_ovfl %d/%d\n", pru->n0_ovfl, n0_ovfl_sent, pru->n3_ovfl, n3_ovfl_sent);
 		return;
 	}
-#endif
 
 	bus_write(addr, data);
 }
