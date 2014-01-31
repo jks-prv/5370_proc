@@ -30,8 +30,12 @@
  #define HPIB_SIM_DEBUG
  //#define RECORD_IO_HIST
  //#define HPIB_RECORD			// record HPIB bus cycles for use in developing HPIB_SIM
+ #define FREQ_DEBUG
 #endif
 
+#if defined(HPIB_RECORD) || defined(HPIB_SIM_DEBUG) || defined(FREQ_DEBUG)
+ #define REG_RECORD
+#endif
 
 #ifdef HP5370A
 	#define ROM_CODE_H		"rom_5370a.h"

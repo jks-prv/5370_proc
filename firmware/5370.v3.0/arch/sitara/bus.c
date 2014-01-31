@@ -10,6 +10,7 @@
 #include "misc.h"
 #include "chip.h"
 #include "bus.h"
+#include "pru_realtime.h"
 
 typedef struct {
 	u4_t pin;
@@ -259,9 +260,10 @@ void bus_delay()
 }
 
 
-// to support hpib_fast_binary()
+// to support PRU and hpib_fast_binary()
 
 CONV_ADDR_DCL(a_n0st);
+CONV_ADDR_DCL(a_o1);
 CONV_ADDR_DCL(a_o2);
 CONV_ADDR_DCL(a_o3);
 CONV_ADDR_DCL(a_n1n2h);
@@ -274,13 +276,14 @@ CONV_ADDR_DATA_DCL(ad_ena);
 CONV_ADDR_DATA_DCL(ad_arm);
 CONV_ADDR_DATA_DCL(ad_idle);
 
-#define CONV_ADDR_DATA_PRF(advar) \
-	printf("%s %8x %8x %8x %8x %8x %8x %8x %8x\n", #advar, \
-		advar ## 0, advar ##0c, advar ## 1, advar ## 1c, advar ## 2, advar ## 2c, advar ## 3, advar ## 3c);
+CONV_DATA_DCL(d_n0_clr_ovfl);
+CONV_DATA_DCL(d_n3_clr_ovfl);
 
-void hpib_fast_binary_init()
+void bus_gpio_init()
 {
+	// for hpib_fast_binary()
 	CONV_ADDR(RREG_N0ST, a_n0st);
+	CONV_ADDR(WREG_O1, a_o1);
 	CONV_ADDR(WREG_O2, a_o2);
 	CONV_ADDR(WREG_O3, a_o3);
 	CONV_ADDR(RREG_N1N2H, a_n1n2h);
@@ -288,10 +291,10 @@ void hpib_fast_binary_init()
 	CONV_ADDR(RREG_N0H, a_n0h);
 	CONV_ADDR(RREG_N0L, a_n0l);
 	
-	CONV_ADDR_DATA(WREG_O3, HPIB_O3_RST, ad_rst);
-	CONV_ADDR_DATA(WREG_O2, HPIB_O2_ENA, ad_ena);
-	CONV_ADDR_DATA(WREG_O2, HPIB_O2_ARM, ad_arm);
-	CONV_ADDR_DATA(WREG_O2, HPIB_O2_IDLE, ad_idle);
+	CONV_ADDR_DATA(WREG_O3, WREG_O3_RST, ad_rst);
+	CONV_ADDR_DATA(WREG_O2, WREG_O2_ENA, ad_ena);
+	CONV_ADDR_DATA(WREG_O2, WREG_O2_ARM, ad_arm);
+	CONV_ADDR_DATA(WREG_O2, WREG_O2_IDLE, ad_idle);
 
 #if 0
 	// shows redundant gpio set/clr writes for use in setting qual mask in FAST_WRITE_GPIO_QUAL_CYCLE() below
@@ -299,8 +302,17 @@ void hpib_fast_binary_init()
 	CONV_ADDR_DATA_PRF(ad_ena);
 	CONV_ADDR_DATA_PRF(ad_arm);
 #endif
+
+	// for PRU
+	CONV_COPY_ADDR(a_n0st, pru);
+	CONV_COPY_ADDR(a_o3, pru);
+	CONV_WRITE_DATA(WREG_O3_N0_CLR_OVFL, d_n0_clr_ovfl);
+	CONV_COPY_WRITE_DATA(d_n0_clr_ovfl, pru);
+	CONV_WRITE_DATA(WREG_O3_N3_CLR_OVFL, d_n3_clr_ovfl);
+	CONV_COPY_WRITE_DATA(d_n3_clr_ovfl, pru);
 }
 
+// FIXME: rewrite to run on the PRU?
 u4_t hpib_fast_binary(s2_t *ibp, u4_t nloop)
 {
 	int i;
@@ -333,12 +345,7 @@ u4_t hpib_fast_binary(s2_t *ibp, u4_t nloop)
 		//n1n2 = ((n0st & N0ST_N1_GPIO) << 3) | ((n0st2 & N0ST_N2_GPIO) >> 11) | (ad_h << 8) | ad_l;
 		n1n2 = ((n0st & N0ST_N1N2) << 16) | (ad_h << 8) | ad_l;
 
-		// PLL_OOL latches, but is reset by HPIB_O3_RST, so check it each time through the loop.
-		// Checking this often doesn't slow down the transfer rate.
-		if (n0st & (N0ST_PLL_OOL | N0ST_N0_OVFL)) {
-			if (n0st & N0ST_PLL_OOL) printf("PLL UNLOCKED\n");
-			if (n0st & N0ST_N0_OVFL) printf("N0 OVFL\n");
-		}
+		if (isActive(N0ST_N0_OVFL, n0st)) printf("N0 OVFL\n");
 		
 		// convert from 18-bit 2s complement
 		if (n1n2 >= 0x20000) {

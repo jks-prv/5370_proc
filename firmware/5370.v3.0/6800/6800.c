@@ -154,8 +154,6 @@ static int IRQs = 0;
 
 #define PEND_PRINT	8
 
-bool holdoff;
-
 void sim_processor()
 {
 	u1_t rA, rB;
@@ -240,13 +238,11 @@ D_STMT(reset:)
 
 next_insn:
 
-	if (!holdoff) {
-		if ((iCount & SIM_POLL_NET_COUNT) == 0) net_poll();
-	
-		char *cp;
-		if (((iCount & SIM_POLL_INPUT_COUNT) == 0) && ((cp = sim_input()) != 0)) {
-			#include "6800.debug.c"
-		}
+	if ((iCount & SIM_POLL_NET_COUNT) == 0) net_poll();
+
+	char *cp;
+	if (((iCount & SIM_POLL_INPUT_COUNT) == 0) && ((cp = sim_input()) != 0)) {
+		#include "6800.debug.c"
 	}
 
 //#define SHOW_INTERP
@@ -321,8 +317,6 @@ checkpending:
 #endif
 
 	if (IRQs) {
-
-if (holdoff) printf("IRQ during holdoff?\n");
 
 		if (IRQs & INT_NMI) {	// NMI is highest priority
 			pushW(rPC);

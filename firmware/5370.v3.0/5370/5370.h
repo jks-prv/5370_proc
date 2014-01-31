@@ -29,7 +29,20 @@
 #define	ADDR_ROM(o)		(0x6000 + (o))		// 0x6000..0x7fff
 #define	ADDR_ROM2(o)	(0xC000 + (o))		// 0xc000..0xdfff
 
-void bus_setup();
+#ifdef DEBUG
+	#define BIT_AREG(reg)	(1 << ((RREG_ ## reg) - ADDR_ARM(0)))
+	#define PBIT(b)	if (isActive(b, data)) printf("%s ", # b);
+
+	#define DUMP_AREG(areg, addr, data) \
+	({ \
+		u2_t a = RREG_ ## areg; \
+		u2_t bit = BIT_AREG(areg); \
+		if ((addr == a) && (dump_regs & bit)) { printf("%s 0x%x %d  ", # areg, data, data); dump_regs &= ~bit; if (!dump_regs) printf("\n"); } \
+	})
+#else
+	#define DUMP_AREG(areg, addr, data)
+#endif
+
 u1_t bus_read(u2_t addr);
 void bus_write(u2_t addr, u1_t data);
 

@@ -9,6 +9,8 @@ fi
 
 DEV=5370
 CAPE=cape-bone-${DEV}-00A0
+DEV_PRU=${DEV}-P
+PRU=cape-bone-${DEV_PRU}-00A0
 SLOTS=`ls /sys/devices/bone_capemgr.*/slots`
 
 # out-of-the-box BBB doesn't seem to have NTP configured
@@ -27,6 +29,17 @@ fi
 if ! grep -q ${DEV} $SLOTS ; then
 	echo load ${DEV} device tree;
 	echo cape-bone-${DEV} > $SLOTS;
+fi
+
+if [ /lib/firmware/${PRU}.dts -nt /lib/firmware/${PRU}.dtbo ] ; then
+	echo compile ${DEV_PRU} device tree;
+	(cd /lib/firmware; dtc -O dtb -o ${PRU}.dtbo -b 0 -@ ${PRU}.dts);
+# don't unload old slot because this is known to cause panics; must reboot
+fi
+
+if ! grep -q ${DEV_PRU} $SLOTS ; then
+	echo load ${DEV_PRU} device tree;
+	echo cape-bone-${DEV_PRU} > $SLOTS;
 fi
 
 ./$1

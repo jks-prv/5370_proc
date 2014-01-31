@@ -43,41 +43,39 @@ endif
 ifeq ($(SETUP), SETUP_TIME_NUTS_PCB_V3)
 ARCH = sitara
 ARCH_INCLUDE = \"sitara.h\"
-CHIP = am3359
+CHIP = AM3359
 CHIP_INCLUDE = \"AM3359.h\"
 PCB_NAME = \"TIME-NUTS_PCB\"
 endif
 
 SIM_FLAGS = -D$(INSTRUMENT) -D$(SETUP) -DARCH_INCLUDE=$(ARCH_INCLUDE) -D$(CHIP) -DCHIP_INCLUDE=$(CHIP_INCLUDE) -DPCB_NAME=$(PCB_NAME)
 
+VPATH = .
 VPATH += ./5370
 VPATH += ./6800
+VPATH += ./arch
 VPATH += ./arch/$(ARCH)
 VPATH += ./support
 VPATH += ./misc
 VPATH += ./user
+VPATH += ./pru ./pru/pasm
 
-INC =  -I.
-INC += -I./5370
-INC += -I./6800
-INC += -I./arch
-INC += -I./arch/$(ARCH)
-INC += -I./support
-INC += -I./misc
-INC += -I./user
+INC = $(addprefix -I, $(VPATH))
 
 RMT_SOURCE = 5370/5370.c 5370/test.c 5370/hpib.c 5370/bug.c main.c 6800/6800.c 6800/6800.trace.c
 RMT_SOURCE += arch/$(ARCH)/bus.c arch/$(ARCH)/timer.c
 RMT_SOURCE += support/misc.c support/net.c support/front_panel.c user/example.c
+RMT_SOURCE += pru/prussdrv.c pru/pru_realtime.c
 
 RMT_INCLUDES = config.h boot.h sim.h
 RMT_INCLUDES += 5370.h 5370_regs.h hpib.h 6800.h 6800.cc.h 6800.core.h 6800.insns.h
-RMT_INCLUDES += arch/chip.h arch/$(ARCH)/$(ARCH).h arch/$(ARCH)/timer.h
+RMT_INCLUDES += arch/chip.h arch/$(ARCH)/$(CHIP).h arch/$(ARCH)/$(ARCH).h arch/$(ARCH)/bus.h arch/$(ARCH)/timer.h
 RMT_INCLUDES += support/misc.h support/net.h support/front_panel.h
+RMT_INCLUDES += $(wildcard pru/*.h)
 
 RMT_BINARIES = hd.bin h.bin bc
-RMT_DEPENDS = $(RMT_SOURCE) $(RMT_INCLUDES) Makefile 6800.debug.c
-RMT_FLAGS = $(SIM_FLAGS)
+RMT_DEPENDS = $(RMT_SOURCE) $(RMT_INCLUDES) Makefile 6800.debug.c pru/pru_realtime.bin
+RMT_FLAGS = $(SIM_FLAGS) -Wno-int-to-void-pointer-cast -lpthread
 RMT_DIRS += -L/usr/local/lib -I/usr/local/include $(INC)
 
 all: hd.bin h.bin
@@ -92,7 +90,16 @@ hd.bin:	$(RMT_DEPENDS)
 h.bin:	$(RMT_DEPENDS)
 	cc -O3 $(RMT_FLAGS) $(RMT_SOURCE) $(RMT_DIRS) -o $@
 
+PASM_SOURCE = $(wildcard pru/pasm/*.c)
+PASM_INCLUDES = $(wildcard pru/pasm/*.h)
+pas:	$(PASM_INCLUDES) $(PASM_SOURCE) Makefile
+	cc -Wall -D_UNIX_ -I./pru/pasm $(PASM_SOURCE) -o pas
+
+pru/pru_realtime.bin:	pas pru/pru_realtime.p pru/pru_realtime.hp
+	(cd pru; ../pas -V3 -b -D_PASM_ -D$(SETUP) pru_realtime.p)
+
 CAPE = cape-bone-5370-00A0
+PRU  = cape-bone-5370-P-00A0
 TEST = cape-bone-test-00A0
 
 install: hd.bin h.bin
@@ -101,6 +108,7 @@ install: hd.bin h.bin
 	install -o root -g root unix_env/hp5370d /etc/init.d
 	install -o root -g root unix_env/hp5370d.service /etc/systemd/system
 	install -D -o root -g root -m 0644 unix_env/$(CAPE).dts /lib/firmware/$(CAPE).dts
+	install -D -o root -g root -m 0644 unix_env/$(PRU).dts /lib/firmware/$(PRU).dts
 #	install -D -o root -g root -m 0644 unix_env/$(TEST).dts /lib/firmware/$(TEST).dts
 	install -D -o root -g root -m 0644 unix_env/ntpdate /usr/local/etc/ntpdate
 	install -D -o root -g root -m 0644 unix_env/.bashrc /home/root/.bashrc
@@ -130,4 +138,4 @@ scp: tar
 	scp ../$(DIST).tgz root@$(BBB_IP):/home/root
 
 clean:
-	-rm -rf $(RMT_BINARIES) *.dSYM ../$(DIST).tgz
+	-rm -rf $(RMT_BINARIES) *.dSYM ../$(DIST).tgz pas pru/pru_realtime.bin

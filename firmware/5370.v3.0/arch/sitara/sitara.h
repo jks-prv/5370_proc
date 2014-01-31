@@ -3,7 +3,9 @@
 
 #include "bus.h"
 
-#include CHIP_INCLUDE
+#ifndef _PASM_
+ #include CHIP_INCLUDE
+#endif
 
 // Sitara memory map
 #define PRCM_BASE	0x44e00000		// power, reset, clock management
@@ -51,22 +53,33 @@
 
 
 // GPIO
-#define GPIO_REVISION(n)	gpio ## n[0x000>>2]
-#define GPIO_SYSCONFIG(n)	gpio ## n[0x010>>2]
-#define GPIO_CLR_IRQ0(n)	gpio ## n[0x03c>>2]
-#define GPIO_CLR_IRQ1(n)	gpio ## n[0x040>>2]
-#define GPIO_OE(n)			gpio ## n[0x134>>2]		// 0 = output
-#define GPIO_IN(n)			gpio ## n[0x138>>2]
-#define GPIO_OUT(n)			gpio ## n[0x13c>>2]
-#define GPIO_CLR(n)			gpio ## n[0x190>>2]
-#define GPIO_SET(n)			gpio ## n[0x194>>2]
+#define	_GPIO_REVISION		0x000
+#define	_GPIO_SYSCONFIG		0x010
+#define	_GPIO_CLR_IRQ0		0x03c
+#define	_GPIO_CLR_IRQ1		0x040
+#define	_GPIO_OE			0x134
+#define	_GPIO_IN			0x138
+#define	_GPIO_OUT			0x13c
+#define	_GPIO_CLR			0x190
+#define	_GPIO_SET			0x194
+
+
+#ifndef _PASM_
+#define GPIO_REVISION(n)	gpio ## n[_GPIO_REVISION>>2]
+#define GPIO_SYSCONFIG(n)	gpio ## n[_GPIO_SYSCONFIG>>2]
+#define GPIO_CLR_IRQ0(n)	gpio ## n[_GPIO_CLR_IRQ0>>2]
+#define GPIO_CLR_IRQ1(n)	gpio ## n[_GPIO_CLR_IRQ1>>2]
+#define GPIO_OE(n)			gpio ## n[_GPIO_OE>>2]			// 0 = output
+#define GPIO_IN(n)			gpio ## n[_GPIO_IN>>2]
+#define GPIO_OUT(n)			gpio ## n[_GPIO_OUT>>2]
+#define GPIO_CLR(n)			gpio ## n[_GPIO_CLR>>2]
+#define GPIO_SET(n)			gpio ## n[_GPIO_SET>>2]
 
 #define	GPIO_OUTPUT(n, bits)	GPIO_OE(n) = GPIO_OE(n) & ~(bits);
 #define	GPIO_INPUT(n, bits)		GPIO_OE(n) = GPIO_OE(n) | (bits);
-
+#endif
 
 // TIMER
-#define TIMER_TCLR(n)	timer ## n[0x38>>2]
 #define	T_TOGGLE		(1<<12)
 #define	T_TRIG_OVFL		(1<<10)
 #define	T_HIGH			(1<<7)
@@ -74,8 +87,15 @@
 #define	T_START			(1<<0)
 #define	T_MODE			(T_TOGGLE | T_TRIG_OVFL | T_RELOAD)
 
-#define TIMER_TCRR(n)	timer ## n[0x3c>>2]
-#define TIMER_TLDR(n)	timer ## n[0x40>>2]
+#define _TIMER_TCLR		0x38
+#define _TIMER_TCRR		0x3c
+#define _TIMER_TLDR		0x40
+
+#ifndef _PASM_
+
+#define TIMER_TCLR(n)	timer ## n[_TIMER_TCLR>>2]
+#define TIMER_TCRR(n)	timer ## n[_TIMER_TCRR>>2]
+#define TIMER_TLDR(n)	timer ## n[_TIMER_TLDR>>2]
 
 
 #define CHECK_IRQ() ((GPIO_IN(0) & BUS_LIRQ) == 0)
@@ -101,6 +121,10 @@
 #define BUS_CLK_START() \
 	TIMER_TCRR(4) = -9; \
 	TIMER_TCLR(4) = T_MODE | T_START;
+
+
+extern u4_t g0_addr[], g1_addr[], g3_addr[];
+extern u4_t g0_write[], g1_write[], g2_write[];
 
 // remember: address bus is inverted (LAn) so sense of SET/CLR is reversed here
 #define SET_ADDR(a) \
@@ -178,10 +202,8 @@
     GPIO_INPUT(2, G2_DATA); \
 	GPIO_SET(0) = BUS_DIR; /* read */
 
-#endif
 
-
-// to support hpib_fast_binary()
+// to support PRU and hpib_fast_binary()
 //
 // The v3 PCB was designed in a huge hurry and assignments of address, data and control signals to
 // gpio pins was done to facilitate the layout. As a result the consecutive bits of, say, the data bus
@@ -191,7 +213,7 @@
 // The v4 PCB will definitely be redesigned to avoid this problem.
 
 #define CONV_ADDR_DCL(avar) \
-	u4_t avar ## 0, avar ##0c, avar ## 1, avar ## 1c, avar ## 3, avar ## 3c;
+	u4_t avar ## 0, avar ## 0c, avar ## 1, avar ## 1c, avar ## 3, avar ## 3c;
 
 // pre-compute address
 #define CONV_ADDR(addr, avar) \
@@ -202,19 +224,69 @@
 	avar ## 3 = g3_addr[addr]; \
 	avar ## 3c = ~g3_addr[addr] & G3_ADDR;
 
+#define CONV_DATA_DCL(dvar) \
+	u4_t dvar ## 0, dvar ## 0c, dvar ## 1, dvar ## 1c, dvar ## 2, dvar ## 2c;
+
+// pre-compute write data
+#define CONV_WRITE_DATA(data, dvar) \
+	dvar ## 0 = g0_write[data]; \
+	dvar ## 0c = ~g0_write[data] & G0_DATA; \
+	dvar ## 1 = g1_write[data]; \
+	dvar ## 1c = ~g1_write[data] & G1_DATA; \
+	dvar ## 2 = g2_write[data]; \
+	dvar ## 2c = ~g2_write[data] & G2_DATA;
+
+// re-assemble read data
+#define CONV_READ_DATA(dvar, data) \
+	u4_t t = dvar ## 0; \
+	data = ((t & BUS_LD0) >> 27) | ((t & BUS_LD3) >> 23) | ((t & BUS_LD4) >> 19); \
+	t = dvar ## 1; \
+	data |= ((t & BUS_LD1) >> 13) | ((t & BUS_LD2) >> 13) | ((t & BUS_LD5) >> 7) | ((t & BUS_LD6) >> 7); \
+	t = dvar ## 2; \
+	data |= ((t & BUS_LD7) << 3);	/* remember: PRU has already inverted LDn */
+
 #define CONV_ADDR_DATA_DCL(advar) \
 	u4_t advar ## 0, advar ##0c, advar ## 1, advar ## 1c, advar ## 2, advar ## 2c, advar ## 3, advar ## 3c;
 
-// pre-compute address and data
+// pre-compute address and (write) data
 #define CONV_ADDR_DATA(addr, data, advar) \
-	advar ## 0 = g0_addr[addr] | g0_write[data]; \
+	advar ## 0  = g0_addr[addr] | g0_write[data]; \
 	advar ## 0c = (~g0_addr[addr] & G0_ADDR) | (~g0_write[data] & G0_DATA); \
-	advar ## 1 = g1_addr[addr] | g1_write[data]; \
+	advar ## 1  = g1_addr[addr] | g1_write[data]; \
 	advar ## 1c = (~g1_addr[addr] & G1_ADDR) | (~g1_write[data] & G1_DATA); \
-	advar ## 2 = g2_write[data]; \
+	advar ## 2  = g2_write[data]; \
 	advar ## 2c = ~g2_write[data] & G2_DATA; \
-	advar ## 3 = g3_addr[addr]; \
+	advar ## 3  = g3_addr[addr]; \
 	advar ## 3c = ~g3_addr[addr] & G3_ADDR;
+
+#define CONV_COPY_ADDR(avar, prefix) \
+	prefix -> avar ## 0 = avar ## 0; \
+	prefix -> avar ## 0c = avar ## 0c; \
+	prefix -> avar ## 1 = avar ## 1; \
+	prefix -> avar ## 1c = avar ## 1c; \
+	prefix -> avar ## 3 = avar ## 3; \
+	prefix -> avar ## 3c = avar ## 3c;
+
+#define CONV_COPY_READ_DATA(prefix, dvar) \
+	dvar ## 0  = prefix -> dvar ## 0; \
+	dvar ## 1  = prefix -> dvar ## 1; \
+	dvar ## 2  = prefix -> dvar ## 2;
+
+#define CONV_COPY_WRITE_DATA(dvar, prefix) \
+	prefix -> dvar ## 0 = dvar ## 0; \
+	prefix -> dvar ## 0c = dvar ## 0c; \
+	prefix -> dvar ## 1 = dvar ## 1; \
+	prefix -> dvar ## 1c = dvar ## 1c; \
+	prefix -> dvar ## 2 = dvar ## 2; \
+	prefix -> dvar ## 2c = dvar ## 2c;
+
+#define CONV_ADDR_PRF(avar) \
+	printf("%s: %8x %8x %8x %8x %8x %8x\n", #avar, \
+		avar ## 0, avar ##0c, avar ## 1, avar ## 1c, avar ## 3, avar ## 3c);
+
+#define CONV_ADDR_DATA_PRF(advar) \
+	printf("%s: %8x %8x %8x %8x %8x %8x %8x %8x\n", #advar, \
+		advar ## 0, advar ##0c, advar ## 1, advar ## 1c, advar ## 2, advar ## 2c, advar ## 3, advar ## 3c);
 
 // set pre-computed address
 #define SET_GPIO_ADDR(avar) \
@@ -343,3 +415,6 @@
 
 void check_pmux();
 
+#endif
+
+#endif

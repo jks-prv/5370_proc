@@ -8,16 +8,18 @@
 
 // busses are scrambled across the four gpios to make pcb layout easier
 
-volatile u4_t *gpio0, *gpio1, *gpio2, *gpio3;
-
-#define	B0	0x01
-#define	B1	0x02
-#define	B2	0x04
-#define	B3	0x08
-#define	B4	0x10
-#define	B5	0x20
-#define	B6	0x40
-#define	B7	0x80
+#ifndef _PASM_
+	volatile u4_t *gpio0, *gpio1, *gpio2, *gpio3;
+	
+	#define	B0	0x01
+	#define	B1	0x02
+	#define	B2	0x04
+	#define	B3	0x08
+	#define	B4	0x10
+	#define	B5	0x20
+	#define	B6	0x40
+	#define	B7	0x80
+#endif
 
 
 // on GPIO0:
