@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
 
 reset:
 	app_state = APP_START;
-	bus_setup();
+	sim_init(argc, argv);
 
 	if ((bus_read(RREG_LDACSR) | bus_read(RREG_KEY_SCAN) | bus_read(RREG_N0ST)) == 0) {
 		lprintf("no 5370 detected?\n");
@@ -212,7 +212,7 @@ reset:
 
 		if (app_state == APP_START) {
 			preempt_reset_key(FALSE);
-			sim_main(argc, argv);
+			sim_main();
 			printf("main returned\n");
 			panic("can't reset until bss zeroed\n");
 			goto reset;

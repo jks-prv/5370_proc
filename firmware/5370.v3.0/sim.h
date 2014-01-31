@@ -13,7 +13,8 @@
 
 extern u1_t sim_key, sim_key_intr;
 
-void sim_main(int argc, char *argv[]);
+void sim_init(int argc, char *argv[]);
+void sim_main();
 void sim_processor();
 u4_t sim_insn_count();
 char *sim_input();
@@ -31,7 +32,7 @@ void trace_on();
 char *tr_s();
 void tr_printf(int ignore);
 
-extern bool iDump, holdoff;
+extern bool iDump;
 extern int iSnap, iTrace;
 extern bool background_mode;
 
