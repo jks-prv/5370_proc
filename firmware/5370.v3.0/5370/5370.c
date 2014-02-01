@@ -46,6 +46,12 @@ static bool hold_off = FALSE;
 static bool use_pru = TRUE;
 static u4_t n3_ovfl_sent, n0_ovfl_sent, ovfl_none;
 
+#ifdef FREQ_DEBUG
+ #define freq_record(chan, type, addr, data, time, str)	reg_record(chan, type, addr, data, time, str)
+#else
+ #define freq_record(chan, type, addr, data, time, str)
+#endif
+
 typedef u1_t (*dev_read_t)(u2_t addr);
 typedef void (*dev_write_t)(u2_t addr, u1_t data);
 
@@ -184,6 +190,7 @@ u1_t handler_dev_arm_read(u2_t addr)
 
 		// PRU saw EOM: be careful about the race condition when looking at the counters
 		if (!sent && done_before && (pru->count == PRU_DONE)) {
+			freq_record(0, REG_STR, 0, 0, 0, "H");
 			hold_off = FALSE;
 		}
 		
@@ -191,6 +198,14 @@ u1_t handler_dev_arm_read(u2_t addr)
 	}
 
 	data = bus_read(addr);
+
+#ifdef FREQ_DEBUG
+	if (use_pru && !hold_off) {
+		if (addr == RREG_N0ST && (isActive(N0ST_EOM, data) || isActive(N0ST_N3_OVFL, data) || isActive(N0ST_N0_OVFL, data))) {
+			freq_record(0, REG_READ, addr, data, 0, 0);
+		}
+	}
+#endif
 
 //#define SELF_TEST
 #ifdef SELF_TEST
@@ -254,7 +269,11 @@ u1_t handler_dev_arm_read(u2_t addr)
 	
 #ifdef DEBUG
 	if (trace_regs) {
-		if (addr == RREG_N0ST) { if (isActive(N0ST_EOM, data)) printf("EOM"); if (isActive(N0ST_N3_OVFL, data)) printf("3"); if (isActive(N0ST_N0_OVFL, data)) printf("0"); printf("."); } else
+		if (addr == RREG_N0ST) {
+			if (isActive(N0ST_EOM, data)) printf("EOM");
+			if (isActive(N0ST_N3_OVFL, data)) printf("3");
+			if (isActive(N0ST_N0_OVFL, data)) printf("0");
+		}
 		if (addr == RREG_I1 && data == 0x7f) printf("_"); else
 		if (addr == RREG_ST) { ; } else
 		if (addr == RREG_A16_SWITCHES) ; else
@@ -333,6 +352,7 @@ void handler_dev_arm_write(u2_t addr, u1_t data)
 #ifdef DEBUG
 		if (trace_regs) { printf("* "); fflush(stdout); }
 #endif
+		freq_record(0, REG_STR, 0, 0, 0, "* ");
 
 		if (use_pru) {
 			assert(pru->count == PRU_DONE);
@@ -351,6 +371,15 @@ void handler_dev_arm_write(u2_t addr, u1_t data)
 	if (use_pru && hold_off && (addr == WREG_O3)) {
 		return;
 	}
+
+#ifdef FREQ_DEBUG
+	if (use_pru && !hold_off) {
+		if (addr == WREG_O3) {
+			if (isActive(O3_N3_OVRST, data) || isActive(O3_N0_OVRST, data))
+				freq_record(0, REG_READ, addr, data, 0, 0);
+		}
+	}
+#endif
 
 	bus_write(addr, data);
 }
@@ -379,6 +408,33 @@ u1_t handler_dev_display_read(u2_t addr)
 	return data;
 }
 
+#ifdef FREQ_DEBUG
+
+void reg_dump_read(u2_t addr, u1_t data, u4_t dup, u4_t time, char *str)
+{
+	if (addr == RREG_N0ST) {
+		printf("%02x", data);
+		if (isActive(N0ST_EOM, data)) printf("EOM");
+		if (isActive(N0ST_N3_OVFL, data)) printf("3V");
+		if (isActive(N0ST_N0_OVFL, data)) printf("0V");
+		printf(".");
+	}
+
+	if (addr == WREG_O3) {
+		printf("%02x", data);
+		if (isActive(O3_N3_OVRST, data)) printf("3C");
+		if (isActive(O3_N0_OVRST, data)) printf("0C");
+		printf(".");
+	}
+}
+
+void reg_dump_str(u2_t addr, u1_t data, u4_t dup, u4_t time, char *str)
+{
+	printf("%s", str);
+}
+
+#endif
+
 void handler_dev_display_write(u2_t addr, u1_t data)
 {
 
@@ -400,8 +456,9 @@ void handler_dev_display_write(u2_t addr, u1_t data)
 	if ((display_all || deviation) && (addr == ADDR_7SEG(0xf))) {
 		static char dbuf[128];
 		static double dval2;
-		static u4_t ddn;
+		static u4_t ddn, dskip;
 
+		freq_record(0, REG_STR, 0, 0, 0, "D ");
 		dsp_7seg_translate(dbuf, &dval2); ddn++;
 		
 		if (display_all || ((ddn & 0xf) == 0))
@@ -410,7 +467,13 @@ void handler_dev_display_write(u2_t addr, u1_t data)
 		if (deviation && (fabs(dval-dval2) > 0.000001)) {
 			printf("+%d %12.9f\n", ddn, dval2);
 			ddn = 0;
+#ifdef FREQ_DEBUG
+			if (dskip > 50) reg_dump(0, reg_dump_read, NULL, reg_dump_str);
+#endif
 		}
+		
+		freq_record(0, REG_RESET, 0, 0, 0, 0);
+		dskip++;
 	}
 #endif
 
@@ -480,9 +543,7 @@ u1_t readDev(u2_t addr)
 #endif
 {
 
-#ifdef REG_RECORD
 	reg_stamp(0, iCount, rPC, n_irq, irq_masked);
-#endif
 
 	// PHK: manual pg 8-57, flowchart box 11: A15 is a signature analyzer trigger
 	if (addr == 0x804f)

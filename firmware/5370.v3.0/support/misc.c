@@ -99,36 +99,40 @@ typedef struct {
 	t_hr_stamp stamp;
 	u2_t addr;
 	u1_t data;
-	u1_t rwn;
+	reg_type_t type;
 	u4_t dup;
 	u4_t time;
+	char *str;
 } hr_buf_t;
 
 #define NCHAN 2
 #define NHP (256*1024)
 
 static hr_buf_t hr_buf[NCHAN][NHP];
-static int nhp[NCHAN] = {0, 0};
+static u4_t nhp[NCHAN] = {0, 0};
 static t_hr_stamp hr_stamp;
 static u4_t last_iCount = 0;
 
-void reg_record(int chan, u1_t rwn, u2_t addr, u1_t d, u4_t time)
+void reg_record(int chan, reg_type_t type, u2_t addr, u1_t d, u4_t time, char *str)
 {
+	assert(chan < NCHAN);
 	hr_buf_t *hp = &hr_buf[chan][nhp[chan]];
 	
-	if (chan < 0) { nhp[(-chan)-1] = 0; return; }
+	if (type == REG_RESET) { nhp[chan] = 0; return; }
 
 	if (nhp[chan] < NHP) {
-		//if ((nhp[chan] > 0) && (addr == (hp-1)->addr) && (d == (hp-1)->data) && ((hp-1)->rwn == rwn)) {
+		//if ((nhp[chan] > 0) && (addr == (hp-1)->addr) && (d == (hp-1)->data) &&
+		//	((type != REG_STR) && ((hp-1)->type == type))) {
 		if (0) {
 			(hp-1)->dup++;
 		} else {
 			hp->stamp = hr_stamp;
 			hp->addr = addr;
-			hp->rwn = rwn;
+			hp->type = type;
 			hp->data = d;
 			hp->dup = 1;
 			hp->time = time;
+			hp->str = str;
 			hp++;
 			nhp[chan]++;
 		}
@@ -166,7 +170,7 @@ t_hr_stamp *reg_get_stamp()
 	return &hr_stamp;
 }
 
-void reg_dump(u1_t chan, callback_t rdecode, callback_t wdecode)
+void reg_dump(u1_t chan, callback_t rdecode, callback_t wdecode, callback_t sdecode)
 {
 	hr_buf_t *p;
 	
@@ -180,12 +184,12 @@ void reg_dump(u1_t chan, callback_t rdecode, callback_t wdecode)
 		if (p->stamp.n_irq) {
 			//printf("---- IRQ ----\n");
 		} else {
-			if (p->rwn == REG_READ) {
-				rdecode(p->addr, p->data, p->dup, p->time);
-			} else {
-				wdecode(p->addr, p->data, p->dup, p->time);
+			switch (p->type) {
+				case REG_READ:  rdecode(p->addr, p->data, p->dup, p->time, p->str); break;
+				case REG_WRITE: wdecode(p->addr, p->data, p->dup, p->time, p->str); break;
+				case REG_STR:   sdecode(p->addr, p->data, p->dup, p->time, p->str); break;
+				default: break;
 			}
-			
 			//printf("\n");
 		}
 	}
@@ -200,32 +204,32 @@ void reg_cmp(callback_t adecode)
 	max = nhp[0]>nhp[1]? nhp[0]:nhp[1];
 	min = nhp[0]<nhp[1]? nhp[0]:nhp[1];
 	for (p = &hr_buf[0][0], q = &hr_buf[1][0]; p != &hr_buf[0][max]; p++, q++, n++) {
-		if ((n < min) && ((p->addr != q->addr) || (p->data != q->data) || (p->rwn != q->rwn))) {
+		if ((n < min) && ((p->addr != q->addr) || (p->data != q->data) || (p->type != q->type))) {
 			printf("%d: ", n);
 			if (p->addr != q->addr) {
-				printf("addr "); adecode(p->addr, 0, p->rwn, p->time);
-				printf(":"); adecode(q->addr, 0, q->rwn, p->time); printf(" ");
+				printf("addr "); adecode(p->addr, 0, p->type, p->time, p->str);
+				printf(":"); adecode(q->addr, 0, q->type, p->time, p->str); printf(" ");
 			} else {
-				printf("addr "); adecode(p->addr, 0, p->rwn, p->time); printf(" ");
+				printf("addr "); adecode(p->addr, 0, p->type, p->time, p->str); printf(" ");
 			}
 			if (p->data != q->data) {
 				printf("data %02x:%02x ", p->data, q->data);
 			} else {
 				printf("data %02x ", p->data);
 			}
-			if (p->rwn != q->rwn) {
-				printf("rwn %d:%d ", p->rwn, q->rwn);
+			if (p->type != q->type) {
+				printf("type %d:%d ", p->type, q->type);
 			} else {
-				printf("rwn %d ", p->rwn);
+				printf("type %d ", p->type);
 			}
 			printf("\n");
 		}
 		if (n >= min) {
 			r = nhp[0]>nhp[1]? p:q;
 			printf("%d: ", n);
-			printf("addr "); adecode(r->addr, 0, r->rwn, p->time); printf(" ");
+			printf("addr "); adecode(r->addr, 0, r->type, p->time, p->str); printf(" ");
 			printf("data %02x ", r->data);
-			printf("rwn %d ", r->rwn);
+			printf("type %d ", r->type);
 			printf("(no cmp)\n");
 		}
 	}
