@@ -96,7 +96,7 @@ pas:	$(PASM_INCLUDES) $(PASM_SOURCE) Makefile
 	cc -Wall -D_UNIX_ -I./pru/pasm $(PASM_SOURCE) -o pas
 
 pru/pru_realtime.bin:	pas pru/pru_realtime.p pru/pru_realtime.hp
-	(cd pru; ../pas -V3 -b -D_PASM_ -D$(SETUP) pru_realtime.p)
+	(cd pru; ../pas -V3 -b -L -l -D_PASM_ -D$(SETUP) pru_realtime.p)
 
 CAPE = cape-bone-5370-00A0
 PRU  = cape-bone-5370-P-00A0
@@ -138,4 +138,4 @@ scp: tar
 	scp ../$(DIST).tgz root@$(BBB_IP):/home/root
 
 clean:
-	-rm -rf $(RMT_BINARIES) *.dSYM ../$(DIST).tgz pas pru/pru_realtime.bin
+	-rm -rf $(RMT_BINARIES) *.dSYM ../$(DIST).tgz pas $(addprefix pru/pru_realtime., bin lst txt)

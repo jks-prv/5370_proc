@@ -100,12 +100,12 @@
 
 .macro eget
 .mparam dst, src, elem
-    LBBO    dst, src, OFFSET(elem), SIZE(elem)
+    lbbo    dst, src, OFFSET(elem), SIZE(elem)
 .endm
 
 .macro eput
 .mparam src, dst, elem
-    SBBO    src, dst, OFFSET(elem), SIZE(elem)
+    sbbo    src, dst, OFFSET(elem), SIZE(elem)
 .endm
 
 
@@ -113,32 +113,32 @@
 
 .macro  ld32
 .mparam dst, src, off
-    LBBO    dst, src, off, 4
+    lbbo    dst, src, off, 4
 .endm
 
 .macro  ld16
 .mparam dst, src, off
-    LBBO    dst, src, off, 2
+    lbbo    dst, src, off, 2
 .endm
 
 .macro  ld8
 .mparam dst, src, off
-    LBBO    dst, src, off, 1
+    lbbo    dst, src, off, 1
 .endm
 
 .macro st32
 .mparam src, dst, off
-    SBBO    src, dst, off, 4
+    sbbo    src, dst, off, 4
 .endm
 
 .macro st16
 .mparam src, dst, off
-    SBBO    src, dst, off, 2
+    sbbo    src, dst, off, 2
 .endm
 
 .macro st8
 .mparam src, dst, off
-    SBBO    src, dst, off, 1
+    sbbo    src, dst, off, 1
 .endm
 
 #endif //_PRU_REALTIME_HP_

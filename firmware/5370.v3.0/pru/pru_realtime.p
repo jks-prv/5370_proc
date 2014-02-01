@@ -91,11 +91,13 @@
 		.u32	n0_ovfl
 		.u32	n3_ovfl
 		.u32	ovfl_none
-		.u32	ra1
-		.u32	ra2
+		.u16	ra1
+		.u16	ra2
+		.u32	io30
+		.u32	io31
 	.ends
 	
-	.assign	regs, r7, r29, r			// r0-r6 are temps, avoid r30-r31
+	.assign	regs, r8, r31, r			// r0-r6 are temps, avoid r30-r31
 
 start:
     // enable OCP master ports so we can access gpio & timer
