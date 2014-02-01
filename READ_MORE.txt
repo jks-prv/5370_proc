@@ -1,4 +1,4 @@
-[edited 1/31/2014]
+[edited 2/1/2014]
 
 This file elaborates on the Quick Start guide in the "README.txt" file.
 
@@ -92,11 +92,16 @@ To decrease boot time, and reduce interference with the 5370 app, the Gnome Disp
 Command shortcuts:
 There are a bunch of shortcut command aliases in the file /home/root/.profile Of course these can't be used until the 5370 software is installed for the first time, which will be true if you purchased the board with the BBB installed. So you can just type "m" instead of "make", "mi" for "make install" etc. Also useful is the "ntp" shortcut which should set the correct time & date if there is an Internet connection.
 
+Random BBB annoyances:
+There are a number of small, but irritating, problems with Angstrom on the BBB. If you're logged in but notice additional attempts to connect with ssh or scp give "... port 22: Connection refused" then restart "dropbear" by typing the command alias "db" via your working connection (or via the serial port, etc.) No need to reboot.
+
+The Ethernet port doesn't seem to reliably get an IP address from the DHCP server. Instead it will default to one of those self-assigned 169.xxx addresses which won't work. This seems to be true occasionally for USB networking as well. I don't know any other solution than to reboot.
+
 BBB bricked:
 In the (hopefully unlikely) event that your BBB becomes "bricked" the BBB wiki link above shows how to re-flash an Angstrom distribution onto the eMMC. You would of course then need to re-install the 5370 software as well.
 
 Versionitis:
-We all know stuff breaks when using different versions of things. All the BBBs used in testing have been hardware revision "A5C" and "A6" boards. The software distribution of Angstrom Linux used was "2013.06.20" and "2013.09.04" found by doing:
+We all know stuff breaks when using different versions of things. All the BBBs used in testing have been hardware revision "A5C", "A6" and "A6A" boards. The software distribution of Angstrom Linux used was "2013.06.20" and "2013.09.04" found by doing:
 
         mkdir -p /mnt/boot
         mount /dev/mmcblk0p1 /mnt/boot
