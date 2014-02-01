@@ -52,6 +52,7 @@
 ******************************************************************************/
 
 #include "boot.h"
+#include "misc.h"
 #include "pru_realtime.h"
 #include <stdio.h>
 
@@ -85,7 +86,7 @@ void pru_start()
     pru->cmd = PRU_PING;
     while (pru->cmd != PRU_DONE);
     if (pru->p[2] != (key1+key2)) panic("PRU didn't start");
-    printf("PRU started\n");
+    lprintf("PRU started\n");
 
 #if 0
     prussdrv_pru_wait_event(PRU_EVTOUT_0);		// wait for halt
