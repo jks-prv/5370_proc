@@ -9,6 +9,7 @@ fi
 
 export PATH=.:$PATH
 
+alias ls="ls --color=auto"
 alias la="ls -la"
 alias lt="ls -lt"
 alias m="make"
@@ -34,8 +35,12 @@ alias h="history"
 alias x="exit"
 alias al="alias"
 alias soc="source ~/.profile"
+alias pe="printenv"
 alias ntp="systemctl reload-or-restart ntpdate"
+alias dl="curl -o \${DIST}.tgz www.jks.com/\${PROJ}/\${DIST}.tgz"
 alias xt="rm -rf \${DIST}; tar xfz \${DIST}.tgz; rm \${DIST}.tgz; cd \${DIST}"
+alias clone="git clone git://github.com/jks-prv/5370_proc.git"
 alias log="journalctl | tail -200"
 alias pubip="curl ident.me; echo"
 alias sc="systemctl"
+alias db="sc reload-or-restart dropbear.socket"
