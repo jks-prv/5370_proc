@@ -61,6 +61,7 @@ int main(int argc, char *argv[])
 	app_state_e app_state;
 	bool save_cfg = FALSE;
 	bool change_settings_ui(u1_t key, bool *skip_first, cfg_t *cfg);
+	bool show_ip = FALSE;
 	
 	FILE *cfp, *efp;
 	char *config_file = "~/.instr.config";
@@ -70,6 +71,7 @@ int main(int argc, char *argv[])
 	
 	for (i=1; i<argc; i++) {
 		if (strcmp(argv[i], "-bg") == 0) background_mode = TRUE;
+		if (strcmp(argv[i], "-ip") == 0) show_ip = TRUE;
 	}
 	
 	lprintf("HP%s v%d.%d\n", INST_STR, FIRMWARE_VER_MAJ, FIRMWARE_VER_MIN);
@@ -148,9 +150,10 @@ reset:
 		display_ipaddr(cfg->ip);
 	} else {
 		lprintf("eth0 not configured?");
-		dsp_7seg_str(0, "enet config?", TRUE);
+		dsp_7seg_str(0, "no ip?", TRUE);
 	}
 	delay(2000);
+	if (show_ip) xit(0);
 
 	// place a call here to setup your measurement extension code
 	meas_extend_example_init();
