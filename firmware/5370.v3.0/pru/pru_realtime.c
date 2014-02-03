@@ -52,6 +52,7 @@
 ******************************************************************************/
 
 #include "boot.h"
+#include "sim.h"
 #include "misc.h"
 #include "pru_realtime.h"
 #include <stdio.h>
@@ -67,16 +68,19 @@ static void *pruDataMem;
 void pru_start()
 {
     unsigned int ret;
+    char *bin;
+    
     tpruss_intc_initdata pruss_intc_initdata = PRUSS_INTC_INITDATA;
 
     prussdrv_init();		
     if (prussdrv_open(PRU_EVTOUT_0)) panic("prussdrv_open");
-    prussdrv_pruintc_init(&pruss_intc_initdata);
+    if (prussdrv_pruintc_init(&pruss_intc_initdata)) panic("prussdrv_pruintc_init");
 
-	prussdrv_map_prumem(PRUSS0_PRU0_DATARAM, &pruDataMem);
+	if (prussdrv_map_prumem(PRUSS0_PRU0_DATARAM, &pruDataMem)) panic("prussdrv_map_prumem");
     pru = (com_t *) pruDataMem;
 
-    prussdrv_exec_program(PRU_NUM, "pru/pru_realtime.bin");
+	bin = background_mode? "/usr/local/bin/hp5370d_realtime.bin" : "pru/pru_realtime.bin";
+    if (prussdrv_exec_program(PRU_NUM, bin)) panic("prussdrv_exec_program");
     
     pru->p[2] = 0;
     u4_t key1 = sys_now_us();

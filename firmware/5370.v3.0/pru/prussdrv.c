@@ -46,7 +46,7 @@
  * ============================================================================
  */
 
-
+#include "misc.h"
 #include <prussdrv.h>
 #include "__prussdrv.h"
 #include <pthread.h>
@@ -54,7 +54,8 @@
 
 //#define __DEBUG
 #ifdef __DEBUG
-#define DEBUG_PRINTF(FORMAT, ...) fprintf(stderr, FORMAT, ## __VA_ARGS__)
+//#define DEBUG_PRINTF(FORMAT, ...) fprintf(stderr, FORMAT, ## __VA_ARGS__)
+#define DEBUG_PRINTF(FORMAT, ...) lprintf(FORMAT, ## __VA_ARGS__)
 #else
 #define DEBUG_PRINTF(FORMAT, ...)
 #endif
@@ -80,14 +81,23 @@ int __prussdrv_memmap_init(void)
         else
             prussdrv.mmap_fd = prussdrv.fd[i];
     }
-    fd = open(PRUSS_UIO_DRV_PRUSS_BASE, O_RDONLY);
-    if (fd >= 0) {
-        read(fd, hexstring, PRUSS_UIO_PARAM_VAL_LEN);
-        prussdrv.pruss_phys_base =
-            strtoul(hexstring, NULL, HEXA_DECIMAL_BASE);
-        close(fd);
-    } else
-        return -1;
+    
+    for (i=0; i<UIO_OPEN_TIMEOUT; i++) {
+		fd = open(PRUSS_UIO_DRV_PRUSS_BASE, O_RDONLY);
+		if (fd >= 0) {
+			read(fd, hexstring, PRUSS_UIO_PARAM_VAL_LEN);
+			prussdrv.pruss_phys_base =
+				strtoul(hexstring, NULL, HEXA_DECIMAL_BASE);
+			close(fd);
+			break;
+		}
+		sleep(1);
+	}
+	if (i==UIO_OPEN_TIMEOUT) {
+		DEBUG_PRINTF("open %s: timeout\n", PRUSS_UIO_DRV_PRUSS_BASE);
+		return -2;
+	}
+        
     fd = open(PRUSS_UIO_DRV_PRUSS_SIZE, O_RDONLY);
     if (fd >= 0) {
         read(fd, hexstring, PRUSS_UIO_PARAM_VAL_LEN);
@@ -95,7 +105,7 @@ int __prussdrv_memmap_init(void)
             strtoul(hexstring, NULL, HEXA_DECIMAL_BASE);
         close(fd);
     } else
-        return -1;
+        return -3;
 
     prussdrv.pru0_dataram_base =
         mmap(0, prussdrv.pruss_map_size, PROT_READ | PROT_WRITE,
@@ -200,7 +210,7 @@ int __prussdrv_memmap_init(void)
             strtoul(hexstring, NULL, HEXA_DECIMAL_BASE);
         close(fd);
     } else
-        return -1;
+        return -4;
 
 
     fd = open(PRUSS_UIO_DRV_L3RAM_SIZE, O_RDONLY);
@@ -210,7 +220,7 @@ int __prussdrv_memmap_init(void)
             strtoul(hexstring, NULL, HEXA_DECIMAL_BASE);
         close(fd);
     } else
-        return -1;
+        return -5;
 
     prussdrv.l3ram_base =
         mmap(0, prussdrv.l3ram_map_size, PROT_READ | PROT_WRITE,
@@ -224,7 +234,7 @@ int __prussdrv_memmap_init(void)
             strtoul(hexstring, NULL, HEXA_DECIMAL_BASE);
         close(fd);
     } else
-        return -1;
+        return -6;
 
     fd = open(PRUSS_UIO_DRV_EXTRAM_SIZE, O_RDONLY);
     if (fd >= 0) {
@@ -233,7 +243,7 @@ int __prussdrv_memmap_init(void)
             strtoul(hexstring, NULL, HEXA_DECIMAL_BASE);
         close(fd);
     } else
-        return -1;
+        return -7;
 
 
     prussdrv.extram_base =
@@ -253,10 +263,21 @@ int prussdrv_init(void)
 
 int prussdrv_open(unsigned int host_interrupt)
 {
+	int i, fd;
+	
     char name[PRUSS_UIO_PRAM_PATH_LEN];
     if (!prussdrv.fd[host_interrupt]) {
         sprintf(name, "/dev/uio%d", host_interrupt);
-        prussdrv.fd[host_interrupt] = open(name, O_RDWR | O_SYNC);
+        for (i=0; i<UIO_OPEN_TIMEOUT; i++) {
+        	if ((fd = open(name, O_RDWR | O_SYNC)) >= 0)
+        		break;
+        	sleep(1);
+        }
+        if (i==UIO_OPEN_TIMEOUT) {
+			DEBUG_PRINTF("open %s: timeout\n", name);
+        	return -1;
+        }
+        prussdrv.fd[host_interrupt] = fd;
         return __prussdrv_memmap_init();
     } else {
         return -1;

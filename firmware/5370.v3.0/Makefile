@@ -104,7 +104,10 @@ TEST = cape-bone-test-00A0
 
 install: hd.bin h.bin
 	cp h.bin hp5370d
+	cp pru/pru_realtime.bin hp5370d_realtime.bin
 	install -D -s -o root -g root hp5370d /usr/local/bin/hp5370d
+	install -D -o root -g root hp5370d_realtime.bin /usr/local/bin/hp5370d_realtime.bin
+	rm hp5370d hp5370d_realtime.bin
 	install -o root -g root unix_env/hp5370d /etc/init.d
 	install -o root -g root unix_env/hp5370d.service /etc/systemd/system
 	install -D -o root -g root -m 0644 unix_env/$(CAPE).dts /lib/firmware/$(CAPE).dts
@@ -138,4 +141,4 @@ scp: tar
 	scp ../$(DIST).tgz root@$(BBB_IP):/home/root
 
 clean:
-	-rm -rf $(RMT_BINARIES) *.dSYM ../$(DIST).tgz pas $(addprefix pru/pru_realtime., bin lst txt)
+	-rm -rf $(RMT_BINARIES) $(wildcard hp5370d*) *.dSYM ../$(DIST).tgz pas $(addprefix pru/pru_realtime., bin lst txt)

@@ -186,6 +186,7 @@
 #define PRUSS_UIO_DRV_EXTRAM_BASE "/sys/class/uio/uio0/maps/map1/addr"
 #define PRUSS_UIO_DRV_EXTRAM_SIZE "/sys/class/uio/uio0/maps/map1/size"
 
+#define UIO_OPEN_TIMEOUT 15
 
 #endif
 
