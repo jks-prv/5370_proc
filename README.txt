@@ -1,4 +1,4 @@
-[edited 1/18/2014]
+[edited 2/3/2014]
 
 This document describes the HP 5370 processor replacement board project.
 
@@ -56,7 +56,7 @@ Now type the following to fetch and install the software:
 	cd 5370.v3.0
 	make install
 
-If there were no errors test the install by running the 5370 app manually. Just type the command "hd" and then, after the 5370 has responded properly, control-C to stop. The "make install" above installs the app so it automatically runs when the BBB is next booted. You can type "reboot" to test this. Remember to type "halt" and wait 10 seconds before powering off.
+If there were no errors test the install by running the 5370 app manually. Just type the command "./hd" and then, after the 5370 has responded properly, control-C to stop. The "make install" above installs the app so it automatically runs when the BBB is next booted. You can type "reboot" to test this. Remember to type "halt" and wait 10 seconds before powering off.
 
 
 [ end of document ]
