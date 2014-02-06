@@ -26,10 +26,6 @@
 // DEBUG
 // INSN_TRACE
 
-#define INT_NMI  1
-#define INT_FIRQ 2
-#define INT_IRQ  4
-
 // redefined from 6800 standard 0xfffx to speed memory access routines via easier address decoding
 #define	VEC_RESET	0x7ffe
 #define	VEC_NMI		0x7ffc
@@ -123,7 +119,7 @@ u1_t ram_image[RAM_SIZE];
 	bool iDump;
 #endif
 
-static int IRQs = 0;
+static u1_t IRQs = 0;
 
 #ifdef DEBUG
 	int irq_trace = 0;
@@ -200,6 +196,7 @@ void sim_processor()
 	u1_t t_rA, t_rB;
 	u2_t t_rX, t_rSP, t_rPC;
 	u1_t t_IRQ, t_C, t_VNZ;
+	u1_t taken;
 
 	trace_init();
 #endif
@@ -459,8 +456,13 @@ doexecute: ;
 
 	// interpreter
 
+#ifdef INSN_TRACE
+	#define BRANCH_ALWAYS()			taken=1; goto branch_taken;
+	#define BRANCH_TAKEN()			taken=1; goto branch_taken;
+#else
 	#define BRANCH_ALWAYS()			goto branch_taken;
 	#define BRANCH_TAKEN()			goto branch_taken;
+#endif
 	
 	#define INSN(opc, opn, x) \
 			case opc: \
@@ -479,6 +481,7 @@ doexecute: ;
 		t_IRQ = IRQ;
 		t_C = C;
 		t_VNZ = VNZ;
+		taken=0;
 	}
 #endif
 
@@ -524,6 +527,10 @@ doexecute: ;
 		
 		// instruction operand shorthand
 		#define NA(x)		x
+		#define WR_A(x)		x
+		#define WR_B(x)		x
+		#define BRANCH(x)	x
+		#define COND(x)		x
 		#define CALL(x)		x
 		#define RTN(x)		x
 		#define IMM(x)		x;
@@ -546,7 +553,7 @@ branch_taken:
 
 #ifdef INSN_TRACE
 	if (itr) {
-		trace(t_iCount, t_rPC, t_IRQ, t_rA, t_rB, t_rX, t_rSP, t_C, t_VNZ, tU8, tU16);
+		trace(t_iCount, t_rPC, rPC, taken, t_IRQ, IRQs, t_rA, t_rB, t_rX, t_rSP, t_C, t_VNZ, tU8, tU16);
 	}
 #endif
 

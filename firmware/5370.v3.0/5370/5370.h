@@ -2,13 +2,15 @@
 #define _5370_H_
 
 #include "5370_regs.h"
+#include "6800.h"
 
 #define	DEV_HPIB	0
 #define	DEV_ARM		1
 #define	DEV_DSP		2
 #define	N_DEV		3
 
-#define	DEV_SPACE_SIZE	0x80
+#define	DEV_START	0x0000
+#define	DEV_SIZE	0x0080
 
 #define	ROM_START	0x6000
 #define	ROM_MASK	0x6000
@@ -31,7 +33,6 @@
 
 #ifdef DEBUG
 	#define BIT_AREG(reg)	(1 << ((RREG_ ## reg) - ADDR_ARM(0)))
-	#define PBIT(b)	if (isActive(b, data)) printf("%s ", # b);
 
 	#define DUMP_AREG(areg, addr, data) \
 	({ \
@@ -39,6 +40,8 @@
 		u2_t bit = BIT_AREG(areg); \
 		if ((addr == a) && (dump_regs & bit)) { printf("%s 0x%x %d  ", # areg, data, data); dump_regs &= ~bit; if (!dump_regs) printf("\n"); } \
 	})
+
+	void dev_decode_regs(insn_attrs_t *ia, u1_t rw, u2_t addr, u1_t data);
 #else
 	#define DUMP_AREG(areg, addr, data)
 #endif

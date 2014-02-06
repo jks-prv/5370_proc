@@ -22,7 +22,7 @@ char *sim_input();
 #define	PF(...)		tr_printf(sprintf(tr_s(), __VA_ARGS__))
 #define	PFC(c, ...)	if (c) tr_printf(sprintf(tr_s(), __VA_ARGS__))
 
-void trace(u4_t iCount, u2_t rPC, u1_t IRQ, u1_t a, u1_t b, u2_t x, u2_t sp, u1_t C, u1_t VNZ, u1_t tU8, u2_t tU16);
+void trace(u4_t iCount, u2_t rPC, u2_t nPC, u1_t taken, u1_t IRQ, u1_t IRQs, u1_t a, u1_t b, u2_t x, u2_t sp, u1_t C, u1_t VNZ, u1_t tU8, u2_t tU16);
 void trace_iSnap(int _iSnap);
 void trace_iDump(int _iDump);
 void trace_init();

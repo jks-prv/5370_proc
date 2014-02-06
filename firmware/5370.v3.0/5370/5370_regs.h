@@ -10,8 +10,8 @@
 #define	AL	0x100		// active low
 #define	AM	0xff
 #define b(f, pol) 		(f | pol)
-#define active(f)		( ((f)&AL)? 0:(f) )			// an active-low active signal is zero
-#define inactive(f)		( ((f)&AL)? ((f)&AM):0 )	// an active-low inactive signal is one
+#define active(f)		( ((f)&AL)? 0:(f) )			// an active active-low signal is zero
+#define inactive(f)		( ((f)&AL)? ((f)&AM):0 )	// an inactive active-low signal is one
 #define	dont_care(f)	0
 #define isActive(f,v)	( ((f)&AL)? (!((f)&AM&(v))) : ((f)&(v)) )
 #define isInactive(f,v)	( ((f)&AL)? ((f)&AM&(v)) : (!((f)&(v))) )
@@ -54,8 +54,8 @@
 #define I1_IO_FLO			0x01		// driven from O2_FLAG and A11 [flag] (wire or)
 
 #define RREG_ST				ADDR_ARM(4)	// 4,5 A17-U9-U11
-#define	N0ST_LOVEN			0x80		// oven temp status [loven]
-#define	N0ST_HEXT			0x40		// ext freq std [hext]
+#define	ST_OVEN				b(0x80,AL)	// oven temp status [loven]
+#define	ST_EXT				b(0x40,AH)	// ext freq std [hext]
 
 #define RREG_N0ST			ADDR_ARM(5)
 #define N0ST_STATUS			(~(N0ST_N0_POS | N0ST_N1N2) & 0xff)
@@ -66,6 +66,8 @@
 #define N0ST_PLL_OOL		b(0x08,AH)	// PLL out-of-lock, latched [lool]
 #define N0ST_N0_OVFL		b(0x04,AH)	// N0 overflow flag
 #define N0ST_N1N2			0x03		// N1N2 bits <17,16>
+#define N0ST_N1N2_B17		0x02		// N1N2 bit 17
+#define N0ST_N1N2_B16		0x01		// N1N2 bit 16
 
 #endif
 

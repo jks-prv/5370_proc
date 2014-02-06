@@ -15,7 +15,7 @@
 
 
 // configuration options
-#define HPIB_SIM				// simulates the HPIB hardware board so the unmodified firmware can continue to work
+//#define HPIB_SIM				// simulates the HPIB hardware board so the unmodified firmware can continue to work
 //#define INTERRUPTS			// real interrupts instead of polling (not fully working yet)
 //#define FASTER_INTERRUPTS
 #define HPIB_ENET_IO			// HPIB i/o redirected to tcp connection
@@ -30,7 +30,7 @@
  #define HPIB_SIM_DEBUG
  //#define RECORD_IO_HIST
  //#define HPIB_RECORD			// record HPIB bus cycles for use in developing HPIB_SIM
- #define FREQ_DEBUG
+ //#define FREQ_DEBUG
 #endif
 
 #if defined(HPIB_RECORD) || defined(HPIB_SIM_DEBUG) || defined(FREQ_DEBUG)

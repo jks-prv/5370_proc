@@ -47,7 +47,7 @@ pinmux_t pins[] = {
 	{0, 0, 0}
 };
 
-u4_t g0_addr[DEV_SPACE_SIZE], g1_addr[DEV_SPACE_SIZE], g3_addr[DEV_SPACE_SIZE];
+u4_t g0_addr[DEV_SIZE], g1_addr[DEV_SIZE], g3_addr[DEV_SIZE];
 u4_t g0_write[256], g1_write[256], g2_write[256];
 u4_t gpio_read[0x400];
 
@@ -73,7 +73,7 @@ void bus_init()
 	int i;
 	
 	// simplify scrambling somewhat by using lookup tables
-	for (i=0; i < DEV_SPACE_SIZE; i++) {
+	for (i=0; i < DEV_SIZE; i++) {
 		g0_addr[i] = ((i & B2) << 12) | ((i & B3) << 12) | ((i & B5) >> 3) | ((i & B6) >> 3);
 		g1_addr[i] = ((i & B4) << 13);
 		g3_addr[i] = ((i & B0) << 16) | ((i & B1) << 18);

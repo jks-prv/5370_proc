@@ -60,7 +60,7 @@ typedef struct {
    dev_write_t dev_write;
 } dev_io_t;
 
-dev_io_t dev_io[DEV_SPACE_SIZE];
+dev_io_t dev_io[DEV_SIZE];
 
 static int tty;
 
@@ -212,34 +212,6 @@ u1_t handler_dev_arm_read(u2_t addr)
 	if (addr == RREG_A16_SWITCHES) data = 0;	// force self-test mode (simulate all switches down)
 #endif
 
-#ifdef DEBUG
-	if (iDump) {
-		printf("ARM read %s @ 0x%x 0x%x <", arm_rreg[addr - ADDR_ARM(0)], addr, data);
-		switch (addr) {
-		case RREG_I1:
-			PBIT(I1_IRQ);
-			PBIT(I1_RTI_MASK);
-			PBIT(I1_RST_TEST);
-			PBIT(I1_SRATE);
-			PBIT(I1_LRMT);
-			PBIT(I1_LRTL);
-			PBIT(I1_MAN_ARM);
-			PBIT(I1_IO_FLO);
-			break;
-		case RREG_N0ST:
-			PBIT(N0ST_N3_OVFL);
-			PBIT(N0ST_EOM);
-			PBIT(N0ST_ARMED);
-			PBIT(N0ST_PLL_OOL);
-			PBIT(N0ST_N0_OVFL);
-			break;
-		default:
-			break;
-		}
-		printf(">\n");
-	}
-#endif
-
 	// The interrupt from pressing the LCL/RMT key causes the RREG_I1 to be read.
 	// Check for a regular key being simultaneously pressed and then when the
 	// register is accessed outside of the interrupt routine use the "sim key"
@@ -290,47 +262,6 @@ u1_t handler_dev_arm_read(u2_t addr)
 
 void handler_dev_arm_write(u2_t addr, u1_t data)
 {
-
-#ifdef DEBUG
-	if (iDump) {
-		printf("ARM write %s @ 0x%x 0x%x <", arm_wreg[addr - ADDR_ARM(0)], addr, data);
-		switch (addr) {
-		case WREG_O2:
-			PBIT(O2_FLAG);
-			PBIT(O2_SRATE_EN);
-			PBIT(O2_HTOGL);
-			PBIT(O2_GATE_MODE);
-			PBIT(O2_HARMCT3);
-			PBIT(O2_ARM_MODE);
-			PBIT(O2_MAN_ARM);
-			PBIT(O2_ARM_EN);
-			break;
-		case WREG_O1:
-			PBIT(O1_LRM_MASK);
-			PBIT(O1_RTI_MASK);
-			PBIT(O1_LHLDEN);
-			PBIT(O1_STOPSW);
-			PBIT(O1_STARTSW);
-			PBIT(O1_HSET2);
-			PBIT(O1_HSET1);
-			PBIT(O1_HSTD);
-			break;
-		case WREG_O3:
-			PBIT(O3_SELF_CLR);
-			PBIT(O3_RST_TEST);
-			PBIT(O3_LARMRST);
-			PBIT(O3_LOLRST);
-			PBIT(O3_N3_OVRST);
-			PBIT(O3_N0_OVRST);
-			PBIT(O3_N3_RST);
-			PBIT(O3_N012_RST);
-			break;
-		default:
-			break;
-		}
-		printf(">\n");
-	}
-#endif
 
 	assert (addr == WREG_LDACCW || addr == WREG_LDACSTART || addr == WREG_LDACSTOP ||
 		addr == WREG_O2 || addr == WREG_O1 || addr == WREG_O3);
@@ -481,6 +412,123 @@ void handler_dev_display_write(u2_t addr, u1_t data)
 
 #ifdef DEBUG
 
+// for printing (pr) use isActive() for actual value
+// for decode (!pr) use bit mask value with AH/AL not taken into account (for now)
+#define DBIT(pr, s, data, bit) if ((!pr && (data & bit)) || (pr && isActive(bit, data))) *s++ = #bit;
+
+void dev_decode_regs(insn_attrs_t *ia, u1_t rw, u2_t addr, u1_t data)
+{
+	int pr = (ia == 0);
+	u4_t f;
+	char *strs[8] = {0,0,0,0,0,0,0,0}, **s = strs, **p = strs;
+
+	//printf("ARM read %s @ 0x%x 0x%x <", arm_rreg[addr - ADDR_ARM(0)], addr, data);
+
+	if (rw) switch (addr) {
+
+	case RREG_LDACSR:
+		DBIT(pr, s, data, DSR_TRIG_LVL_STOP);
+		DBIT(pr, s, data, DSR_TRIG_LVL_START);
+		DBIT(pr, s, data, DSR_SPARE);
+		DBIT(pr, s, data, DSR_VOK);
+		break;
+
+	case RREG_I1:
+		DBIT(pr, s, data, I1_IRQ);
+		DBIT(pr, s, data, I1_RTI_MASK);
+		DBIT(pr, s, data, I1_RST_TEST);
+		DBIT(pr, s, data, I1_SRATE);
+		DBIT(pr, s, data, I1_LRMT);
+		DBIT(pr, s, data, I1_LRTL);
+		DBIT(pr, s, data, I1_MAN_ARM);
+		DBIT(pr, s, data, I1_IO_FLO);
+		break;
+
+	case RREG_ST:
+		DBIT(pr, s, data, ST_OVEN);
+		DBIT(pr, s, data, ST_EXT);
+		break;
+
+	case RREG_N0ST:
+		DBIT(pr, s, data, N0ST_N3_OVFL);
+		DBIT(pr, s, data, N0ST_EOM);
+		DBIT(pr, s, data, N0ST_N0_POS);
+		DBIT(pr, s, data, N0ST_ARMED);
+		DBIT(pr, s, data, N0ST_PLL_OOL);
+		DBIT(pr, s, data, N0ST_N0_OVFL);
+		DBIT(pr, s, data, N0ST_N1N2_B17);
+		DBIT(pr, s, data, N0ST_N1N2_B16);
+		break;
+
+	default:
+		break;
+	}
+
+	//printf("ARM write %s @ 0x%x 0x%x <", arm_wreg[addr - ADDR_ARM(0)], addr, data);
+
+	if (!rw) switch (addr) {
+
+	case WREG_LDACCW:
+		DBIT(pr, s, data, DCW_START_DAC_OE_L);
+		DBIT(pr, s, data, DCW_STOP_DAC_OE_L);
+		DBIT(pr, s, data, DCW_RELAY);
+		DBIT(pr, s, data, DCW_LOCK_FIX);
+		DBIT(pr, s, data, DCW_SPARE);
+		DBIT(pr, s, data, DCW_HRMT_SLOPE);
+		DBIT(pr, s, data, DCW_FWD_REV_START);
+		DBIT(pr, s, data, DCW_FWD_REV_STOP);
+		break;
+
+	case WREG_O2:
+		DBIT(pr, s, data, O2_FLAG);
+		DBIT(pr, s, data, O2_SRATE_EN);
+		DBIT(pr, s, data, O2_HTOGL);
+		DBIT(pr, s, data, O2_GATE_MODE);
+		DBIT(pr, s, data, O2_HARMCT3);
+		DBIT(pr, s, data, O2_ARM_MODE);
+		DBIT(pr, s, data, O2_MAN_ARM);
+		DBIT(pr, s, data, O2_ARM_EN);
+		break;
+
+	case WREG_O1:
+		DBIT(pr, s, data, O1_LRM_MASK);
+		DBIT(pr, s, data, O1_RTI_MASK);
+		DBIT(pr, s, data, O1_LHLDEN);
+		DBIT(pr, s, data, O1_STOPSW);
+		DBIT(pr, s, data, O1_STARTSW);
+		DBIT(pr, s, data, O1_HSET2);
+		DBIT(pr, s, data, O1_HSET1);
+		DBIT(pr, s, data, O1_HSTD);
+		break;
+
+	case WREG_O3:
+		DBIT(pr, s, data, O3_SELF_CLR);
+		DBIT(pr, s, data, O3_RST_TEST);
+		DBIT(pr, s, data, O3_LARMRST);
+		DBIT(pr, s, data, O3_LOLRST);
+		DBIT(pr, s, data, O3_N3_OVRST);
+		DBIT(pr, s, data, O3_N0_OVRST);
+		DBIT(pr, s, data, O3_N3_RST);
+		DBIT(pr, s, data, O3_N012_RST);
+		break;
+
+	default:
+		break;
+	}
+	
+	if (!*p) return;
+	if (!pr) f = ia->flags;
+	
+	//if (!pr && (f & _BIT)) PF("<%s> ", *p); else
+	if (pr || (!pr && (f & (_BIT | _AND | _OR | _XOR)))) {
+		PF("%s<", pr? "" : "[msk]   ");
+		int first=1;
+		for (p=strs; p!=s; first=0, p++) PF("%s%s", first? "":", ", *p);
+		PF("> ");
+	} else
+	if (!pr && *p) PF("FIXME %08x <%s> ", f, *p);
+}
+
 u1_t handler_dev_read_bad(u2_t addr)
 {
 	panic("dev read bad");
@@ -509,7 +557,7 @@ void sim_main()
 	bus_test();
 #endif
 
-	for (i = 0; i < DEV_SPACE_SIZE; i++) {
+	for (i = 0; i < DEV_SIZE; i++) {
 		dev_io_t *devp = &dev_io[i];
 		
 		if ((i >= ADDR_ARM(0)) && (i <= ADDR_ARM(0xf))) {
@@ -550,7 +598,7 @@ u1_t readDev(u2_t addr)
 		return 0;
 
 #ifdef DEBUG
-	if (addr >= DEV_SPACE_SIZE) {
+	if (addr >= DEV_SIZE) {
 		printf("addr 0x%x\n", addr);
 		panic("too big");
 	}
@@ -575,7 +623,7 @@ void writeDev(u2_t addr, u1_t data)
 #endif
 
 #ifdef DEBUG
-	if (addr >= DEV_SPACE_SIZE) {
+	if (addr >= DEV_SIZE) {
 		panic("too big");
 	}
 #endif
@@ -721,6 +769,7 @@ char *sim_input()
 
 		if (*cp == 'z') {
 			//trace_regs ^= 1;
+			trace_iDump(1);
 			return 0;
 		}
 #endif

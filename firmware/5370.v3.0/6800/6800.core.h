@@ -261,6 +261,10 @@
 	tU8; \
 })
 
+// identical to 'and' but resolves to different macro in 6800.trace.c
+#define bit(p8_1, p8_2) \
+	and(p8_1, p8_2)
+
 #define com(p8) \
 ({ \
 	u1_t d8 = p8; \

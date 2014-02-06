@@ -7,6 +7,9 @@
 #define N_OP		256
 #define N_LEGIT_OP	197
 
+#define INT_NMI  1
+#define INT_FIRQ 2
+#define INT_IRQ  4
 
 // Macros controlling the read & write of memory/device space.
 // Written this way to facilitate insertion of debugging code.
@@ -115,11 +118,51 @@
 	pushByte(addr, d8); \
 })
 
-extern u1_t rom_image[ROM_SIZE];
-extern u1_t ram_image[RAM_SIZE];
+extern u1_t rom_image[];
+extern u1_t ram_image[];
 
 #if defined(DEBUG) || defined(INSN_TRACE)
- extern char *deco[N_OP];
+
+extern char *deco[N_OP];
+
+#define	_R			0x00000001
+#define	_W			0x00000002
+#define	_RMW		0x00000004
+#define	_8			0x00000008
+#define	_16			0x00000010
+#define	_R8			0x00000020
+#define	_W8			0x00000040
+#define	_R16		0x00000080
+#define	_W16		0x00000100
+
+#define	_BRANCH		0x00000200
+#define	_COND		0x00000400
+#define	_CALL		0x00000800
+#define	_RTN		0x00001000
+
+#define	_DFLOW		0x00002000
+#define	_rA			0x00004000
+#define	_rB			0x00008000
+#define	_LD			0x00010000
+#define	_AND		0x00020000
+#define	_OR			0x00040000
+#define	_XOR		0x00080000
+#define	_BIT		0x00100000
+
+#define	_SKIP_START	0x00200000
+#define	_SKIP_STOP	0x00400000
+
+#define	_REL		0x04000000
+#define	_IMM		0x08000000
+#define	_WIM		0x10000000
+#define	_DIR		0x20000000
+#define	_EXT		0x40000000
+#define	_IDX		0x80000000
+
+typedef struct {
+	u4_t flags;
+} insn_attrs_t;
+
 #endif
 
 #endif

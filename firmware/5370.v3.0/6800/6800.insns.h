@@ -6,7 +6,7 @@
 	INSN(0x01, nop, ; );
 
 	INSN(0x06, tap, NA( setCC(rA); ) );
-	INSN(0x07, tpa, NA( rA = getCC(); ) );
+	INSN(0x07, tpa, WR_A( rA = getCC(); ) );
 
 	INSN(0x08, inx, NA( rX++; setZX(rX); ) );
 	INSN(0x09, dex, NA( rX--; setZX(rX); ) );
@@ -18,50 +18,50 @@
 	INSN(0x0e, cli, NA( clrI(); ) );
 	INSN(0x0f, sei, NA( setI(); ) );
 
-	INSN(0x16, tab, NA( xfer(rB, rA); ) );
-	INSN(0x17, tba, NA( xfer(rA, rB); ) );
+	INSN(0x16, tab, WR_B( xfer(rB, rA); ) );
+	INSN(0x17, tba, WR_A( xfer(rA, rB); ) );
 
-	INSN(0x19, daa, NA( rA = daa(rA); ) );
+	INSN(0x19, daa, WR_A( rA = daa(rA); ) );
 
-	INSN(0x20, bra, _08_REL(); NA( if (1) { branch(); } ) );
+	INSN(0x20, bra, _08_REL(); BRANCH( if (1) { branch(); } ) );
 	INSN(0x21, brn, _08_REL(); );
-	INSN(0x22, bhi, _08_REL(); NA( if (bhi()) { branch(); } ) );
-	INSN(0x23, bls, _08_REL(); NA( if (bls()) { branch(); } ) );
-	INSN(0x24, bcc, _08_REL(); NA( if (bcc()) { branch(); } ) );
-	INSN(0x25, bcs, _08_REL(); NA( if (bcs()) { branch(); } ) );
-	INSN(0x26, bne, _08_REL(); NA( if (bne()) { branch(); } ) );
-	INSN(0x27, beq, _08_REL(); NA( if (beq()) { branch(); } ) );
-	INSN(0x28, bvc, _08_REL(); NA( if (bvc()) { branch(); } ) );
-	INSN(0x29, bvs, _08_REL(); NA( if (bvs()) { branch(); } ) );
-	INSN(0x2a, bpl, _08_REL(); NA( if (bpl()) { branch(); } ) );
-	INSN(0x2b, bmi, _08_REL(); NA( if (bmi()) { branch(); } ) );
-	INSN(0x2c, bge, _08_REL(); NA( if (bge()) { branch(); } ) );
-	INSN(0x2d, blt, _08_REL(); NA( if (blt()) { branch(); } ) );
-	INSN(0x2e, bgt, _08_REL(); NA( if (bgt()) { branch(); } ) );
-	INSN(0x2f, ble, _08_REL(); NA( if (ble()) { branch(); } ) );
+	INSN(0x22, bhi, _08_REL(); COND( if (bhi()) { branch(); } ) );
+	INSN(0x23, bls, _08_REL(); COND( if (bls()) { branch(); } ) );
+	INSN(0x24, bcc, _08_REL(); COND( if (bcc()) { branch(); } ) );
+	INSN(0x25, bcs, _08_REL(); COND( if (bcs()) { branch(); } ) );
+	INSN(0x26, bne, _08_REL(); COND( if (bne()) { branch(); } ) );
+	INSN(0x27, beq, _08_REL(); COND( if (beq()) { branch(); } ) );
+	INSN(0x28, bvc, _08_REL(); COND( if (bvc()) { branch(); } ) );
+	INSN(0x29, bvs, _08_REL(); COND( if (bvs()) { branch(); } ) );
+	INSN(0x2a, bpl, _08_REL(); COND( if (bpl()) { branch(); } ) );
+	INSN(0x2b, bmi, _08_REL(); COND( if (bmi()) { branch(); } ) );
+	INSN(0x2c, bge, _08_REL(); COND( if (bge()) { branch(); } ) );
+	INSN(0x2d, blt, _08_REL(); COND( if (blt()) { branch(); } ) );
+	INSN(0x2e, bgt, _08_REL(); COND( if (bgt()) { branch(); } ) );
+	INSN(0x2f, ble, _08_REL(); COND( if (ble()) { branch(); } ) );
 
 	INSN(0x30, tsx, NA( rX = rSP + 1; ) );
 	INSN(0x31, ins, NA( rSP++; ) );
-	INSN(0x32, pula, NA( rA = pullB(); ) );
-	INSN(0x33, pulb, NA( rB = pullB(); ) );
+	INSN(0x32, pula, WR_A( rA = pullB(); ) );
+	INSN(0x33, pulb, WR_B( rB = pullB(); ) );
 	INSN(0x34, des, NA( rSP--; ) );
 	INSN(0x35, txs, NA( rSP = rX - 1; ) );
 	INSN(0x36, psha, NA( pushB(rA); ) );
 	INSN(0x37, pshb, NA( pushB(rB); ) );
-	INSN(0x39, rts, CALL( rPC = pullW(); BRANCH_ALWAYS(); ) );
+	INSN(0x39, rts, RTN( rPC = pullW(); BRANCH_ALWAYS(); ) );
 	INSN(0x3b, rti, RTN( setCC(pullB()); rB = pullB(); rA = pullB(); rX = pullW(); rPC = pullW(); BRANCH_ALWAYS(); ) );
 	INSN(0x3e, wai, NA( if (IRQs) goto checkpending; else rPC--; BRANCH_ALWAYS(); ) );
-	INSN(0x3f, swi, RTN( pushW(rPC); pushW(rX); pushB(rA); pushB(rB); pushB(getCC()); setI(); rPC = readWord(VEC_SWI); BRANCH_ALWAYS(); ) );
+	INSN(0x3f, swi, CALL( pushW(rPC); pushW(rX); pushB(rA); pushB(rB); pushB(getCC()); setI(); rPC = readWord(VEC_SWI); BRANCH_ALWAYS(); ) );
 
-	INSN(0x6e, jmp, _08_IDX(); NA( computed_goto(tAddr); ) );
-	INSN(0x7e, jmp, _16_EXT(); NA( computed_goto(tAddr); ) );
+	INSN(0x6e, jmp, _08_IDX(); BRANCH( computed_goto(tAddr); ) );
+	INSN(0x7e, jmp, _16_EXT(); BRANCH( computed_goto(tAddr); ) );
 
 	INSN(0xad, jsr, _08_IDX(); CALL( pushW(rPC); computed_goto(tAddr); ) );
 	INSN(0xbd, jsr, _16_EXT(); CALL( pushW(rPC); computed_goto(tAddr); ) );
 
 	INSN(0x8d, bsr, _08_IMM(); CALL( tS16 = (s2_t) (s1_t) tU8; pushW(rPC); rPC += tS16; BRANCH_ALWAYS(); ) );
 
-	INSN(0x1b, add, NA( rA = add(rA, rB); ) );
+	INSN(0x1b, add, WR_A( rA = add(rA, rB); ) );
 	INSN(0x8b, add, _08_IMM(); IMM(rA = add(rA, tU8)); );
 	INSN(0x9b, add, _08_DIR(); R8(rA = add(rA, tU8)); );
 	INSN(0xab, add, _08_IDX(); R8(rA = add(rA, tU8)); );
@@ -80,7 +80,7 @@
 	INSN(0xe9, adc, _08_IDX(); R8(rB = adc(rB, tU8)); );
 	INSN(0xf9, adc, _16_EXT(); R8(rB = adc(rB, tU8)); );
 
-	INSN(0x10, sub, NA( rA = sub(rA, rB); ) );
+	INSN(0x10, sub, WR_A( rA = sub(rA, rB); ) );
 	INSN(0x80, sub, _08_IMM(); IMM(rA = sub(rA, tU8)); );
 	INSN(0x90, sub, _08_DIR(); R8(rA = sub(rA, tU8)); );
 	INSN(0xa0, sub, _08_IDX(); R8(rA = sub(rA, tU8)); );
@@ -126,14 +126,14 @@
 	INSN(0xe8, eor, _08_IDX(); R8(rB = eor(rB, tU8)); );
 	INSN(0xf8, eor, _16_EXT(); R8(rB = eor(rB, tU8)); );
 
-	INSN(0x85, bit, _08_IMM(); IMM(and(rA, tU8)); );
-	INSN(0x95, bit, _08_DIR(); R8(and(rA, tU8)); );
-	INSN(0xa5, bit, _08_IDX(); R8(and(rA, tU8)); );
-	INSN(0xb5, bit, _16_EXT(); R8(and(rA, tU8)); );
-	INSN(0xc5, bit, _08_IMM(); IMM(and(rB, tU8)); );
-	INSN(0xd5, bit, _08_DIR(); R8(and(rB, tU8)); );
-	INSN(0xe5, bit, _08_IDX(); R8(and(rB, tU8)); );
-	INSN(0xf5, bit, _16_EXT(); R8(and(rB, tU8)); );
+	INSN(0x85, bit, _08_IMM(); IMM(bit(rA, tU8)); );
+	INSN(0x95, bit, _08_DIR(); R8(bit(rA, tU8)); );
+	INSN(0xa5, bit, _08_IDX(); R8(bit(rA, tU8)); );
+	INSN(0xb5, bit, _16_EXT(); R8(bit(rA, tU8)); );
+	INSN(0xc5, bit, _08_IMM(); IMM(bit(rB, tU8)); );
+	INSN(0xd5, bit, _08_DIR(); R8(bit(rB, tU8)); );
+	INSN(0xe5, bit, _08_IDX(); R8(bit(rB, tU8)); );
+	INSN(0xf5, bit, _16_EXT(); R8(bit(rB, tU8)); );
 
 	INSN(0x11, cmp, NA( cmp(rA, rB); ) );
 	INSN(0x81, cmp, _08_IMM(); IMM(cmp(rA, tU8)); );
@@ -186,48 +186,48 @@
 	INSN(0xef, stx, _08_IDX(); W16(st16(rX)); );
 	INSN(0xff, stx, _16_EXT(); W16(st16(rX)); );
 
-	INSN(0x4c, inc, NA( rA = inc(rA); ) );
-	INSN(0x5c, inc, NA( rB = inc(rB); ) );
+	INSN(0x4c, inc, WR_A( rA = inc(rA); ) );
+	INSN(0x5c, inc, WR_B( rB = inc(rB); ) );
 	INSN(0x6c, inc, _08_IDX(); RMW_8(tU8 = inc(tU8)); );
 	INSN(0x7c, inc, _16_EXT(); RMW_8(tU8 = inc(tU8)); );
 
-	INSN(0x4a, dec, NA( rA = dec(rA); ) );
-	INSN(0x5a, dec, NA( rB = dec(rB); ) );
+	INSN(0x4a, dec, WR_A( rA = dec(rA); ) );
+	INSN(0x5a, dec, WR_B( rB = dec(rB); ) );
 	INSN(0x6a, dec, _08_IDX(); RMW_8(tU8 = dec(tU8)); );
 	INSN(0x7a, dec, _16_EXT(); RMW_8(tU8 = dec(tU8)); );
 
-	INSN(0x40, neg, NA( rA = neg(rA); ) );
-	INSN(0x50, neg, NA( rB = neg(rB); ) );
+	INSN(0x40, neg, WR_A( rA = neg(rA); ) );
+	INSN(0x50, neg, WR_B( rB = neg(rB); ) );
 	INSN(0x60, neg, _08_IDX(); RMW_8(tU8 = neg(tU8)); );
 	INSN(0x70, neg, _16_EXT(); RMW_8(tU8 = neg(tU8)); );
 
-	INSN(0x43, com, NA( rA = com(rA); ) );
-	INSN(0x53, com, NA( rB = com(rB); ) );
+	INSN(0x43, com, WR_A( rA = com(rA); ) );
+	INSN(0x53, com, WR_B( rB = com(rB); ) );
 	INSN(0x63, com, _08_IDX(); RMW_8(tU8 = com(tU8)); );
 	INSN(0x73, com, _16_EXT(); RMW_8(tU8 = com(tU8)); );
 
-	INSN(0x44, lsr, NA( rA = lsr(rA); ) );
-	INSN(0x54, lsr, NA( rB = lsr(rB); ) );
+	INSN(0x44, lsr, WR_A( rA = lsr(rA); ) );
+	INSN(0x54, lsr, WR_B( rB = lsr(rB); ) );
 	INSN(0x64, lsr, _08_IDX(); RMW_8(tU8 = lsr(tU8)); );
 	INSN(0x74, lsr, _16_EXT(); RMW_8(tU8 = lsr(tU8)); );
 
-	INSN(0x46, ror, NA( rA = ror(rA); ) );
-	INSN(0x56, ror, NA( rB = ror(rB); ) );
+	INSN(0x46, ror, WR_A( rA = ror(rA); ) );
+	INSN(0x56, ror, WR_B( rB = ror(rB); ) );
 	INSN(0x66, ror, _08_IDX(); RMW_8(tU8 = ror(tU8)); );
 	INSN(0x76, ror, _16_EXT(); RMW_8(tU8 = ror(tU8)); );
 
-	INSN(0x49, rol, NA( rA = rol(rA); ) );
-	INSN(0x59, rol, NA( rB = rol(rB); ) );
+	INSN(0x49, rol, WR_A( rA = rol(rA); ) );
+	INSN(0x59, rol, WR_B( rB = rol(rB); ) );
 	INSN(0x69, rol, _08_IDX(); RMW_8(tU8 = rol(tU8)); );
 	INSN(0x79, rol, _16_EXT(); RMW_8(tU8 = rol(tU8)); );
 
-	INSN(0x47, asr, NA( rA = asr(rA); ) );
-	INSN(0x57, asr, NA( rB = asr(rB); ) );
+	INSN(0x47, asr, WR_A( rA = asr(rA); ) );
+	INSN(0x57, asr, WR_B( rB = asr(rB); ) );
 	INSN(0x67, asr, _08_IDX(); RMW_8(tU8 = asr(tU8)); );
 	INSN(0x77, asr, _16_EXT(); RMW_8(tU8 = asr(tU8)); );
 
-	INSN(0x48, asl, NA( rA = asl(rA); ) );
-	INSN(0x58, asl, NA( rB = asl(rB); ) );
+	INSN(0x48, asl, WR_A( rA = asl(rA); ) );
+	INSN(0x58, asl, WR_B( rB = asl(rB); ) );
 	INSN(0x68, asl, _08_IDX(); RMW_8(tU8 = asl(tU8)); );
 	INSN(0x78, asl, _16_EXT(); RMW_8(tU8 = asl(tU8)); );
 
@@ -236,7 +236,7 @@
 	INSN(0x6d, tst, _08_IDX(); RMW_8(tst(tU8)); );
 	INSN(0x7d, tst, _16_EXT(); RMW_8(tst(tU8)); );
 
-	INSN(0x4f, clr, NA( rA = clr(); ) );
-	INSN(0x5f, clr, NA( rB = clr(); ) );
+	INSN(0x4f, clr, WR_A( rA = clr(); ) );
+	INSN(0x5f, clr, WR_B( rB = clr(); ) );
 	INSN(0x6f, clr, _08_IDX(); W8(tU8 = clr()); );
 	INSN(0x7f, clr, _16_EXT(); W8(tU8 = clr()); );
