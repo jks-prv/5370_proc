@@ -13,7 +13,8 @@
 
 extern u1_t sim_key, sim_key_intr;
 
-void sim_init(int argc, char *argv[]);
+void sim_init();
+void sim_args(bool cmd_line, int argc, char *argv[]);
 void sim_main();
 void sim_processor();
 u4_t sim_insn_count();

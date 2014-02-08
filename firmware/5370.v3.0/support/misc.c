@@ -71,6 +71,22 @@ void lprintf(char *fmt, ...)
 	printf("%s", s);
 }
 
+int split(char *cp, int *argc, char *argv[], int nargs)
+{
+	int n=0;
+	char **ap;
+	
+	for (ap = argv; (*ap = strsep(&cp, " \t\n")) != NULL;) {
+		if (**ap != '\0') {
+			n++;
+			if (++ap >= &argv[nargs])
+				break;
+		}
+	}
+	
+	return n;
+}
+
 // assumes no phase wrap between t1 & t2
 u4_t time_diff(u4_t t1, u4_t t2)
 {

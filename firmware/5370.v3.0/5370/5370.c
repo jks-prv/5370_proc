@@ -64,14 +64,14 @@ dev_io_t dev_io[DEV_SIZE];
 
 static int tty;
 
-void sim_init(int argc, char *argv[])
+void sim_args(bool cmd_line, int argc, char *argv[])
 {
 	int i;
 
 	for (i=1; i<argc; i++) {
 #ifdef DEBUG
-		if (strcmp(argv[i], "-bug_stdev") == 0) bug_stdev = TRUE;
-		if (strcmp(argv[i], "-bug_freq") == 0) bug_freq = TRUE;
+		if (strcmp(argv[i], "-bug-stdev") == 0) bug_stdev = TRUE;
+		if (strcmp(argv[i], "-bug-freq") == 0) bug_freq = TRUE;
 		if (strcmp(argv[i], "-gt1") == 0) gate1 = TRUE;
 		if (strcmp(argv[i], "-gt2") == 0) gate2 = TRUE;
 		if (strcmp(argv[i], "-gt3") == 0) gate3 = TRUE;
@@ -83,7 +83,10 @@ void sim_init(int argc, char *argv[])
 		if (strcmp(argv[i], "-npru") == 0) use_pru = FALSE;
 #endif
 	}
+}
 
+void sim_init()
+{
 	// try and improve our performance a bit
     setpriority(PRIO_PROCESS, 0, -20);
 	scall("mlockall", mlockall(MCL_CURRENT | MCL_FUTURE));
@@ -579,7 +582,7 @@ void sim_main()
 		}
 	}
 	
-	net_connect(SERVER, NULL, NULL);
+	net_connect(SERVER, NULL, listen_port);
 
 	sim_processor();
 }
@@ -698,6 +701,17 @@ char *sim_input()
 			exit(0);
 		}
 		
+		// process command starting with '-' as args
+		if (*cp == '-') {
+			#define NARGS 16
+			int argc; char *argv[NARGS];
+			
+			argc = 1 + split(cp, &argc, &argv[1], NARGS);
+			sim_args(FALSE, argc, argv);
+			hpib_args(FALSE, argc, argv);
+			return 0;
+		}
+		
 		if (*cp == 'm') {
 			meas_extend_example(0);
 			return 0;
@@ -769,7 +783,8 @@ char *sim_input()
 
 		if (*cp == 'z') {
 			//trace_regs ^= 1;
-			trace_iDump(1);
+			//trace_iDump(1);
+			hps ^= 1;
 			return 0;
 		}
 #endif

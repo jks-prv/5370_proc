@@ -79,7 +79,11 @@ int main(int argc, char *argv[])
 
 reset:
 	app_state = APP_START;
-	sim_init(argc, argv);
+
+	sim_args(TRUE, argc, argv);
+	hpib_args(TRUE, argc, argv);
+
+	sim_init();
 
 	if ((bus_read(RREG_LDACSR) | bus_read(RREG_KEY_SCAN) | bus_read(RREG_N0ST)) == 0) {
 		lprintf("no 5370 detected?\n");

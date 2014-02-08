@@ -30,6 +30,8 @@ void xit(int err);
 
 #define scall(x, y) if ((y) < 0) sys_panic(x);
 
+int split(char *cp, int *argc, char *argv[], int nargs);
+
 #ifdef CLIENT_SIDE
  #define sys_now() 0
 #else
