@@ -15,12 +15,10 @@
 
 
 // configuration options
-//#define HPIB_SIM				// simulates the HPIB hardware board so the unmodified firmware can continue to work
+#define HPIB_SIM				// simulates the HPIB hardware board so the unmodified firmware can continue to work
 //#define INTERRUPTS			// real interrupts instead of polling (not fully working yet)
 //#define FASTER_INTERRUPTS
-#define HPIB_ENET_IO			// HPIB i/o redirected to tcp connection
 //#define HPIB_ECHO_INPUT
-#define HPIB_TELNET_TCP_PORT 0
 //#define MEAS_IP_HPIB_MEAS		// measure instructions-per-HPIB-measurement
 //#define MEAS_IPS				// measure instructions-interpreted-per-second
 

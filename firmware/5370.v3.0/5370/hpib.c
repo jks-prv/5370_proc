@@ -11,7 +11,6 @@
  * 
  */
 
-//#define DISABLE_HPIB
 //#define HPIB_DECODE
 
 #include "boot.h"
@@ -32,12 +31,32 @@
 	#define D_HPIB(x)
 #endif
 
-#ifdef DISABLE_HPIB
-	static bool hpib_remind = FALSE;
+typedef enum { HPIB_HARD, HPIB_SIMU, HPIB_ENET, HPIB_DISA } hpib_dev_t;
+hpib_dev_t hpib_dev = HPIB_ENET;
+
+void hpib_args(bool cmd_line, int argc, char *argv[])
+{
+	int i;
+
+	for (i=1; i<argc; i++) {
+		if (strcmp(argv[i], "-hpib-hard") == 0) hpib_dev = HPIB_HARD;
+		if (strcmp(argv[i], "-hpib-sim") == 0) hpib_dev = HPIB_SIMU;
+		if (strcmp(argv[i], "-hpib-enet") == 0) hpib_dev = HPIB_ENET;
+		if (strcmp(argv[i], "-hpib-dis") == 0) hpib_dev = HPIB_DISA;
+	}
+
+#ifndef HPIB_SIM
+	if ((hpib_dev == HPIB_SIMU) || (hpib_dev == HPIB_ENET))
+		printf("WARNING: HPIB_SIM not defined at compile-time\n");
 #endif
+
+	if (hpib_dev == HPIB_DISA) printf("REMINDER: HPIB bus transactions DISABLED\n");
+}
 
 #ifdef HPIB_SIM
 	static u1_t hpib_sim(u2_t addr, u1_t data);
+#else
+	#define hpib_sim(addr, data) 0
 #endif
 
 #if defined(HPIB_DECODE) || defined(HPIB_RECORD) || defined(HPIB_SIM_DEBUG)
@@ -171,21 +190,12 @@ u1_t handler_dev_hpib_read(u2_t addr)
 {
 	u1_t d;
 
-#ifdef DISABLE_HPIB
-	if (!hpib_remind) {
-		printf("REMINDER: HPIB configured for no real bus transactions\n");
-		hpib_remind = TRUE;
+	switch (hpib_dev) {
+		case HPIB_SIMU: case HPIB_ENET: d = hpib_sim(addr, 0); break;
+		case HPIB_HARD: d = bus_read(addr); break;
+		case HPIB_DISA: default: d = 0; break;
 	}
-
-	return 0;
-#endif
-
-#ifdef HPIB_SIM
-	d = hpib_sim(addr, 0);
-#else
-	d = bus_read(addr);
-#endif
-
+	
 #ifdef DEBUG
 	PFC(iTrace, "[HPIB read @ 0x%x 0x%x]\n", addr, d);
 #endif
@@ -278,22 +288,15 @@ static void hpib_wdecode(u2_t addr, u1_t d, u1_t count_dups)
 void handler_dev_hpib_write(u2_t addr, u1_t d)
 {
 
-#ifdef DISABLE_HPIB
-	return;
-#endif
-
 #ifdef DEBUG
 	PFC(iTrace, "[HPIB write @ 0x%x 0x%x]\n", addr, d);
 #endif
 	
-#ifdef HPIB_SIM
-	TEST3_SET();
-	hpib_sim(addr + 4, d);
-	TEST3_CLR();
-	return;
-#else
-	bus_write(addr, d);
-#endif
+	switch (hpib_dev) {
+		case HPIB_SIMU: case HPIB_ENET: hpib_sim(addr+4, d); break;
+		case HPIB_HARD: bus_write(addr, d); break;
+		case HPIB_DISA: default: break;
+	}
 	
 #ifdef HPIB_RECORD
 	reg_record(REG_WRITE, addr, d);
@@ -461,10 +464,64 @@ void handler_dev_hpib_write(u2_t addr, u1_t d)
 		break;
 #endif
 
-typedef enum { S_INIT, S_IDLE, S_LISTEN_INIT, S_LISTEN, S_TALK_INIT, S_TALKING, NSTATES } states_e;
+void hpib_enet_binary(bool fast_mode, u1_t wdata)
+{
+	if (fast_mode) {
+		u4_t *bp, nb;
+		bp = net_send(0, 0, NO_COPY(FALSE), FLUSH(FALSE));	// get buffer pointer
+
+		while (1) {		// send data as fast as possible
+			nb = hpib_fast_binary((s2_t *) bp, HPIB_MEAS_PER_FAST_PKT);		// enough data for a full packet
+			bp = net_send((char *) bp, nb, NO_COPY(TRUE), FLUSH(TRUE));
+			if (bp == 0) break;
+			{
+				u4_t now;
+				static u4_t last, meas;
+				now = sys_now();
+				if (time_diff(now, last) >= 1000) {
+					printf("%d meas/sec\n", meas);
+					last = now;
+					meas = 0;
+				}
+				meas += HPIB_MEAS_PER_FAST_PKT;
+			}
+		}
+	} else {
+
+		// inefficient, but net_send() accumulates data in buffer before sending packet anyway
+		net_send((char*) &wdata, 1, NO_COPY(FALSE), FLUSH(FALSE));
+
+		u4_t now;
+		static u4_t last, meas;
+		now = sys_now();
+		if (time_diff(now, last) >= 1000) {
+			meas /= 5;
+			printf("%d meas/sec", meas);
+		#ifdef MEAS_IP_HPIB_MEAS
+			{
+				static u4_t iCount, last_iCount;
+				iCount = sim_insn_count();
+				printf(", %d insn/meas", (iCount-last_iCount)/meas);
+				last_iCount = iCount;
+			}
+		#endif
+			printf("\n");
+			last = now;
+			meas = 0;
+		}
+		meas++;
+		if (meas & 1) {
+			TEST1_SET();
+		} else {
+			TEST1_CLR();
+		}
+	}
+}
+
+typedef enum { S_INIT, S_IDLE, S_LISTEN, S_TALK_INIT, S_TALKING, NSTATES } states_e;
 
 #ifdef HPIB_SIM_DEBUG
-	char *states[NSTATES] = { "init", "idle", "listen_init", "listen", "talk_init", "talking" };
+	char *states[NSTATES] = { "init", "idle", "listen", "talk_init", "talking" };
 	static u4_t last_iCount = 0;
 #endif
 
@@ -534,7 +591,7 @@ idle:
 		RTN_REG(R1_state, H_rdy);
 
 		case R3_status:
-			if (*hip) {	// LISTEN
+			if (*hip) {	// we have data, force LISTEN mode
 				r3 &= ~H_talk;
 				r3 |= H_listen | H_rmt;
 				rdata = r3;
@@ -552,9 +609,9 @@ idle:
 			break;
 
 		case W1_status:
-			if (wdata & H_LSRQ_o) {	// TALK
+			if (wdata & H_LSRQ_o) {	// firmware wants to TALK (service request)
 				W_REG(wdata);
-				r3 &= ~H_listen;
+				r3 &= ~H_listen;	// tell firmware we're listening (ready-for-data)
 				r3 |= H_HRFD_i | H_talk | H_rmt;
 				state = S_TALK_INIT;
 			} else {
@@ -693,12 +750,13 @@ idle:
 		}
 		break;
 		
-	case S_TALK_INIT:	// allows R3_status to read once with H_HRFD_i=1
+	case S_TALK_INIT:	// this state allows R3_status to read once with H_HRFD_i=1 before it is set to zero
 talk_init:
 		assert (r3 == (H_talk | H_HRFD_i | H_rmt));
 
 		switch (addr) {
 
+		// generate a '1' pulse with H_HRFD_i essentially
 		RTN_REGx(R3_status, r3, if (hps) printf("TALK: "); r3 &= ~H_HRFD_i; state = S_TALKING; );
 
 		RTN_REGx(R1_state, H_rdy | irqFF, irqFF = 0; );
@@ -728,6 +786,7 @@ talk_init:
 
 		case R1_state:
 			rdata = H_rdy | irqFF;
+			R_REG(rdata);
 			
 			// Hack: Only the read of R1 from the interrupt routine resets irqFF because there is a delay
 			// delivering the interrupt when using inlined code (must wait for the next branch).
@@ -737,109 +796,62 @@ talk_init:
 			break;
 
 		case W0_data_out:
-#ifdef HPIB_ENET_IO
-			if (binary_mode) {
-	#ifdef HPIB_SIM_DEBUG
-				if (HPIB_TELNET_TCP_PORT) {	// send as ascii
-					char buf[8];
-					sprintf(buf, "%d-", wdata);
-					net_send(buf, strlen(buf), FALSE, FALSE);
-				} else
-	#endif
-				{	// HPIB_TCP_PORT, send in binary as usual
+			W_REG(wdata);
 
-					if (fast_mode) {
-						u4_t *bp, nb;
-						bp = net_send(0, 0, FALSE, FALSE);	// get buffer pointer
-	
-						while (1) {		// send data as fast as possible
-							nb = hpib_fast_binary((s2_t *) bp, HPIB_MEAS_PER_FAST_PKT);		// enough data for a full packet
-							bp = net_send((char *) bp, nb, /* no copy */ TRUE, TRUE);
-							if (bp == 0) break;
-							{
-								u4_t now;
-								static u4_t last, meas;
-								now = sys_now();
-								if (time_diff(now, last) >= 1000) {
-									printf("%d meas/sec\n", meas);
-									last = now;
-									meas = 0;
-								}
-								meas += HPIB_MEAS_PER_FAST_PKT;
-							}
-						}
+			if (hpib_dev == HPIB_ENET) {
+				if (binary_mode) {
+					if (net_no_connection()) {	// send as ascii
+						char buf[8];
+						sprintf(buf, "%d-", wdata);
+						net_send(buf, strlen(buf), NO_COPY(FALSE), FLUSH(FALSE));
 					} else {
-
-						// inefficient, but net_send() accumulates data in buffer before sending packet anyway
-						net_send((char*) &wdata, 1, FALSE, FALSE);
-
-						u4_t now;
-						static u4_t last, meas;
-						now = sys_now();
-						if (time_diff(now, last) >= 1000) {
-							meas /= 5;
-							printf("%d meas/sec", meas);
-						#ifdef MEAS_IP_HPIB_MEAS
-							{
-								static u4_t iCount, last_iCount;
-								iCount = sim_insn_count();
-								printf(", %d insn/meas", (iCount-last_iCount)/meas);
-								last_iCount = iCount;
-							}
-						#endif
-							printf("\n");
-							last = now;
-							meas = 0;
-						}
-						meas++;
-						if (meas & 1) {
-							TEST1_SET();
-						} else {
-							TEST1_CLR();
-						}
+						// send in binary as usual
+						hpib_enet_binary(fast_mode, wdata);
 					}
+				} else {
+					// send ASCII
+					net_send((char*) &wdata, 1, NO_COPY(FALSE), FLUSH((wdata=='\n')? TRUE:FALSE));
 				}
 			} else {
-				net_send((char*) &wdata, 1, FALSE, (wdata=='\n')? TRUE:FALSE);
+				assert(hpib_dev == HPIB_SIMU);
+				if (binary_mode) {
+					printf("%d-", wdata);
+				} else {
+					if (hps) printf("W0_data_out=<%c> %02x ", wdata, wdata); else printf("%c", wdata);
+				}
 			}
-#else
-			if (binary_mode) {
-				printf("%d-", wdata);
-			} else {
-				if (hps) printf("W0_data_out=<%c> %02x ", wdata, wdata); else printf("%c", wdata);
-			}
-#endif
+
 			irqFF = H_IRQ;
 			if (irq_en) hpib_causeIRQ = 1;
 			break;
 
 		case R3_status:
+			R_REG(r3);
 			if (!binary_mode) {
 				state = S_IDLE;
 				goto idle;
 			}
 
 			// in binary mode from here
-#ifdef HPIB_ENET_IO
-	#ifdef HPIB_SIM_DEBUG
-			if (HPIB_TELNET_TCP_PORT) {
-				net_send("\n", 1, FALSE, TRUE);
-			} else
-	#endif
-			{	// HPIB_TCP_PORT
-				if (++loopct >= HPIB_MEAS_PER_PKT) {	// accumulate a full packet before sending
-					net_send(0, 0, FALSE, TRUE);
-					loopct = 0;
+			if (hpib_dev == HPIB_ENET) {
+				if (net_no_connection()) {
+					net_send("\n", 1, NO_COPY(FALSE), FLUSH(TRUE));
+				} else {
+					if (++loopct >= HPIB_MEAS_PER_PKT) {	// accumulate a full packet before sending
+						net_send(0, 0, NO_COPY(FALSE), FLUSH(TRUE));
+						loopct = 0;
+					}
 				}
+			} else {
+				assert(hpib_dev == HPIB_SIMU);
+				if (!hps) printf("\n");
 			}
-#else
-			if (!hps) printf("\n");
-#endif
+
 			if (*hip) {		// break out of binary mode if new input available (typically a "tb0")
 				D_HPIB(printf("exit binary mode receiving: %s", hip));
-#ifdef HPIB_ENET_IO
-				net_send(0, 0, FALSE, TRUE);		// flush any partial output
-#endif
+
+				if (hpib_dev == HPIB_ENET) net_send(0, 0, NO_COPY(FALSE), FLUSH(TRUE));		// flush any partial output
+
 				state = S_IDLE;
 				goto idle;
 			}
@@ -847,10 +859,18 @@ talk_init:
 			rdata = r3;
 			r3 |= H_HRFD_i;
 			state = S_TALK_INIT;
-			R_REG(rdata);
 			break;
 
-		ANY_WREG(W1_status, ; );
+		case W1_status:
+			if (wdata & H_LSRQ_o) {	// firmware wants to continue to TALK, e.g. "ST9" command
+				W_REG(wdata);
+				r3 &= ~H_listen;	// tell firmware we're listening (ready-for-data)
+				r3 |= H_HRFD_i | H_talk | H_rmt;
+				state = S_TALK_INIT;
+			} else {
+				W_REG(wdata);
+			}
+			break;
 
 		case W2_ctrl:
 			W_REG(wdata);

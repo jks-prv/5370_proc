@@ -25,14 +25,15 @@
 #include <netinet/ip.h>
 #include <arpa/inet.h>
 
-int sfd, srv_sock;
+static int sfd, srv_sock, listening_port;
 
-int net_connect(net_type_e cs, char *host, char *port)
+int net_connect(net_type_e cs, char *host, int port)
 {
 	struct addrinfo hints;
 	struct addrinfo *result, *rp;
 	int s;
 	struct sigaction sig;
+	char port_str[16];
 	
 	memset(&sig, 0, sizeof(struct sigaction));
 	sig.sa_handler = SIG_IGN;
@@ -52,16 +53,18 @@ int net_connect(net_type_e cs, char *host, char *port)
 		setsockopt(sfd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof val);
 		addr.sin_family = AF_INET;
 		addr.sin_addr.s_addr = INADDR_ANY;
-		addr.sin_port = htons(HPIB_TCP_PORT);
+		addr.sin_port = htons(port);
 		if (bind(sfd, (struct sockaddr*) &addr, sizeof addr) < 0) sys_panic("bind");
 		if (listen(sfd, 1) < 0) sys_panic("listen");
 		if (fcntl(sfd, F_SETFL, O_NONBLOCK) < 0) sys_panic("socket non-block");
-		lprintf("listening for TCP connection on port %d..\n", HPIB_TCP_PORT);
+		lprintf("listening for TCP connection on port %d..\n", port);
+		listening_port = port;
 		return sfd;
 	}
 	
 	// cs == CLIENT
-	s = getaddrinfo(host, port, &hints, &result);
+	sprintf(port_str, "%d", port);
+	s = getaddrinfo(host, port_str, &hints, &result);
 
 	if (s != 0) {
 	   fprintf(stderr, "getaddrinfo: \"%s\" %s\n", host, gai_strerror(s));
@@ -156,6 +159,11 @@ void net_poll()
 	}
 }
 
+bool net_no_connection()
+{
+	return ((!srv_sock)? TRUE:FALSE);
+}
+
 u4_t *net_send(char *cb, u4_t nb, bool no_copy, bool flush)
 {
 	static u4_t send_buf_aligned[HPIB_PKT_BUFSIZE/4];
@@ -176,6 +184,12 @@ u4_t *net_send(char *cb, u4_t nb, bool no_copy, bool flush)
 	}
 
 	if (flush && cnt) {
+		if (!srv_sock) {
+			if (fwrite(buf, 1, cnt, stdout) != cnt) {
+				sys_panic("net_send fwrite");
+			}
+			fflush(stdout);
+		} else
 		if (write(srv_sock, buf, cnt) < 0) {
 			if (errno == EPIPE) return 0;
 			sys_panic("net_send write");

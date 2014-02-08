@@ -48,22 +48,32 @@
 
 /*
 
+interface management signals:
+	L ATN i		attention (DIO is a cmd)
+	L IFC i		interface clear
+	L REN i		remote enable
+	L SRQ o		service request (interrupt to controller)
+	L EOI io	end-or-identify
+
+handshake signals:
+	L DAV io	data valid
+	H NRFD io	not ready-for-data
+	H NDAC io	not data accepted
+
 side effects of HPIB register access:
-
-R0_data_in	clocks data FF
-R1_state	clocks irq FF
-R2_state	clocks com FF
-R3_status	clocks rmt-qual FF
-
-W0_data_out	clocks rdy FF
-W1_status	clocks srq FF
+	R0_data_in	clocks data FF
+	R1_state	clocks irq FF
+	R2_state	clocks com FF
+	R3_status	clocks rmt-qual FF
+	
+	W0_data_out	clocks rdy FF
+	W1_status	clocks srq FF
 
 */
 
 
 // for transfers of binary measurement data over ethernet
-#define HPIB_TCP_PORT		5370
-#define HPIB_TCP_PORT_STR	"5370"
+#define HPIB_TCP_PORT	5370
 
 #define HPIB_PKT_BUFSIZE	(1048-1)
 
@@ -76,6 +86,7 @@ W1_status	clocks srq FF
 
 extern bool hpib_causeIRQ, hps;
 
+void hpib_args(bool cmd_line, int argc, char *argv[]);
 u4_t hpib_recv(void *conn, char *buf);
 void hpib_input(char *buf);
 u4_t hpib_fast_binary(s2_t *ibp, u4_t nloop);

@@ -42,6 +42,9 @@ void net_hpib(int sfd, char *cmd, bool reply)
 // measure with and without the overhead of the post-transfer calculation
 #define DO_CALC
 
+//#define HOST	"hp5370a.2217a01627"
+#define HOST	"localhost"
+
 bool background_mode = FALSE;
 
 int main(int argc, char *argv[])
@@ -51,12 +54,10 @@ int main(int argc, char *argv[])
 	u1_t *s, *s2;
 	bool rng, fast_mode = FALSE;
 	
-	if (argc >= 2) {
-		fast_mode = TRUE;
-		printf("fast mode\n");
-	}
+	i=1;
+	if ((i < argc) && (strcmp(argv[i], "-f") == 0)) { fast_mode = TRUE; i++; }
 	
-	sfd = net_connect(CLIENT, "hp5370a.2217a01627", HPIB_TCP_PORT_STR);
+	sfd = net_connect(CLIENT, (i < argc)? argv[i]:HOST, HPIB_TCP_PORT);
 
 	if (fast_mode) {
 

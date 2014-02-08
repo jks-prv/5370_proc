@@ -582,7 +582,7 @@ void sim_main()
 		}
 	}
 	
-	net_connect(SERVER, NULL, listen_port);
+	net_connect(SERVER, NULL, HPIB_TCP_PORT);
 
 	sim_processor();
 }
