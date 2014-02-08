@@ -1,5 +1,8 @@
 # Makefile for compiling 5370 project
 
+VERSION_MAJ = 3
+VERSION_MIN = 0
+
 #INSTRUMENT = HP5370A
 INSTRUMENT = HP5370B
 #INSTRUMENT = HP5359A
@@ -49,6 +52,7 @@ PCB_NAME = \"TIME-NUTS_PCB\"
 endif
 
 SIM_FLAGS = -D$(INSTRUMENT) -D$(SETUP) -DARCH_INCLUDE=$(ARCH_INCLUDE) -D$(CHIP) -DCHIP_INCLUDE=$(CHIP_INCLUDE) -DPCB_NAME=$(PCB_NAME)
+VERSION = -DFIRMWARE_VER_MAJ=$(VERSION_MAJ) -DFIRMWARE_VER_MIN=$(VERSION_MIN)
 
 VPATH = .
 VPATH += ./5370
@@ -75,7 +79,7 @@ RMT_INCLUDES += $(wildcard pru/*.h)
 
 RMT_BINARIES = hd.bin h.bin bc
 RMT_DEPENDS = $(RMT_SOURCE) $(RMT_INCLUDES) Makefile 6800.debug.c pru/pru_realtime.bin
-RMT_FLAGS = $(SIM_FLAGS) -Wno-int-to-void-pointer-cast -lpthread
+RMT_FLAGS = $(SIM_FLAGS) $(VERSION) -Wno-int-to-void-pointer-cast -lpthread
 RMT_DIRS += -L/usr/local/lib -I/usr/local/include $(INC)
 
 all: hd.bin h.bin
@@ -130,15 +134,23 @@ log:
 bc:	$(RMT_DEPENDS) 5370/hpib_client.c
 	cc -O3 -DCLIENT_SIDE $(RMT_FLAGS) 5370/hpib_client.c support/misc.c support/net.c $(RMT_DIRS) -o $@
 
-DIST = 5370.v3.0
-BBB_IP = $(IP_BBB_5370)
+v ver version:
+	@echo "you are running version" $(VERSION_MAJ)"."$(VERSION_MIN)
+
+DIST = 5370.v$(VERSION_MAJ).$(VERSION_MIN)
 
 tar:
 	make clean
-	tar cfz ../$(DIST).tgz ../$(DIST)
+	@rm -f ../5370
+	@ln -s $(DIST) ../5370
+	tar cfz ../$(DIST).tgz ../$(DIST) ../5370
+	@rm -f ../5370.tgz
+	@ln -s $(DIST).tgz ../5370.tgz
+
+BBB_IP = $(IP_BBB_5370)
 
 scp: tar
 	scp ../$(DIST).tgz root@$(BBB_IP):/home/root
 
 clean:
-	-rm -rf $(RMT_BINARIES) $(wildcard hp5370d*) *.dSYM ../$(DIST).tgz pas $(addprefix pru/pru_realtime., bin lst txt)
+	-rm -rf $(RMT_BINARIES) $(wildcard hp5370d*) *.dSYM ../$(DIST).tgz ../5370.tgz pas $(addprefix pru/pru_realtime., bin lst txt)

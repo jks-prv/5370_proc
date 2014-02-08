@@ -1,17 +1,13 @@
 #ifndef _CONFIG_H_
 #define _CONFIG_H_
 
-// firmware version
-#define	FIRMWARE_VER_MAJ	3
-#define	FIRMWARE_VER_MIN	0
-
-
 // these defines are set by the makefile:
 // {HP5370A, HP5370B, HP5359A}
 // SETUP_*
 // CHIP_INCLUDE
 // DEBUG
 // INSN_TRACE
+// FIRMWARE_VER_MAJ, FIRMWARE_VER_MIN
 
 
 // configuration options

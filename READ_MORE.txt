@@ -1,11 +1,15 @@
-[edited 2/1/2014]
+[edited 2/9/2014]
 
 This file elaborates on the Quick Start guide in the "README.txt" file.
 
 
+SOFTWARE VERSIONS
+To see what version of the software is in your build directory, go there ('cd ~/5370') and type 'm v' or 'm version'. The version is also shown on the instrument display when the app starts.
+
+
 USING GIT TO TRACK SOFTWARE CHANGES
 
-The BBB is delivered with (or you have installed) the software in the /home/root/5370.v3.0 build directory. But it might be a good idea to use the version control system "git" to track changes made on the GitHub repository github.com/jks-prv/5370_proc where the latest changes are always available. There are several ways to configure git depending on your goals. If you expect to contribute changes to the software then you should setup an account on github.com and configure git on the BBB with your account information. You should also do this if you want to be notified by email when changes are made to the repository. There is info on the web about how to setup git and it won't be repeated here.
+The BBB is delivered with (or you have installed) the software in the /home/root/5370 build directory. Note that this is actually a symlink to the current version (e.g. 5370.v3.0). But it might be a good idea to use the version control system "git" to track changes made on the GitHub repository github.com/jks-prv/5370_proc where the latest changes are always available. There are several ways to configure git depending on your goals. If you expect to contribute changes to the software then you should setup an account on github.com and configure git on the BBB with your account information. You should also do this if you want to be notified by email when changes are made to the repository. There is info on the web about how to setup git and it won't be repeated here.
 
 If you just want to use git to manually get changes then only a few commands are needed. To clone the repository initially:
 
@@ -19,7 +23,7 @@ To periodically update your copy with changes on GitHub:
 
 If you have made local changes to the software then pulling updates like this will fail if you have changed a file git is trying to update. In this case you must first configure git to establish a proper "branch" of the repository rather than just a simple clone (see web info). After that git will try to merge repository changes with your local changes and complain if it is unable to do so.
 
-Note that the build directory 5370.v3.0 is in ~/5370_proc/firmware/ of the git clone.
+Note that the build directory (e.g. 5370.v3.0) is in ~/5370_proc/firmware/ of the git clone.
 
 
 MANUALLY RUNNING THE APP
@@ -96,6 +100,9 @@ Random BBB annoyances:
 There are a number of small, but irritating, problems with Angstrom on the BBB. If you're logged in but notice additional attempts to connect with ssh or scp give "... port 22: Connection refused" then restart "dropbear" by typing the command alias "db" via your working connection (or via the serial port, etc.) No need to reboot.
 
 The Ethernet port doesn't seem to reliably get an IP address from the DHCP server. Instead it will default to one of those self-assigned 169.xxx addresses which won't work. This seems to be true occasionally for USB networking as well. I don't know any other solution than to reboot.
+
+BBB doesn't power-up:
+It is well known that older BBBs will occasionally not power-up after external power is applied. You can verify this has happened by checking for the blue LEDs on the BBB after the instrument is powered on. An instrument power-cycle should clear the problem.
 
 BBB bricked:
 In the (hopefully unlikely) event that your BBB becomes "bricked" the BBB wiki link above shows how to re-flash an Angstrom distribution onto the eMMC. You would of course then need to re-install the 5370 software as well.

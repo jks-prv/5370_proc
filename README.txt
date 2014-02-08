@@ -1,9 +1,6 @@
-[edited 2/3/2014]
+[edited 2/9/2014]
 
 This document describes the HP 5370 processor replacement board project.
-
-        Firmware release:       v3.0, October 25, 2013
-        PCB release:            v3.1, October 25, 2013
 
 Version 3.x uses an inexpensive BeagleBone Black (BBB) single-board computer as the host for the 5370 application code (app). The BBB runs Angstrom Linux from the 2GB on-board eMMC flash memory.
 
@@ -51,12 +48,11 @@ The current Angstrom distribution doesn't do a good job of starting NTP if the I
 Now type the following to fetch and install the software:
 
 	cd /home/root (if you're not there already)
-	curl -o 5370.tgz www.jks.com/5370/5370.v3.0.tgz
+	curl -o 5370.tgz www.jks.com/5370/5370.tgz
 	tar xfz 5370.tgz
-	cd 5370.v3.0
+	cd 5370
 	make install
 
 If there were no errors test the install by running the 5370 app manually. Just type the command "./hd" and then, after the 5370 has responded properly, control-C to stop. The "make install" above installs the app so it automatically runs when the BBB is next booted. You can type "reboot" to test this. Remember to type "halt" and wait 10 seconds before powering off.
-
 
 [ end of document ]
