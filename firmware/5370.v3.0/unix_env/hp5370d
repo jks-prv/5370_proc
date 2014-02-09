@@ -28,15 +28,6 @@ case "$1" in
     fi
     echo "Starting hp5370d"
 
-	if grep -q 'NTPSERVERS=""' /etc/default/ntpdate ; then
-		cp /usr/local/etc/ntpdate /etc/default;
-	fi
-
-	if date | grep -q 2000; then
-#		(echo "start NTP"; systemctl reload-or-restart ntpdate);
-		(echo "start NTP"; /usr/bin/ntpdate-sync silent);
-	fi
-
 	if [ /lib/firmware/${CAPE}.dts -nt /lib/firmware/${CAPE}.dtbo ] ; then
 		echo compile ${DEV} device tree;
 		dtc -O dtb -o /lib/firmware/${CAPE}.dtbo -b 0 -@ /lib/firmware/${CAPE}.dts;

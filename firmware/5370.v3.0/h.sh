@@ -13,13 +13,6 @@ DEV_PRU=${DEV}-P
 PRU=cape-bone-${DEV_PRU}-00A0
 SLOTS=`ls /sys/devices/bone_capemgr.*/slots`
 
-# out-of-the-box BBB doesn't seem to have NTP configured
-if grep -q 'NTPSERVERS=""' /etc/default/ntpdate ; then
-	cp unix_env/ntpdate /etc/default;
-fi
-
-if date | grep -q 2000; then (echo start NTP; systemctl reload-or-restart ntpdate); fi
-
 if [ /lib/firmware/${CAPE}.dts -nt /lib/firmware/${CAPE}.dtbo ] ; then
 	echo compile ${DEV} device tree;
 	(cd /lib/firmware; dtc -O dtb -o ${CAPE}.dtbo -b 0 -@ ${CAPE}.dts);

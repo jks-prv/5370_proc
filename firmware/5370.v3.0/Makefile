@@ -117,7 +117,7 @@ install: hd.bin h.bin
 	install -D -o root -g root -m 0644 unix_env/$(CAPE).dts /lib/firmware/$(CAPE).dts
 	install -D -o root -g root -m 0644 unix_env/$(PRU).dts /lib/firmware/$(PRU).dts
 #	install -D -o root -g root -m 0644 unix_env/$(TEST).dts /lib/firmware/$(TEST).dts
-	install -D -o root -g root -m 0644 unix_env/ntpdate /usr/local/etc/ntpdate
+	/usr/lib/connman/test/set-global-timeservers pool.ntp.org
 	install -D -o root -g root -m 0644 unix_env/.bashrc /home/root/.bashrc
 	install -D -o root -g root -m 0644 unix_env/.profile /home/root/.profile
 	systemctl enable hp5370d
