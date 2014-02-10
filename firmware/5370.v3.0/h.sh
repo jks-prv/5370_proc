@@ -3,7 +3,7 @@
 
 # hack to see if we're running on a BBB
 if test ! -d /lib/firmware; then
-	./$1
+	$*
 	exit 0
 fi
 
@@ -35,4 +35,4 @@ if ! grep -q ${DEV_PRU} $SLOTS ; then
 	echo cape-bone-${DEV_PRU} > $SLOTS;
 fi
 
-./$1
+$*
