@@ -156,8 +156,8 @@ reset:
 		lprintf("eth0 not configured?");
 		dsp_7seg_str(0, "no ip?", TRUE);
 	}
-	delay(2000);
 	if (show_ip) xit(0);
+	delay(2000);
 
 	// place a call here to setup your measurement extension code
 	meas_extend_example_init();
