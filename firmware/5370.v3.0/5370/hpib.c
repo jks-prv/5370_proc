@@ -5,9 +5,6 @@
  * TODO
  * 1. For fast mode, check the assumption that the pre-added n1n2 + n0 really always fits in 2 bytes without overflow.
  * 2. Lots of the HPIB commands are untested.
- *
- * BUGS
- * 1. ST9 only outputs "TI=..., " and then stops. Must be waiting for some sort of signal to continue.
  * 
  */
 
@@ -31,8 +28,8 @@
 	#define D_HPIB(x)
 #endif
 
-typedef enum { HPIB_HARD, HPIB_SIMU, HPIB_ENET, HPIB_DISA } hpib_dev_t;
-hpib_dev_t hpib_dev = HPIB_ENET;
+typedef enum { HPIB_HARD, HPIB_SIMU, HPIB_NET } hpib_dev_t;
+hpib_dev_t hpib_dev = HPIB_NET;
 
 void hpib_args(bool cmd_line, int argc, char *argv[])
 {
@@ -41,16 +38,14 @@ void hpib_args(bool cmd_line, int argc, char *argv[])
 	for (i=1; i<argc; i++) {
 		if (strcmp(argv[i], "-hpib-hard") == 0) hpib_dev = HPIB_HARD;
 		if (strcmp(argv[i], "-hpib-sim") == 0) hpib_dev = HPIB_SIMU;
-		if (strcmp(argv[i], "-hpib-enet") == 0) hpib_dev = HPIB_ENET;
-		if (strcmp(argv[i], "-hpib-dis") == 0) hpib_dev = HPIB_DISA;
+		if (strcmp(argv[i], "-hpib-net") == 0) hpib_dev = HPIB_NET;
 	}
 
 #ifndef HPIB_SIM
-	if ((hpib_dev == HPIB_SIMU) || (hpib_dev == HPIB_ENET))
+	if ((hpib_dev == HPIB_SIMU) || (hpib_dev == HPIB_NET))
 		printf("WARNING: HPIB_SIM not defined at compile-time\n");
 #endif
 
-	if (hpib_dev == HPIB_DISA) printf("REMINDER: HPIB bus transactions DISABLED\n");
 }
 
 #ifdef HPIB_SIM
@@ -191,9 +186,9 @@ u1_t handler_dev_hpib_read(u2_t addr)
 	u1_t d;
 
 	switch (hpib_dev) {
-		case HPIB_SIMU: case HPIB_ENET: d = hpib_sim(addr, 0); break;
+		case HPIB_SIMU: case HPIB_NET: d = hpib_sim(addr, 0); break;
 		case HPIB_HARD: d = bus_read(addr); break;
-		case HPIB_DISA: default: d = 0; break;
+		default: d = 0; break;
 	}
 	
 #ifdef DEBUG
@@ -293,9 +288,9 @@ void handler_dev_hpib_write(u2_t addr, u1_t d)
 #endif
 	
 	switch (hpib_dev) {
-		case HPIB_SIMU: case HPIB_ENET: hpib_sim(addr+4, d); break;
+		case HPIB_SIMU: case HPIB_NET: hpib_sim(addr+4, d); break;
 		case HPIB_HARD: bus_write(addr, d); break;
-		case HPIB_DISA: default: break;
+		default: break;
 	}
 	
 #ifdef HPIB_RECORD
@@ -464,7 +459,7 @@ void handler_dev_hpib_write(u2_t addr, u1_t d)
 		break;
 #endif
 
-void hpib_enet_binary(bool fast_mode, u1_t wdata)
+void hpib_net_binary(bool fast_mode, u1_t wdata)
 {
 	if (fast_mode) {
 		u4_t *bp, nb;
@@ -798,7 +793,7 @@ talk_init:
 		case W0_data_out:
 			W_REG(wdata);
 
-			if (hpib_dev == HPIB_ENET) {
+			if (hpib_dev == HPIB_NET) {
 				if (binary_mode) {
 					if (net_no_connection()) {	// send as ascii
 						char buf[8];
@@ -806,7 +801,7 @@ talk_init:
 						net_send(buf, strlen(buf), NO_COPY(FALSE), FLUSH(FALSE));
 					} else {
 						// send in binary as usual
-						hpib_enet_binary(fast_mode, wdata);
+						hpib_net_binary(fast_mode, wdata);
 					}
 				} else {
 					// send ASCII
@@ -833,7 +828,7 @@ talk_init:
 			}
 
 			// in binary mode from here
-			if (hpib_dev == HPIB_ENET) {
+			if (hpib_dev == HPIB_NET) {
 				if (net_no_connection()) {
 					net_send("\n", 1, NO_COPY(FALSE), FLUSH(TRUE));
 				} else {
@@ -850,7 +845,7 @@ talk_init:
 			if (*hip) {		// break out of binary mode if new input available (typically a "tb0")
 				D_HPIB(printf("exit binary mode receiving: %s", hip));
 
-				if (hpib_dev == HPIB_ENET) net_send(0, 0, NO_COPY(FALSE), FLUSH(TRUE));		// flush any partial output
+				if (hpib_dev == HPIB_NET) net_send(0, 0, NO_COPY(FALSE), FLUSH(TRUE));		// flush any partial output
 
 				state = S_IDLE;
 				goto idle;
