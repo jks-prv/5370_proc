@@ -62,8 +62,10 @@
 
 #define PRU_NUM 	0
 
-com_t *pru;
 static void *pruDataMem;
+
+com_t *pru;
+com2_t *pru2;
 
 void pru_start()
 {
@@ -78,18 +80,22 @@ void pru_start()
 
 	if (prussdrv_map_prumem(PRUSS0_PRU0_DATARAM, &pruDataMem)) panic("prussdrv_map_prumem");
     pru = (com_t *) pruDataMem;
+    pru2 = (com2_t *) (pruDataMem + PRU_COM_SIZE);
 
 	bin = background_mode? "/usr/local/bin/hp5370d_realtime.bin" : "pru/pru_realtime.bin";
     if (prussdrv_exec_program(PRU_NUM, bin)) panic("prussdrv_exec_program");
     
-    pru->p[2] = 0;
     u4_t key1 = sys_now_us();
     u4_t key2 = key1 >> 8;
     pru->p[0] = key1;
     pru->p[1] = key2;
+    pru->p[2] = 0;
+    pru->p[3] = 0;
+    pru2->m2_offset = 0xbeefcafe;
     pru->cmd = PRU_PING;
     while (pru->cmd != PRU_DONE);
     if (pru->p[2] != (key1+key2)) panic("PRU didn't start");
+    if (pru->p[3] != 0xbeefcafe) panic("PRU com2_t at wrong offset?");
     lprintf("PRU started\n");
 
 #if 0

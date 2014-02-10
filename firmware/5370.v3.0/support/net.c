@@ -191,7 +191,7 @@ u4_t *net_send(char *cb, u4_t nb, bool no_copy, bool flush)
 			fflush(stdout);
 		} else
 		if (write(srv_sock, buf, cnt) < 0) {
-			if (errno == EPIPE) return 0;
+			if ((errno == EPIPE) || (errno == ECONNRESET)) return 0;
 			sys_panic("net_send write");
 		}
 		send_idx = 0;

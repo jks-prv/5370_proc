@@ -46,6 +46,7 @@
 	#define DUMP_AREG(areg, addr, data)
 #endif
 
+void send_pru_cmd(u4_t cmd);
 u1_t bus_read(u2_t addr);
 void bus_write(u2_t addr, u1_t data);
 

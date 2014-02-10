@@ -282,19 +282,33 @@ CONV_DATA_DCL(d_n3_clr_ovfl);
 void bus_gpio_init()
 {
 	// for hpib_fast_binary()
-	CONV_ADDR(RREG_N0ST, a_n0st);
-	CONV_ADDR(WREG_O1, a_o1);
-	CONV_ADDR(WREG_O2, a_o2);
-	CONV_ADDR(WREG_O3, a_o3);
-	CONV_ADDR(RREG_N1N2H, a_n1n2h);
-	CONV_ADDR(RREG_N1N2L, a_n1n2l);
-	CONV_ADDR(RREG_N0H, a_n0h);
-	CONV_ADDR(RREG_N0L, a_n0l);
+#ifndef HPIB_FAST_BINARY_PRU
+	CONV_ADDR(_, a_n0st, RREG_N0ST);
+	CONV_ADDR(_, a_o1, WREG_O1);
+	CONV_ADDR(_, a_o2, WREG_O2);
+	CONV_ADDR(_, a_o3, WREG_O3);
+	CONV_ADDR(_, a_n1n2h, RREG_N1N2H);
+	CONV_ADDR(_, a_n1n2l, RREG_N1N2L);
+	CONV_ADDR(_, a_n0h, RREG_N0H);
+	CONV_ADDR(_, a_n0l, RREG_N0L);
 	
-	CONV_ADDR_DATA(WREG_O3, WREG_O3_RST, ad_rst);
-	CONV_ADDR_DATA(WREG_O2, WREG_O2_ENA, ad_ena);
-	CONV_ADDR_DATA(WREG_O2, WREG_O2_ARM, ad_arm);
-	CONV_ADDR_DATA(WREG_O2, WREG_O2_IDLE, ad_idle);
+	CONV_ADDR_DATA(_, ad_rst, WREG_O3, WREG_O3_RST);
+	CONV_ADDR_DATA(_, ad_ena, WREG_O2, WREG_O2_ENA);
+	CONV_ADDR_DATA(_, ad_arm, WREG_O2, WREG_O2_ARM);
+	CONV_ADDR_DATA(_, ad_idle, WREG_O2, WREG_O2_IDLE);
+#else
+	CONV_ADDR(pru->_, a_n0st, RREG_N0ST);
+	CONV_ADDR(pru->_, a_n0_h, RREG_N0H);
+	CONV_ADDR(pru->_, a_n1n2_h, RREG_N1N2H);
+	CONV_ADDR(pru->_, a_o3, WREG_O3);
+	CONV_WRITE_DATA(pru->_, d_n0_clr_ovfl, WREG_O3_N0_CLR_OVFL);
+	CONV_WRITE_DATA(pru->_, d_n3_clr_ovfl, WREG_O3_N3_CLR_OVFL);
+
+	CONV_ADDR_DATA(pru2->_, ad_rst, WREG_O3, WREG_O3_RST);
+	CONV_ADDR_DATA(pru2->_, ad_ena, WREG_O2, WREG_O2_ENA);
+	CONV_ADDR_DATA(pru2->_, ad_arm, WREG_O2, WREG_O2_ARM);
+	CONV_ADDR_DATA(pru2->_, ad_idle, WREG_O2, WREG_O2_IDLE);
+#endif
 
 #if 0
 	// shows redundant gpio set/clr writes for use in setting qual mask in FAST_WRITE_GPIO_QUAL_CYCLE() below
@@ -302,33 +316,37 @@ void bus_gpio_init()
 	CONV_ADDR_DATA_PRF(ad_ena);
 	CONV_ADDR_DATA_PRF(ad_arm);
 #endif
-
-	// for PRU
-	CONV_COPY_ADDR(a_n0st, pru);
-	CONV_COPY_ADDR(a_o3, pru);
-	CONV_WRITE_DATA(WREG_O3_N0_CLR_OVFL, d_n0_clr_ovfl);
-	CONV_COPY_WRITE_DATA(d_n0_clr_ovfl, pru);
-	CONV_WRITE_DATA(WREG_O3_N3_CLR_OVFL, d_n3_clr_ovfl);
-	CONV_COPY_WRITE_DATA(d_n3_clr_ovfl, pru);
 }
 
-// FIXME: rewrite to run on the PRU?
 u4_t hpib_fast_binary(s2_t *ibp, u4_t nloop)
 {
 	int i;
 	u4_t t;
 	s2_t *bp = ibp;
-	u4_t n0st, n0st2, ad_h, ad_l;
+	u4_t n0st, n0st2, n1n2_h, n1n2_l, n0_h, n0_l;
 	s4_t n1n2, n0;
-	
+
+#ifdef HPIB_FAST_BINARY_PRU
+	send_pru_cmd(PRU_BUS_CLK_STOP);
+#else
 	BUS_CLK_STOP();
-	TEST1_SET();
+#endif
 
 	for (i = 0; i < nloop; i++) {
-		
+
+#ifdef HPIB_FAST_BINARY_PRU
+		send_pru_cmd(PRU_TI_MEAS);
+
+		CONV_READ_DATA(t, n0st, pru2->_, d_n0st);
+		CONV_READ_DATA(t, n1n2_h, pru2->_, d_n1n2_h);
+		CONV_READ_DATA(t, n1n2_l, pru2->_, d_n1n2_l);
+		CONV_READ_DATA(t, n0_h, pru2->_, d_n0_h);
+		CONV_READ_DATA(t, n0_l, pru2->_, d_n0_l);
+#else
 		FAST_WRITE_ENTER();
 		FAST_WRITE_GPIO_QUAL_CYCLE(ad_rst, 1,1,1,1,1,1,1,1);
 		FAST_WRITE_GPIO_QUAL_CYCLE(ad_ena, 1,1,1,1,1,1,1,1);
+		// i.e. only gpio1 changes, gpio[023] same as previous write
 		FAST_WRITE_GPIO_QUAL_CYCLE(ad_arm, 0,0,1,1,0,0,0,0);
 		FAST_WRITE_EXIT();
 
@@ -341,9 +359,12 @@ u4_t hpib_fast_binary(s2_t *ibp, u4_t nloop)
 		FAST_WRITE_EXIT();
 
 		FAST_READ_GPIO_CYCLE(a_n0st, n0st);
-		FAST_READ2_GPIO_CYCLE(a_n1n2h, ad_h, ad_l);
-		//n1n2 = ((n0st & N0ST_N1_GPIO) << 3) | ((n0st2 & N0ST_N2_GPIO) >> 11) | (ad_h << 8) | ad_l;
-		n1n2 = ((n0st & N0ST_N1N2) << 16) | (ad_h << 8) | ad_l;
+		FAST_READ2_GPIO_CYCLE(a_n1n2h, n1n2_h, n1n2_l);
+		FAST_READ2_GPIO_CYCLE(a_n0h, n0_h, n0_l);
+#endif
+
+		//n1n2 = ((n0st & N0ST_N1_GPIO) << 3) | ((n0st2 & N0ST_N2_GPIO) >> 11) | (n1n2_h << 8) | n1n2_l;
+		n1n2 = ((n0st & N0ST_N1N2) << 16) | (n1n2_h << 8) | n1n2_l;
 
 		if (isActive(N0ST_N0_OVFL, n0st)) printf("N0 OVFL\n");
 		
@@ -352,8 +373,7 @@ u4_t hpib_fast_binary(s2_t *ibp, u4_t nloop)
 			n1n2 = n1n2 - 0x40000;
 		}
 		
-		FAST_READ2_GPIO_CYCLE(a_n0h, ad_h, ad_l);
-		n0 = (ad_h << 8) | ad_l;
+		n0 = (n0_h << 8) | n0_l;
 
 		// convert from 16-bit sign-magnitude
 		if ((n0st & N0ST_N0_POS_GPIO) == 0) {
@@ -380,8 +400,11 @@ u4_t hpib_fast_binary(s2_t *ibp, u4_t nloop)
 		*bp++ = (s2_t) (u2_t) (n1n2 & 0xffff);
 	}
 
-	TEST1_CLR();
+#ifdef HPIB_FAST_BINARY_PRU
+	send_pru_cmd(PRU_BUS_CLK_START);
+#else
 	BUS_CLK_START();
+#endif
 	
 	return nloop * sizeof (*bp);
 }

@@ -10,7 +10,7 @@
 
 	// shared memory used to communicate with CPU
 	// layout must match pru_realtime.h
-	.struct	c
+	.struct	m
 		.u32	cmd
 		.u32	count
 		.u32	watchdog
@@ -24,12 +24,33 @@
 		.u32	n3_ovfl
 		.u32	ovfl_none
 
+		.u32	a_gen_0				// pre-scrambled address for general bus i/o
+		.u32	a_gen_0c
+		.u32	a_gen_1
+		.u32	a_gen_1c
+		.u32	a_gen_3
+		.u32	a_gen_3c
+
 		.u32	a_n0st_0				// pre-scrambled RREG_N0ST address
 		.u32	a_n0st_0c
 		.u32	a_n0st_1
 		.u32	a_n0st_1c
 		.u32	a_n0st_3
 		.u32	a_n0st_3c
+
+		.u32	a_n0_h_0
+		.u32	a_n0_h_0c
+		.u32	a_n0_h_1
+		.u32	a_n0_h_1c
+		.u32	a_n0_h_3
+		.u32	a_n0_h_3c
+
+		.u32	a_n1n2_h_0
+		.u32	a_n1n2_h_0c
+		.u32	a_n1n2_h_1
+		.u32	a_n1n2_h_1c
+		.u32	a_n1n2_h_3
+		.u32	a_n1n2_h_3c
 
 		.u32	a_o3_0					// pre-scrambled RREG_O3 address
 		.u32	a_o3_0c
@@ -51,26 +72,80 @@
 		.u32	d_n3_clr_ovfl_1c
 		.u32	d_n3_clr_ovfl_2
 		.u32	d_n3_clr_ovfl_2c
+	.ends
 
-		.u32	g_addr_0				// pre-scrambled address for general bus i/o
-		.u32	g_addr_0c
-		.u32	g_addr_1
-		.u32	g_addr_1c
-		.u32	g_addr_3
-		.u32	g_addr_3c
+	.struct	m2
+		.u32	m2_offset
+		
+		.u32	d_gen_0				// pre/post-scrambled read/write data for general bus i/o
+		.u32	d_gen_0c
+		.u32	d_gen_1
+		.u32	d_gen_1c
+		.u32	d_gen_2
+		.u32	d_gen_2c
 
-		.u32	g_data_0				// pre/post-scrambled read/write data for general bus i/o
-		.u32	g_data_0c
-		.u32	g_data_1
-		.u32	g_data_1c
-		.u32	g_data_2
-		.u32	g_data_2c
+		// rest are for PRU_TI_MEAS
+		.u32	ad_rst_0
+		.u32	ad_rst_0c
+		.u32	ad_rst_1
+		.u32	ad_rst_1c
+		.u32	ad_rst_2
+		.u32	ad_rst_2c
+		.u32	ad_rst_3
+		.u32	ad_rst_3c
 
+		.u32	ad_ena_0
+		.u32	ad_ena_0c
+		.u32	ad_ena_1
+		.u32	ad_ena_1c
+		.u32	ad_ena_2
+		.u32	ad_ena_2c
+		.u32	ad_ena_3
+		.u32	ad_ena_3c
+
+		.u32	ad_arm_0
+		.u32	ad_arm_0c
+		.u32	ad_arm_1
+		.u32	ad_arm_1c
+		.u32	ad_arm_2
+		.u32	ad_arm_2c
+		.u32	ad_arm_3
+		.u32	ad_arm_3c
+
+		.u32	ad_idle_0
+		.u32	ad_idle_0c
+		.u32	ad_idle_1
+		.u32	ad_idle_1c
+		.u32	ad_idle_2
+		.u32	ad_idle_2c
+		.u32	ad_idle_3
+		.u32	ad_idle_3c
+
+		.u32	d_n0st_0
+		.u32	d_n0st_1
+		.u32	d_n0st_2
+
+		.u32	d_n1n2_h_0
+		.u32	d_n1n2_h_1
+		.u32	d_n1n2_h_2
+
+		.u32	d_n1n2_l_0
+		.u32	d_n1n2_l_1
+		.u32	d_n1n2_l_2
+
+		.u32	d_n0_h_0
+		.u32	d_n0_h_1
+		.u32	d_n0_h_2
+
+		.u32	d_n0_l_0
+		.u32	d_n0_l_1
+		.u32	d_n0_l_2
 	.ends
 
 	// register aliases
 	.struct	regs
-		.u32	com
+		.u32	m
+		.u32	m2
 		.u32	gpio0
 		.u32	gpio1
 		.u32	gpio2
@@ -93,11 +168,13 @@
 		.u32	ovfl_none
 		.u16	ra1
 		.u16	ra2
+		.u16	ra3
+		.u16	ra4
 		.u32	io30
 		.u32	io31
 	.ends
 	
-	.assign	regs, r8, r31, r			// r0-r6 are temps, avoid r30-r31
+	.assign	regs, r6, r31, r			// r0-r5 are temps, avoid r30-r31
 
 start:
     // enable OCP master ports so we can access gpio & timer
@@ -105,8 +182,9 @@ start:
     clr		r1, r1, 4					// clear standby_init bit
     sbco	r1, c4, 4, 4
 
-	// address pointers (too big for immediate field)
-	mov		r.com, 0
+	// address pointers (too big for immediate field in most cases)
+	mov		r.m, PRU_COM_MEM
+	mov		r.m2, PRU_COM_MEM2
 	mov		r.gpio0, GPIO0_BASE
 	mov		r.gpio1, GPIO1_BASE
 	mov		r.gpio2, GPIO2_BASE
@@ -120,83 +198,83 @@ start:
 	mov		r.timer_tcrr, _TIMER_TCRR
 
 	mov		r1, 0
-	eput	r1, r.com, c.watchdog
+	eput	r1, r.m, m.watchdog
 	jmp		cmd_clear
 
 cmd_done:
 	mov		r1, PRU_DONE
-    eput	r1, r.com, c.cmd
+    eput	r1, r.m, m.cmd
     
 cmd_get:
-	eget	r1, r.com, c.cmd
+	eget	r1, r.m, m.cmd
 	qbeq	cmd_ping, r1, PRU_PING
 	qbeq	cmd_read, r1, PRU_READ
 	qbeq	cmd_write, r1, PRU_WRITE
 	qbeq	cmd_clear, r1, PRU_CLEAR
+	qbeq	cmd_bus_clk_stop, r1, PRU_BUS_CLK_STOP
+	qbeq	cmd_bus_clk_start, r1, PRU_BUS_CLK_START
+	qbeq	cmd_TI_meas, r1, PRU_TI_MEAS
 
 	// note that cmd_count() is run concurrently with command processing
-	eget	r1, r.com, c.count
+	eget	r1, r.m, m.count
 	qbeq	cmd_count, r1, PRU_COUNT
 	jmp		cmd_get
 
+
 // establish we're running by answering a ping
 cmd_ping:
-	eget	r1, r.com, c.p0
-	eget	r2, r.com, c.p1
+	eget	r1, r.m, m.p0
+	eget	r2, r.m, m.p1
 	add		r1, r1, r2
-    eput	r1, r.com, c.p2
+    eput	r1, r.m, m.p2
+    eget	r1, r.m2, m2.m2_offset
+    eput	r1, r.m, m.p3
 	jmp 	cmd_done
+
 
 // 5370 bus read
 cmd_read:
-	eget	r0, r.com, c.g_addr_0
-	eget	r1, r.com, c.g_addr_0c
-	eget	r2, r.com, c.g_addr_1
-	eget	r3, r.com, c.g_addr_1c
-	eget	r4, r.com, c.g_addr_3
-	eget	r5, r.com, c.g_addr_3c
+	mov		r.p0, OFFSET(m.a_gen_0)
 	jsr2	set_addr
 	jsr1	bus_read
-	eput	r.p0, r.com, c.g_data_0
-	eput	r.p1, r.com, c.g_data_1
-	eput	r.p2, r.com, c.g_data_2
+	eput	r.p0, r.m2, m2.d_gen_0
+	eput	r.p1, r.m2, m2.d_gen_1
+	eput	r.p2, r.m2, m2.d_gen_2
 	jmp		cmd_done
-	
+
+
 // 5370 bus write
 cmd_write:
-	eget	r0, r.com, c.g_addr_0
-	eget	r1, r.com, c.g_addr_0c
-	eget	r2, r.com, c.g_addr_1
-	eget	r3, r.com, c.g_addr_1c
-	eget	r4, r.com, c.g_addr_3
-	eget	r5, r.com, c.g_addr_3c
+	mov		r.p0, OFFSET(m.a_gen_0)
 	jsr2	set_addr
-	eget	r.p0, r.com, c.g_data_0
-	eget	r.p1, r.com, c.g_data_0c
-	eget	r.p2, r.com, c.g_data_1
-	eget	r.p3, r.com, c.g_data_1c
-	eget	r.p4, r.com, c.g_data_2
-	eget	r.p5, r.com, c.g_data_2c
+	eget	r.p0, r.m2, m2.d_gen_0
+	eget	r.p1, r.m2, m2.d_gen_0c
+	eget	r.p2, r.m2, m2.d_gen_1
+	eget	r.p3, r.m2, m2.d_gen_1c
+	eget	r.p4, r.m2, m2.d_gen_2
+	eget	r.p5, r.m2, m2.d_gen_2c
 	jsr1	bus_write
 	jmp		cmd_done
+
 
 // clear overflow couters
 cmd_clear:
 	mov		r.n0_ovfl, 0
-	eput	r.n0_ovfl, r.com, c.n0_ovfl
+	eput	r.n0_ovfl, r.m, m.n0_ovfl
 	mov		r.n3_ovfl, 0
-	eput	r.n3_ovfl, r.com, c.n3_ovfl
+	eput	r.n3_ovfl, r.m, m.n3_ovfl
 	mov		r.ovfl_none, 0
-	eput	r.ovfl_none, r.com, c.ovfl_none
+	eput	r.ovfl_none, r.m, m.ovfl_none
 	mov		r1, PRU_DONE
-	eput	r1, r.com, c.count
+	eput	r1, r.m, m.count
 	jmp 	cmd_done
+
 
 // count N0/N3 counter overflows; stop when EOM (end-of-measurement) detected
 cmd_count:
-	eget	r1, r.com, c.watchdog
+	eget	r1, r.m, m.watchdog
 	add		r1, r1, 1
-	eput	r1, r.com, c.watchdog
+	eput	r1, r.m, m.watchdog
 
 	jsr1	wait_bus_clk					// let bus clock run
 	jsr1	addr_n0st
@@ -207,16 +285,15 @@ check_n0:
 	and		r1, r.p1, r1
 	qbeq	check_n3, r1, 0
 	add		r.n0_ovfl, r.n0_ovfl, 1
-	eput	r.n0_ovfl, r.com, c.n0_ovfl
-	
-	eget	r.p0, r.com, c.d_n0_clr_ovfl_0
-	eget	r.p1, r.com, c.d_n0_clr_ovfl_0c
-	eget	r.p2, r.com, c.d_n0_clr_ovfl_1
-	eget	r.p3, r.com, c.d_n0_clr_ovfl_1c
-	eget	r.p4, r.com, c.d_n0_clr_ovfl_2
-	eget	r.p5, r.com, c.d_n0_clr_ovfl_2c
-	
+	eput	r.n0_ovfl, r.m, m.n0_ovfl
+
 	jsr1	addr_out3
+	eget	r.p0, r.m, m.d_n0_clr_ovfl_0
+	eget	r.p1, r.m, m.d_n0_clr_ovfl_0c
+	eget	r.p2, r.m, m.d_n0_clr_ovfl_1
+	eget	r.p3, r.m, m.d_n0_clr_ovfl_1c
+	eget	r.p4, r.m, m.d_n0_clr_ovfl_2
+	eget	r.p5, r.m, m.d_n0_clr_ovfl_2c
 	jsr1	bus_write
 	jmp		cmd_get
 
@@ -225,36 +302,148 @@ check_n3:
 	and		r1, r.p2, r1
 	qbeq	check_eom, r1, 0
 	add		r.n3_ovfl, r.n3_ovfl, 1
-	eput	r.n3_ovfl, r.com, c.n3_ovfl
-	
-	eget	r.p0, r.com, c.d_n3_clr_ovfl_0
-	eget	r.p1, r.com, c.d_n3_clr_ovfl_0c
-	eget	r.p2, r.com, c.d_n3_clr_ovfl_1
-	eget	r.p3, r.com, c.d_n3_clr_ovfl_1c
-	eget	r.p4, r.com, c.d_n3_clr_ovfl_2
-	eget	r.p5, r.com, c.d_n3_clr_ovfl_2c
-	
+	eput	r.n3_ovfl, r.m, m.n3_ovfl
+
 	jsr1	addr_out3
+	eget	r.p0, r.m, m.d_n3_clr_ovfl_0
+	eget	r.p1, r.m, m.d_n3_clr_ovfl_0c
+	eget	r.p2, r.m, m.d_n3_clr_ovfl_1
+	eget	r.p3, r.m, m.d_n3_clr_ovfl_1c
+	eget	r.p4, r.m, m.d_n3_clr_ovfl_2
+	eget	r.p5, r.m, m.d_n3_clr_ovfl_2c
 	jsr1	bus_write
 	jmp		cmd_get
 
 check_eom:
 	add		r.ovfl_none, r.ovfl_none, 1
-	eput	r.ovfl_none, r.com, c.ovfl_none
+	eput	r.ovfl_none, r.m, m.ovfl_none
 	mov		r1, N0ST_EOM_GPIO				// on gpio1, active low
 	and		r1, r.p1, r1
 	qbne	cmd_get, r1, 0
 	mov		r1, PRU_DONE
-    eput	r1, r.com, c.count
+    eput	r1, r.m, m.count
 	jmp		cmd_get
+
+
+cmd_bus_clk_stop:
+	// BUS_CLK_STOP()
+	jsr2	bus_clock_stop_deassert
+	jsr2	wait_clk
+	jmp		cmd_done
+
+
+cmd_bus_clk_start:
+	// BUS_CLK_START()
+	jsr2	wait_clk
+	jsr2	bus_clock_start
+	jmp		cmd_done
+
+
+// perform a fast TI measurement
+cmd_TI_meas:
+
+	// FAST_WRITE_ENTER()
+	jsr3	fast_write_enter
+
+	// FAST_WRITE_GPIO_QUAL_CYCLE(ad_rst, 1,1,1,1,1,1,1,1)
+	sgpio	r1, gpio0, ad_rst_0, ad_rst_0c
+	sgpio	r1, gpio1, ad_rst_1, ad_rst_1c
+	sgpio	r1, gpio2, ad_rst_2, ad_rst_2c
+	sgpio	r1, gpio3, ad_rst_3, ad_rst_3c
+	jsr3	bus_clock_pulse
+
+	// FAST_WRITE_GPIO_QUAL_CYCLE(ad_ena, 1,1,1,1,1,1,1,1)
+	sgpio	r1, gpio0, ad_ena_0, ad_ena_0c
+	sgpio	r1, gpio1, ad_ena_1, ad_ena_1c
+	sgpio	r1, gpio2, ad_ena_2, ad_ena_2c
+	sgpio	r1, gpio3, ad_ena_3, ad_ena_3c
+	jsr3	bus_clock_pulse
+
+	// i.e. only gpio1 changes, gpio[023] same as previous write
+	// FAST_WRITE_GPIO_QUAL_CYCLE(ad_arm, 0,0,1,1,0,0,0,0)
+	sgpio	r1, gpio1, ad_arm_1, ad_arm_1c
+	jsr3	bus_clock_pulse
+
+	// FAST_WRITE_EXIT()
+	jsr3	fast_write_exit
+
+	// do {
+	//     FAST_READ_GPIO1_CYCLE(1, n0st, a_n0st)
+	// } while (n0st & N0ST_EOM_GPIO)
+	jsr1	addr_n0st
+
+wait_eom:
+	jsr3	bus_read1
+	mov		r1, N0ST_EOM_GPIO				// on gpio1, active low
+	and		r1, r.p1, r1
+	qbne	wait_eom, r1, 0
+	
+	// FAST_WRITE_ENTER()
+	jsr3	fast_write_enter
+
+	// FAST_WRITE_GPIO_CYCLE(ad_idle)
+	sgpio	r1, gpio0, ad_idle_0, ad_idle_0c
+	sgpio	r1, gpio1, ad_idle_1, ad_idle_1c
+	sgpio	r1, gpio2, ad_idle_2, ad_idle_2c
+	sgpio	r1, gpio3, ad_idle_3, ad_idle_3c
+	jsr3	bus_clock_pulse
+
+	// FAST_WRITE_EXIT()
+	jsr3	fast_write_exit
+
+	// FAST_READ_GPIO_CYCLE(a_n0st, n0st)
+	jsr1	addr_n0st
+	jsr3	bus_read1
+	eput	r.p0, r.m2, m2.d_n0st_0
+	eput	r.p1, r.m2, m2.d_n0st_1
+	eput	r.p2, r.m2, m2.d_n0st_2
+
+	// FAST_READ2_GPIO_CYCLE(a_n1n2h, n1n2_h, n1n2_l)
+	mov		r.p0, OFFSET(m.a_n1n2_h_0)
+	jsr2	set_addr
+	jsr3	bus_read1
+	eput	r.p0, r.m2, m2.d_n1n2_h_0
+	eput	r.p1, r.m2, m2.d_n1n2_h_1
+	eput	r.p2, r.m2, m2.d_n1n2_h_2
+	mov		r1, BUS_LA0						// on gpio3, active low
+	st32	r1, r.gpio3, r.gpio_clr
+	eput	r.p0, r.m2, m2.d_n1n2_l_0
+	eput	r.p1, r.m2, m2.d_n1n2_l_1
+	eput	r.p2, r.m2, m2.d_n1n2_l_2
+
+	// FAST_READ2_GPIO_CYCLE(a_n0h, n0_h, n0_l)
+	mov		r.p0, OFFSET(m.a_n0_h_0)
+	jsr2	set_addr
+	jsr3	bus_read1
+	eput	r.p0, r.m2, m2.d_n0_h_0
+	eput	r.p1, r.m2, m2.d_n0_h_1
+	eput	r.p2, r.m2, m2.d_n0_h_2
+	mov		r1, BUS_LA0						// on gpio3, active low
+	st32	r1, r.gpio3, r.gpio_clr
+	eput	r.p0, r.m2, m2.d_n0_l_0
+	eput	r.p1, r.m2, m2.d_n0_l_1
+	eput	r.p2, r.m2, m2.d_n0_l_2
+
+	jmp		cmd_done
 
 
 // ---------------------------
 
+// call with: address already set
 // returns: r.p0=gpio0 r.p1=gpio1 r.p2=gpio2
 bus_read:
+	// BUS_CLK_STOP()
 	jsr2	bus_clock_stop_deassert
 	jsr2	wait_clk
+	
+	jsr3	bus_read1
+
+	// BUS_CLK_START()
+	jsr2	wait_clk
+	jsr2	bus_clock_start
+	rtn1
+
+bus_read1:
 	
 	// FAST_READ_CYCLE()
 	mov		r1, BUS_DIR
@@ -277,18 +466,41 @@ bus_read:
 	jsr2	bus_clock_stop_deassert
 	mov		r1, BUS_LVMA
 	st32	r1, r.gpio1, r.gpio_set
+	rtn3
 
-	jsr2	wait_clk
-	jsr2	bus_clock_start
-	rtn1
 
 // call with:
+//		address already set
 //		r.p0=gpio0_set r.p1=gpio0_clr
 //		r.p2=gpio1_set r.p3=gpio1_clr
 //		r.p4=gpio2_set r.p5=gpio2_clr
 bus_write:
+	// BUS_CLK_STOP()
 	jsr2	bus_clock_stop_deassert
 	jsr2	wait_clk
+
+	// FAST_WRITE_ENTER()
+	jsr3	fast_write_enter
+
+	// FAST_WRITE_CYCLE()
+	st32	r.p0, r.gpio0, r.gpio_clr		// data is active low, so swap set/clr sense
+	st32	r.p1, r.gpio0, r.gpio_set
+	st32	r.p2, r.gpio1, r.gpio_clr
+	st32	r.p3, r.gpio1, r.gpio_set
+	st32	r.p4, r.gpio2, r.gpio_clr
+	st32	r.p5, r.gpio2, r.gpio_set
+	jsr3	bus_clock_pulse
+
+	// FAST_WRITE_EXIT()
+	jsr3	fast_write_exit
+
+	// BUS_CLK_START()
+	jsr2	wait_clk
+	jsr2	bus_clock_start
+	rtn1
+
+
+fast_write_enter:
 
 	// FAST_WRITE_ENTER()
 	mov		r1, BUS_DIR
@@ -308,21 +520,10 @@ bus_write:
 	st32	r1, r.gpio0, r.gpio_set
 	mov		r1, BUS_LVMA
 	st32	r1, r.gpio1, r.gpio_clr
+	rtn3
 
-	// FAST_WRITE_CYCLE()
-	st32	r.p0, r.gpio0, r.gpio_clr		// data is active low, so swap set/clr sense
-	st32	r.p1, r.gpio0, r.gpio_set
-	st32	r.p2, r.gpio1, r.gpio_clr
-	st32	r.p3, r.gpio1, r.gpio_set
-	st32	r.p4, r.gpio2, r.gpio_clr
-	st32	r.p5, r.gpio2, r.gpio_set
 
-//	jsr2	wait_clk
-	jsr2	wait_access
-	jsr2	bus_clock_assert
-	jsr2	wait_access
-	jsr2	bus_clock_stop_deassert
-	jsr2	wait_clk
+fast_write_exit:
 
 	// FAST_WRITE_EXIT()
 	mov		r1, BUS_LRW
@@ -342,37 +543,43 @@ bus_write:
 
 	mov		r1, BUS_DIR
 	st32	r1, r.gpio0, r.gpio_set
+	rtn3
 
-	jsr2	wait_clk
-	jsr2	bus_clock_start
-	rtn1
 
+// r.p0 = OFFSET(in r.m of address values)
 set_addr:
-	st32	r0, r.gpio0, r.gpio_clr			// set/clr order reversed for LAn
+	ld32	r1, r.m, r.p0
+	add		r.p0, r.p0, 4
+	st32	r1, r.gpio0, r.gpio_clr			// set/clr order reversed for LAn
+
+	ld32	r1, r.m, r.p0
+	add		r.p0, r.p0, 4
 	st32	r1, r.gpio0, r.gpio_set
-	st32	r2, r.gpio1, r.gpio_clr
-	st32	r3, r.gpio1, r.gpio_set
-	st32	r4, r.gpio3, r.gpio_clr
-	st32	r5, r.gpio3, r.gpio_set
+
+	ld32	r1, r.m, r.p0
+	add		r.p0, r.p0, 4
+	st32	r1, r.gpio1, r.gpio_clr
+
+	ld32	r1, r.m, r.p0
+	add		r.p0, r.p0, 4
+	st32	r1, r.gpio1, r.gpio_set
+
+	ld32	r1, r.m, r.p0
+	add		r.p0, r.p0, 4
+	st32	r1, r.gpio3, r.gpio_clr
+
+	ld32	r1, r.m, r.p0
+	add		r.p0, r.p0, 4
+	st32	r1, r.gpio3, r.gpio_set
 	rtn2
 
 addr_n0st:
-	eget	r0, r.com, c.a_n0st_0
-	eget	r1, r.com, c.a_n0st_0c
-	eget	r2, r.com, c.a_n0st_1
-	eget	r3, r.com, c.a_n0st_1c
-	eget	r4, r.com, c.a_n0st_3
-	eget	r5, r.com, c.a_n0st_3c
+	mov		r.p0, OFFSET(m.a_n0st_0)
 	jsr2	set_addr
 	rtn1
 
 addr_out3:
-	eget	r0, r.com, c.a_o3_0
-	eget	r1, r.com, c.a_o3_0c
-	eget	r2, r.com, c.a_o3_1
-	eget	r3, r.com, c.a_o3_1c
-	eget	r4, r.com, c.a_o3_3
-	eget	r5, r.com, c.a_o3_3c
+	mov		r.p0, OFFSET(m.a_o3_0)
 	jsr2	set_addr
 	rtn1
 
@@ -437,3 +644,11 @@ bus_clock_start:
 	mov		r1, (T_MODE | T_START)
 	st32	r1,	r.timer, r.timer_tclr
 	rtn2
+
+bus_clock_pulse:
+	jsr2	wait_access
+	jsr2	bus_clock_assert
+	jsr2	wait_access
+	jsr2	bus_clock_stop_deassert
+	jsr2	wait_clk
+	rtn3

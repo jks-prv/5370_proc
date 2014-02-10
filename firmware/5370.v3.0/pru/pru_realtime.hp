@@ -48,10 +48,6 @@
 
 #include "pru_realtime.h"
 
-// ***************************************
-// *      Global Macro definitions       *
-// ***************************************
-
 // Refer to this mapping in the file - \prussdrv\include\pruss_intc_mapping.h
 #define PRU0_PRU1_INTERRUPT     17
 #define PRU1_PRU0_INTERRUPT     18
@@ -75,7 +71,17 @@
 #define CTPPR_1         0x2202C
 
 
-// call/return from nested levels 1 & 2 (use different return address regs)
+// setting gpio registers
+.macro sgpio
+.mparam treg, gpio, adval, advalc
+	eget	treg, r.m2, m2.adval
+	st32	treg, r.gpio, r.gpio_clr
+	eget	treg, r.m2, m2.advalc
+	st32	treg, r.gpio, r.gpio_set
+.endm
+
+
+// call/return from nested levels (use different return address regs)
 
 .macro jsr1
 .mparam	dst
@@ -93,6 +99,15 @@
 
 .macro rtn2
 	jmp		r.ra2.w0
+.endm
+
+.macro jsr3
+.mparam	dst
+	jal		r.ra3.w0, dst
+.endm
+
+.macro rtn3
+	jmp		r.ra3.w0
 .endm
 
 

@@ -213,72 +213,55 @@ extern u4_t g0_write[], g1_write[], g2_write[];
 // The v4 PCB will definitely be redesigned to avoid this problem.
 
 #define CONV_ADDR_DCL(avar) \
-	u4_t avar ## 0, avar ## 0c, avar ## 1, avar ## 1c, avar ## 3, avar ## 3c;
+	u4_t _ ## avar ## 0, _ ## avar ## 0c, _ ## avar ## 1, _ ## avar ## 1c, _ ## avar ## 3, _ ## avar ## 3c;
 
 // pre-compute address
-#define CONV_ADDR(addr, avar) \
-	avar ## 0 = g0_addr[addr]; \
-	avar ## 0c = ~g0_addr[addr] & G0_ADDR; \
-	avar ## 1 = g1_addr[addr]; \
-	avar ## 1c = ~g1_addr[addr] & G1_ADDR; \
-	avar ## 3 = g3_addr[addr]; \
-	avar ## 3c = ~g3_addr[addr] & G3_ADDR;
+#define CONV_ADDR(prefix, avar, addr) \
+	prefix ## avar ## 0 = g0_addr[addr]; \
+	prefix ## avar ## 0c = ~g0_addr[addr] & G0_ADDR; \
+	prefix ## avar ## 1 = g1_addr[addr]; \
+	prefix ## avar ## 1c = ~g1_addr[addr] & G1_ADDR; \
+	prefix ## avar ## 3 = g3_addr[addr]; \
+	prefix ## avar ## 3c = ~g3_addr[addr] & G3_ADDR;
 
 #define CONV_DATA_DCL(dvar) \
-	u4_t dvar ## 0, dvar ## 0c, dvar ## 1, dvar ## 1c, dvar ## 2, dvar ## 2c;
+	u4_t _ ## dvar ## 0, _ ## dvar ## 0c, _ ## dvar ## 1, _ ## dvar ## 1c, _ ## dvar ## 2, _ ## dvar ## 2c;
+
+#define CONV_DATA_READ_DCL(dvar) \
+	u4_t _ ## dvar ## 0, _ ## dvar ## 1, _ ## dvar ## 2;
 
 // pre-compute write data
-#define CONV_WRITE_DATA(data, dvar) \
-	dvar ## 0 = g0_write[data]; \
-	dvar ## 0c = ~g0_write[data] & G0_DATA; \
-	dvar ## 1 = g1_write[data]; \
-	dvar ## 1c = ~g1_write[data] & G1_DATA; \
-	dvar ## 2 = g2_write[data]; \
-	dvar ## 2c = ~g2_write[data] & G2_DATA;
+#define CONV_WRITE_DATA(prefix, dvar, data) \
+	prefix ## dvar ## 0 = g0_write[data]; \
+	prefix ## dvar ## 0c = ~g0_write[data] & G0_DATA; \
+	prefix ## dvar ## 1 = g1_write[data]; \
+	prefix ## dvar ## 1c = ~g1_write[data] & G1_DATA; \
+	prefix ## dvar ## 2 = g2_write[data]; \
+	prefix ## dvar ## 2c = ~g2_write[data] & G2_DATA;
 
 // re-assemble read data
-#define CONV_READ_DATA(dvar, data) \
-	u4_t t = dvar ## 0; \
+#define CONV_READ_DATA(t, data, prefix, dvar) \
+	t = prefix ## dvar ## 0; \
 	data = ((t & BUS_LD0) >> 27) | ((t & BUS_LD3) >> 23) | ((t & BUS_LD4) >> 19); \
-	t = dvar ## 1; \
+	t = prefix ## dvar ## 1; \
 	data |= ((t & BUS_LD1) >> 13) | ((t & BUS_LD2) >> 13) | ((t & BUS_LD5) >> 7) | ((t & BUS_LD6) >> 7); \
-	t = dvar ## 2; \
+	t = prefix ## dvar ## 2; \
 	data |= ((t & BUS_LD7) << 3);	/* remember: PRU has already inverted LDn */
 
 #define CONV_ADDR_DATA_DCL(advar) \
-	u4_t advar ## 0, advar ##0c, advar ## 1, advar ## 1c, advar ## 2, advar ## 2c, advar ## 3, advar ## 3c;
+	u4_t _ ## advar ## 0, _ ## advar ##0c, _ ## advar ## 1, _ ## advar ## 1c, \
+		_ ## advar ## 2, _ ## advar ## 2c, _ ## advar ## 3, _ ## advar ## 3c;
 
 // pre-compute address and (write) data
-#define CONV_ADDR_DATA(addr, data, advar) \
-	advar ## 0  = g0_addr[addr] | g0_write[data]; \
-	advar ## 0c = (~g0_addr[addr] & G0_ADDR) | (~g0_write[data] & G0_DATA); \
-	advar ## 1  = g1_addr[addr] | g1_write[data]; \
-	advar ## 1c = (~g1_addr[addr] & G1_ADDR) | (~g1_write[data] & G1_DATA); \
-	advar ## 2  = g2_write[data]; \
-	advar ## 2c = ~g2_write[data] & G2_DATA; \
-	advar ## 3  = g3_addr[addr]; \
-	advar ## 3c = ~g3_addr[addr] & G3_ADDR;
-
-#define CONV_COPY_ADDR(avar, prefix) \
-	prefix -> avar ## 0 = avar ## 0; \
-	prefix -> avar ## 0c = avar ## 0c; \
-	prefix -> avar ## 1 = avar ## 1; \
-	prefix -> avar ## 1c = avar ## 1c; \
-	prefix -> avar ## 3 = avar ## 3; \
-	prefix -> avar ## 3c = avar ## 3c;
-
-#define CONV_COPY_READ_DATA(prefix, dvar) \
-	dvar ## 0  = prefix -> dvar ## 0; \
-	dvar ## 1  = prefix -> dvar ## 1; \
-	dvar ## 2  = prefix -> dvar ## 2;
-
-#define CONV_COPY_WRITE_DATA(dvar, prefix) \
-	prefix -> dvar ## 0 = dvar ## 0; \
-	prefix -> dvar ## 0c = dvar ## 0c; \
-	prefix -> dvar ## 1 = dvar ## 1; \
-	prefix -> dvar ## 1c = dvar ## 1c; \
-	prefix -> dvar ## 2 = dvar ## 2; \
-	prefix -> dvar ## 2c = dvar ## 2c;
+#define CONV_ADDR_DATA(prefix, advar, addr, data) \
+	prefix ## advar ## 0  = g0_addr[addr] | g0_write[data]; \
+	prefix ## advar ## 0c = (~g0_addr[addr] & G0_ADDR) | (~g0_write[data] & G0_DATA); \
+	prefix ## advar ## 1  = g1_addr[addr] | g1_write[data]; \
+	prefix ## advar ## 1c = (~g1_addr[addr] & G1_ADDR) | (~g1_write[data] & G1_DATA); \
+	prefix ## advar ## 2  = g2_write[data]; \
+	prefix ## advar ## 2c = ~g2_write[data] & G2_DATA; \
+	prefix ## advar ## 3  = g3_addr[addr]; \
+	prefix ## advar ## 3c = ~g3_addr[addr] & G3_ADDR;
 
 #define CONV_ADDR_PRF(avar) \
 	printf("%s: %8x %8x %8x %8x %8x %8x\n", #avar, \
@@ -288,16 +271,18 @@ extern u4_t g0_write[], g1_write[], g2_write[];
 	printf("%s: %8x %8x %8x %8x %8x %8x %8x %8x\n", #advar, \
 		advar ## 0, advar ##0c, advar ## 1, advar ## 1c, advar ## 2, advar ## 2c, advar ## 3, advar ## 3c);
 
+#ifndef HPIB_FAST_BINARY_PRU
+
 // set pre-computed address
 #define SET_GPIO_ADDR(avar) \
-	GPIO_CLR(0) = avar ## 0; \
-	GPIO_SET(0) = avar ## 0c; \
-	GPIO_CLR(1) = avar ## 1; \
-	GPIO_SET(1) = avar ## 1c; \
-	GPIO_CLR(3) = avar ## 3; \
-	GPIO_SET(3) = avar ## 3c;
+	GPIO_CLR(0) = _ ## avar ## 0; \
+	GPIO_SET(0) = _ ## avar ## 0c; \
+	GPIO_CLR(1) = _ ## avar ## 1; \
+	GPIO_SET(1) = _ ## avar ## 1c; \
+	GPIO_CLR(3) = _ ## avar ## 3; \
+	GPIO_SET(3) = _ ## avar ## 3c;
 
-// this doesn't work for some reason (timing marginal?)
+// the following way of computing 'data' doesn't work for some reason (timing marginal?)
 // gives occasional wrong answers with fast binary hpib transfers
 // but doesn't really matter since it's no faster than existing bitwise shift-and-or scheme
 //	data = gpio_read[((GPIO_IN(0) >> 18) | (GPIO_IN(1) >> 12) | GPIO_IN(2)) & 0x33f];
@@ -385,33 +370,35 @@ extern u4_t g0_write[], g1_write[], g2_write[];
 
 // regular full byte write
 #define FAST_WRITE_GPIO_CYCLE(advar) \
-	GPIO_CLR(0) = advar ## 0; \
-	GPIO_SET(0) = advar ## 0c; \
-	GPIO_CLR(1) = advar ## 1; \
-	GPIO_SET(1) = advar ## 1c; \
-	GPIO_CLR(2) = advar ## 2; \
-	GPIO_SET(2) = advar ## 2c; \
-	GPIO_CLR(3) = advar ## 3; \
-	GPIO_SET(3) = advar ## 3c; \
+	GPIO_CLR(0) = _ ## advar ## 0; \
+	GPIO_SET(0) = _ ## advar ## 0c; \
+	GPIO_CLR(1) = _ ## advar ## 1; \
+	GPIO_SET(1) = _ ## advar ## 1c; \
+	GPIO_CLR(2) = _ ## advar ## 2; \
+	GPIO_SET(2) = _ ## advar ## 2c; \
+	GPIO_CLR(3) = _ ## advar ## 3; \
+	GPIO_SET(3) = _ ## advar ## 3c; \
 	\
 	/* pulse the bus clock */ \
 	BUS_CLK_ASSERT(); \
 	BUS_CLK_DEASSERT();
 
-// write allowing each gpio set/clr to be qualified
+// write allowing each gpio set/clr to be qualified (and the 'if' optimized away since test values are constant)
 #define FAST_WRITE_GPIO_QUAL_CYCLE(advar, g0, g0c, g1, g1c, g2, g2c, g3, g3c) \
-	if (g0) GPIO_CLR(0) = advar ## 0; \
-	if (g0c) GPIO_SET(0) = advar ## 0c; \
-	if (g1) GPIO_CLR(1) = advar ## 1; \
-	if (g1c) GPIO_SET(1) = advar ## 1c; \
-	if (g2) GPIO_CLR(2) = advar ## 2; \
-	if (g2c) GPIO_SET(2) = advar ## 2c; \
-	if (g3) GPIO_CLR(3) = advar ## 3; \
-	if (g3c) GPIO_SET(3) = advar ## 3c; \
+	if (g0) GPIO_CLR(0) = _ ## advar ## 0; \
+	if (g0c) GPIO_SET(0) = _ ## advar ## 0c; \
+	if (g1) GPIO_CLR(1) = _ ## advar ## 1; \
+	if (g1c) GPIO_SET(1) = _ ## advar ## 1c; \
+	if (g2) GPIO_CLR(2) = _ ## advar ## 2; \
+	if (g2c) GPIO_SET(2) = _ ## advar ## 2c; \
+	if (g3) GPIO_CLR(3) = _ ## advar ## 3; \
+	if (g3c) GPIO_SET(3) = _ ## advar ## 3c; \
 	\
 	/* pulse the bus clock */ \
 	BUS_CLK_ASSERT(); \
 	BUS_CLK_DEASSERT();
+
+#endif
 
 void check_pmux();
 

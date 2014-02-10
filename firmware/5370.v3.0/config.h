@@ -12,6 +12,7 @@
 
 // configuration options
 #define HPIB_SIM				// simulates the HPIB hardware board so the unmodified firmware can continue to work
+#define HPIB_FAST_BINARY_PRU	// use the PRU to collect HPIB fast binary data
 //#define INTERRUPTS			// real interrupts instead of polling (not fully working yet)
 //#define FASTER_INTERRUPTS
 //#define HPIB_ECHO_INPUT

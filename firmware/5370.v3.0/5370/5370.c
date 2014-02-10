@@ -102,7 +102,7 @@ void sim_init()
 	bus_gpio_init();
 }
 
-static void send_pru_cmd(cmd)
+void send_pru_cmd(u4_t cmd)
 {
 	u4_t i;
 	
@@ -120,18 +120,17 @@ static void send_pru_cmd(cmd)
 
 u1_t bus_read(u2_t addr)
 {
-	CONV_ADDR_DCL(g_addr);
-	CONV_DATA_DCL(g_data);
+	CONV_ADDR_DCL(a_gen);
+	CONV_DATA_DCL(d_gen);
 	u1_t data;
+	u4_t t;
 	
 	if (use_pru) {
-		CONV_ADDR(addr, g_addr);
-		CONV_COPY_ADDR(g_addr, pru);
+		CONV_ADDR(pru->_, a_gen, addr);
 
 		send_pru_cmd(PRU_READ);
 
-		CONV_COPY_READ_DATA(pru, g_data);
-		CONV_READ_DATA(g_data, data);
+		CONV_READ_DATA(t, data, pru2->_, d_gen);
 	} else {
 		data = bus_fast_read(addr);
 	}
@@ -141,14 +140,12 @@ u1_t bus_read(u2_t addr)
 
 void bus_write(u2_t addr, u1_t data)
 {
-	CONV_ADDR_DCL(g_addr);
-	CONV_DATA_DCL(g_data);
+	CONV_ADDR_DCL(a_gen);
+	CONV_DATA_DCL(d_gen);
 	
 	if (use_pru) {
-		CONV_ADDR(addr, g_addr);
-		CONV_COPY_ADDR(g_addr, pru);
-		CONV_WRITE_DATA(data, g_data);
-		CONV_COPY_WRITE_DATA(g_data, pru);
+		CONV_ADDR(pru->_, a_gen, addr);
+		CONV_WRITE_DATA(pru2->_, d_gen, data);
 
 		send_pru_cmd(PRU_WRITE);
 

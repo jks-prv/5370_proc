@@ -473,7 +473,7 @@ void hpib_enet_binary(bool fast_mode, u1_t wdata)
 		while (1) {		// send data as fast as possible
 			nb = hpib_fast_binary((s2_t *) bp, HPIB_MEAS_PER_FAST_PKT);		// enough data for a full packet
 			bp = net_send((char *) bp, nb, NO_COPY(TRUE), FLUSH(TRUE));
-			if (bp == 0) break;
+			if (bp == 0) break;		// only happens when client has closed the socket
 			{
 				u4_t now;
 				static u4_t last, meas;
