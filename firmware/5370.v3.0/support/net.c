@@ -54,7 +54,16 @@ int net_connect(net_type_e cs, char *host, int port)
 		addr.sin_family = AF_INET;
 		addr.sin_addr.s_addr = INADDR_ANY;
 		addr.sin_port = htons(port);
-		if (bind(sfd, (struct sockaddr*) &addr, sizeof addr) < 0) sys_panic("bind");
+		
+		if (bind(sfd, (struct sockaddr*) &addr, sizeof addr) < 0) {
+			if (errno == EADDRINUSE) {
+				lprintf("network port %d in use\n", port);
+				lprintf("app already running in background?\ntry \"make stop\" (or \"m stop\") first\n");
+				xit(0);
+			}
+			sys_panic("bind");
+		}
+		
 		if (listen(sfd, 1) < 0) sys_panic("listen");
 		if (fcntl(sfd, F_SETFL, O_NONBLOCK) < 0) sys_panic("socket non-block");
 		lprintf("listening for TCP connection on port %d..\n", port);
