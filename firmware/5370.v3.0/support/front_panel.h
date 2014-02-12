@@ -101,7 +101,10 @@ enum front_pnl_loc2_e {
 typedef struct {
 	u1_t drive, sense;
 	char *name;
-	u1_t order;
+	union {
+		u1_t order;		// order to display unit and LED indicators
+		u1_t group;		// key group for store/recall
+	};
 } scan_code;
 
 extern scan_code front_pnl_key[], front_pnl_led[], front_pnt_units[];
@@ -111,10 +114,11 @@ extern bool dsp_7seg_ok;
 u1_t check_char();
 bool key_down();
 void wait_key_release();
+void config_file_update();
 void preempt_reset_key(bool preempt);
 void process_key(u1_t key);
 
-// mechanism to allow a routine to get a callback on a front panel button push
+// mechanism to allow a routine to get a callback on a front panel key push
 typedef void (*k_cb_fn)(u1_t key);
 u4_t register_key_callback(u1_t key, k_cb_fn k_cb);
 

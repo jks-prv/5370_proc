@@ -13,6 +13,9 @@
 
 extern u1_t sim_key, sim_key_intr;
 
+#define N_PROFILE	16
+extern char conf_profile[N_PROFILE];
+
 void sim_init();
 void sim_args(bool cmd_line, int argc, char *argv[]);
 void sim_main();

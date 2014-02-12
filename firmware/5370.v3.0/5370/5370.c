@@ -64,11 +64,26 @@ dev_io_t dev_io[DEV_SIZE];
 
 static int tty;
 
+static bool store_keys = TRUE;
+static bool recall_file = FALSE;
+char conf_profile[N_PROFILE] = "default";
+
 void sim_args(bool cmd_line, int argc, char *argv[])
 {
 	int i;
 
 	for (i=1; i<argc; i++) {
+	
+		if (strcmp(argv[i], "-rcl") == 0 || strcmp(argv[i], "-recall") == 0) {
+			recall_file = TRUE;
+			
+			if (((i+1) < argc) && (argv[i+1][0] != '-')) {
+				i++;
+				strncpy(conf_profile, argv[i], N_PROFILE);
+				printf("recall key settings from profile \"%s\"\n", conf_profile);
+			}
+		}
+
 #ifdef DEBUG
 		if (strcmp(argv[i], "-bug-stdev") == 0) bug_stdev = TRUE;
 		if (strcmp(argv[i], "-bug-freq") == 0) bug_freq = TRUE;
@@ -631,40 +646,95 @@ void writeDev(u2_t addr, u1_t data)
 	(dev_io[addr].dev_write)(addr, data);
 }
 
+#define	SELF_TEST_DELAY		2048
+#define	DLY(n)	(SELF_TEST_DELAY+(n))		// wait a bit for self-test to finish
+
+static u4_t key_epoch, key_threshold;
+
+// mechanism to spread out recall key presses over time
+static bool kdelay(delay)
+{
+	static u4_t key_delay;
+
+	key_delay = time_diff(sys_now(), key_epoch);
+	
+	if ((key_delay >= DLY(delay)) && (DLY(delay) > key_threshold)) {
+		key_threshold = DLY(delay);
+		return TRUE;
+	}
+	
+	return FALSE;
+}
+
 enum front_pnl_loc_e skey_func[] = { TI, TRG_LVL, FREQ, PERIOD };
 enum front_pnl_loc_e skey_gate[] = { _1_PER, _PT01_SEC, _PT1_SEC, _1_SEC };
 enum front_pnl_loc_e skey_stat[] = { MEAN, STD_DEV, MIN, MAX, DSP_REF, CLR_REF, DSP_EVTS, SET_REF };
 enum front_pnl_loc_e skey_samp[] = { PT1, _100, _1K, _10K, _100K };
 enum front_pnl_loc_e skey_misc[] = { P_TI_ONLY, P_M_TI, EXT_HOFF, PER_COMPL, EXT_ARM, MAN_RATE };
 
-static char ibuf[32], dbuf[256];
+#define	N_DBUF	256
+static char ibuf[32], dbuf[N_DBUF];
+
+static bool recall_active = FALSE;
+static FILE *kfp;
+static int rcl_key;
+static bool self_test = TRUE;
+static u4_t boot_time;
 
 char *sim_input()
 {
-	int n=0, e;
+	int n=0, k, key;
 	char *cp = ibuf;
-	static int bg_delay = 0;
 	
 	if (background_mode)
 		return 0;
+	
+	if (!boot_time) boot_time = sys_now();
+
+	if (self_test && boot_time && (time_diff(sys_now(), boot_time) > SELF_TEST_DELAY)) {
+		self_test = FALSE;
+	}
+	
+	if (store_keys && !self_test && !recall_active) config_file_update();
+	
+	if (recall_file) {
+		recall_active = TRUE;
+		sprintf(dbuf, "/home/root/.5370.%s.conf", conf_profile);
+		kfp = fopen(dbuf, "r");
+		key_epoch = sys_now(); key_threshold = 0;
+		recall_file = FALSE;
+	}
+	
+	if (recall_active && kfp && kdelay(rcl_key * 256)) {
+		if (fgets(dbuf, N_DBUF, kfp)) {
+			if (sscanf(dbuf, "rcl key 0x%02x", &key) == 1) {
+				cp = "k-\n"; n=3;	// virtual command to get key press thru code below
+				rcl_key++;
+			}
+		} else {
+			fclose(kfp);
+			kfp = 0;
+			recall_active = FALSE;
+		}
+	}
 
 #ifdef DEBUG
-	if (bg_delay < 4000) bg_delay++;
-#ifdef HPIB_SIM
+ #ifdef HPIB_SIM
 	if (bug_stdev) {
-		if (bg_delay == 1000) hpib_input("tr\n");
-		if (bg_delay == 1500) hpib_input("ta+0.05\n");
-		if (bg_delay == 2000) find_bug();
+		if (kdelay(0)) hpib_input("tr\n");
+		if (kdelay(500)) hpib_input("ta+0.05\n");
+		if (kdelay(1000)) find_bug();
 	}
-#endif
+ #endif
+
 	if (bug_freq) {
-		if (bg_delay == 1000) { cp = "k fn3\n"; n=6; }
-		if (bg_delay == 1500 && gate1) { cp = "k gt1\n"; n=6; }
-		if (bg_delay == 1500 && gate2) { cp = "k gt2\n"; n=6; }
-		if (bg_delay == 1500 && gate3) { cp = "k gt3\n"; n=6; }
-		if (bg_delay == 1500 && gate4) { cp = "k gt4\n"; n=6; }
-		//if (bg_delay == 2000) { cp = "t\n"; n=2; }
-		//if (bg_delay == 2500) { cp = "z\n"; n=2; }
+		if (kdelay(0)) { cp = "k fn3\n"; n=6; }
+		if (kdelay(500) && gate1) { cp = "k gt1\n"; n=6; }
+		if (kdelay(500) && gate2) { cp = "k gt2\n"; n=6; }
+		if (kdelay(500) && gate3) { cp = "k gt3\n"; n=6; }
+		if (kdelay(500) && gate4) { cp = "k gt4\n"; n=6; }
+		//if (kdelay(1000)) { cp = "t\n"; n=2; }
+		//if (kdelay(1500)) { cp = "z\n"; n=2; }
 	}
 #endif
 
@@ -689,6 +759,8 @@ char *sim_input()
 				"m\t\trun measurement extension example code\n"
 				"s\t\tshow measurement statistics\n"
 				"rc\t\tshow values of count-chain registers (one sample)\n"
+				"rcl|recall [name]   load key settings from current or named profile\n"
+				"sto|store name      save key settings to named profile\n"
 				"q\t\tquit\n"
 				"\n");
 			return 0;
@@ -726,33 +798,41 @@ char *sim_input()
 		// emulate a key press by causing an interrupt and returning the correct
 		// scan code for the subsequent read of the RREG_KEY_SCAN register
 		if (*cp == 'k') {
-			e = 0;
+			k = 0;
 			
+			if (*(cp+1) == '-') {					// key press from recall above
+				k = -1;
+			} else
 			if (sscanf(cp, "k fn%d", &n) == 1) {	// function keys 1..4
 				if (n >= 1 && n <= 4)
-					e = skey_func[n-1];
+					k = skey_func[n-1];
 			} else
 			if (sscanf(cp, "k gt%d", &n) == 1) {	// gate time keys 1..4
 				if (n >= 1 && n <= 4)
-					e = skey_gate[n-1];
+					k = skey_gate[n-1];
 			} else
 			if (sscanf(cp, "k st%d", &n) == 1) {	// statistics keys 1..8
 				if (n >= 1 && n <= 8)
-					e = skey_stat[n-1];
+					k = skey_stat[n-1];
 			} else
 			if (sscanf(cp, "k ss%d", &n) == 1) {	// sample size keys 1..5
 				if (n >= 1 && n <= 5)
-					e = skey_samp[n-1];
+					k = skey_samp[n-1];
 			} else
 			if (sscanf(cp, "k m%d", &n) == 1) {		// misc keys 1..6
 				if (n >= 1 && n <= 6)
-					e = skey_misc[n-1];
+					k = skey_misc[n-1];
 			}
 			
-			if (e) {
-				sim_key = KEY(e);
+			if (k > 0) {
+				sim_key = KEY(k);
 				sim_key_intr = 1;
-				printf("key press: %s (%d 0x%2x)\n", front_pnl_led[e].name, n, sim_key);
+				printf("key press: %s (%d 0x%02x)\n", front_pnl_led[k].name, n, sim_key);
+			} else
+			if (k == -1) {
+				sim_key = key;
+				sim_key_intr = 1;
+				printf("recall: key 0x%02x\n", key);
 			} else {
 				cp[strlen(cp)-1] = 0;
 				printf("bad key command: \"%s\"\n", cp);
@@ -761,9 +841,26 @@ char *sim_input()
 			num_meas = 0;
 			return 0;
 		}
+		
+		if (sscanf(cp, "rcl %16s", conf_profile)==1 || sscanf(cp, "recall %16s", conf_profile)==1) {
+			printf("recall key settings from profile \"%s\"\n", conf_profile);
+			recall_file = TRUE;
+			return 0;
+		}
+		
+		// recall using currently active config
+		if (strcmp(cp, "rcl")==0 || strcmp(cp, "recall")==0) {
+			recall_file = TRUE;
+			return 0;
+		}
+
+		if (sscanf(cp, "sto %16s", conf_profile)==1 || sscanf(cp, "store %16s", conf_profile)==1) {
+			printf("store key settings to profile \"%s\"\n", conf_profile);
+			return 0;
+		}
 
 		// measure number of measurements-per-second
-		if (*cp == 's') {
+		if (*cp == 's' && n==2) {
 			if (num_meas) {
 				printf("%.1f meas/s\n", (float)num_meas / ((float)(sys_now()-meas_time)/1000.0));
 				num_meas = meas_time = 0;

@@ -619,7 +619,7 @@ idle:
 			nmi_en = (wdata & H_LNMI_ENL)? FALSE:TRUE;
 
 			if (wdata == H_ren_sw) {
-				//printf("remote button pushed\n");
+				//printf("remote key pushed\n");
 			} else {
 				W_REG(wdata);
 			}

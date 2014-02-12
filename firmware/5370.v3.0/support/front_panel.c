@@ -10,17 +10,17 @@
 #include <ctype.h>
 
 scan_code front_pnl_key[] = {
-//	LCL_RMT,	TI,			TRG_LVL,	MEAN,		STD_DEV,	PT1,		_100,		P_TI_ONLY,	P_M_TI,
-	{GND,D4},	{LDS0,D0},	{LDS1,D0},	{LDS2,D0},	{LDS3,D0},	{LDS4,D0},	{LDS5,D0},	{LDS6,D0},	{LDS7,D0},
+//	LCL_RMT,			TI,					TRG_LVL,			MEAN,				STD_DEV,		PT1,			_100,			P_TI_ONLY,		P_M_TI,
+	{GND,D4,0,0},		{LDS0,D0,0,1},		{LDS1,D0,0,1},		{LDS2,D0,0,3},		{LDS3,D0,0,3},	{LDS4,D0,0,4},	{LDS5,D0,0,4},	{LDS6,D0,0,5},	{LDS7,D0,0,5},
 
-//	RESET,		FREQ,		PERIOD,		MIN,		MAX,		_1K,		_10K,		EXT_HOFF,	PER_COMPL,
-	{LDS6,D3},	{LDS0,D1},	{LDS1,D1},	{LDS2,D1},	{LDS3,D1},	{LDS4,D1},	{LDS5,D1},	{LDS6,D1},	{LDS7,D1},
+//	RESET,				FREQ,				PERIOD,				MIN,				MAX,			_1K,			_10K,			EXT_HOFF,		PER_COMPL,
+	{LDS6,D3,0,0},		{LDS0,D1,0,1},		{LDS1,D1,0,1},		{LDS2,D1,0,3},		{LDS3,D1,0,3},	{LDS4,D1,0,4},	{LDS5,D1,0,4},	{LDS6,D1,0,6},	{LDS7,D1,0,0},
 
-//				_1_PER,		_PT01_SEC,	DSP_REF,	CLR_REF,	_100K,								EXT_ARM,
-				{LDS0,D2},	{LDS1,D2},	{LDS2,D2},	{LDS3,D2},	{LDS4,D2},							{LDS7,D2},
+//						_1_PER,				_PT01_SEC,			DSP_REF,			CLR_REF,		_100K,											EXT_ARM,
+						{LDS0,D2,0,2},		{LDS1,D2,0,2},		{LDS2,D2,0,0},		{LDS3,D2,0,0},	{LDS4,D2,0,4},									{LDS7,D2,0,7},
 				
-//				_PT1_SEC,	_1_SEC,		DSP_EVTS,	SET_REF,	MAN_RATE,							MAN_INPUT (dedicated input not in scan chain),
-				{LDS0,D3},	{LDS1,D3},	{LDS2,D3},	{LDS3,D3},	{LDS4,D3},							{GND,D5},
+//						_PT1_SEC,			_1_SEC,				DSP_EVTS,			SET_REF,		MAN_RATE,										MAN_INPUT,
+						{LDS0,D3,0,2},		{LDS1,D3,0,2},		{LDS2,D3,0,0},		{LDS3,D3,0,0},	{LDS4,D3,0,0},									{GND,D5,0,8},
 };
 
 scan_code front_pnl_led[] = {
@@ -28,7 +28,7 @@ scan_code front_pnl_led[] = {
 	{DSA,L3,"rmt",0},	{DSF,L0,"ti",1},	{DSE,L0,"trg_lvl",1},	{DSD,L0,"mean",3},	{DSC,L0,"sdev",3},	{DSB,L0,"1",4},		{DSA,L0,"100",4},	{DS9,L0,"ti_only",5},	{DS8,L0,"+/-_ti",5},
 
 //	RESET,				FREQ,				PERIOD,					MIN,				MAX,				_1K,				_10K,				EXT_HOFF,				PER_COMPL,
-	{DS9,L3,"rst",0},	{DSF,L1,"freq",1},	{DSE,L1,"period",1},	{DSD,L1,"min",3},	{DSC,L1,"max",3},	{DSB,L1,"1k",4},	{DSA,L1,"10k",4},	{DS9,L1,"ext_hoff",5},	{XXX,XXX},
+	{DS9,L3,"rst",0},	{DSF,L1,"freq",1},	{DSE,L1,"period",1},	{DSD,L1,"min",3},	{DSC,L1,"max",3},	{DSB,L1,"1k",4},	{DSA,L1,"10k",4},	{DS9,L1,"ext_hoff",5},	{XXX,XXX,"per_compl"},
 
 //						_1_PER,				_PT01_SEC,				DSP_REF,			CLR_REF,			_100K,															EXT_ARM,
 						{DSF,L2,"1_per",2},	{DSE,L2,".01s",2},		{DSD,L2,"dref",6},	{XXX,XXX},			{DSB,L2,"100k",4},												{DS8,L2,"ext_arm",5},
@@ -125,6 +125,8 @@ static u1_t dsp_7seg_cache[N_7SEG];
 static char dsp_char_cache[N_7SEG];
 static u1_t dsp_leds_cache[N_LEDS];
 
+#define LED_ON(lp)	(dsp_leds_cache[lp->drive] & lp->sense)
+
 bool dsp_7seg_ok;
 
 void dsp_7seg_init(void)
@@ -191,7 +193,7 @@ void dsp_7seg_translate(char *s, double *fval)
 	for (j=0; j<=2; j++) {
 		for (i=0; i<N_UNITS_SHOW; i++) {
 			u = &front_pnt_units[i];
-			if ((u->order == j) && (dsp_leds_cache[u->drive] & u->sense)) {
+			if ((u->order == j) && LED_ON(u)) {
 				strcpy(s, u->name);
 				s += strlen(u->name);
 			}
@@ -212,7 +214,7 @@ void dsp_key_leds_translate(char *s)
 	for (j=0; j<=6; j++) {
 		for (i=0; i<N_KLEDS_SHOW; i++) {
 			u = &front_pnl_led[i];
-			if ((u->order == j) && (dsp_leds_cache[u->drive] & u->sense)) {
+			if ((u->order == j) && LED_ON(u)) {
 				strcpy(s, u->name);
 				strcat(s, " ");
 				s += strlen(u->name)+1;
@@ -397,6 +399,72 @@ void preempt_reset_key(bool preempt)
 	reset_key_preempted = preempt;
 }
 
+#define N_KEYS sizeof(front_pnl_key) / sizeof(front_pnl_key[0])
+
+typedef struct {
+	u1_t key;
+	scan_code *lp;
+} key_last_t;
+
+#define	N_GROUPS	9
+key_last_t key_last[N_GROUPS];		// note key_last[0] unused
+
+static bool key_need_update = FALSE;
+
+#define	N_DBUF	32
+static char dbuf[N_DBUF];
+
+void config_file_update()
+{
+	int i, group;
+	static u4_t key_last_update;
+	scan_code *kp, *lp;
+	key_last_t *kl;
+	key_last_t key[N_GROUPS];
+
+	for (i=1; i<N_GROUPS; i++) { key[i].key = 0; key[i].lp = 0; }
+
+	for (i=0; i<N_KEYS; i++) {
+		kp = &front_pnl_key[i];
+		if (kp->group == 0) continue;
+		assert(kp->group < N_GROUPS);
+		lp = &front_pnl_led[i];
+		
+		if (LED_ON(lp)) {	// state of key LED determines whether we consider it "pushed" or not
+			key[kp->group].key = KEY(i);
+			key[kp->group].lp = lp;
+		}
+	}
+
+	// check for state change of keys in a group
+	for (i=1; i<N_GROUPS; i++) {
+		kl = &key_last[i];
+
+		if (kl->key != key[i].key) {
+			kl->key = key[i].key;
+			kl->lp = key[i].lp;
+			key_need_update = TRUE;
+		}
+	}
+	
+	// only update file periodically
+	if (key_need_update && (time_diff(sys_now(), key_last_update) > 10000)) {
+		FILE *fp;
+		
+		key_need_update = FALSE;
+		key_last_update = sys_now();
+
+		sprintf(dbuf, "/home/root/.5370.%s.conf", conf_profile);
+		scallz("fopen", fp = fopen(dbuf, "w"));
+		for (i=1; i<N_GROUPS; i++) {
+			if (key_last[i].key) {
+				//printf("store \"%s\": key 0x%02x %s\n", conf_profile, key_last[i].key, (key_last[i].lp)->name);
+				fprintf(fp, "rcl key 0x%02x %s\n", key_last[i].key, (key_last[i].lp)->name);
+			}
+		}
+		fclose(fp);
+	}
+}
 
 #define N_KCB	16
 

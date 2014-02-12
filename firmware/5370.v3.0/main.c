@@ -69,9 +69,21 @@ int main(int argc, char *argv[])
 	cfg_t *f_cfg = 0;	// location in flash where config is stored
 	cfg_t *cfg = &cfg_buf;
 	
+	// silently ignores unrecognized arguments
 	for (i=1; i<argc; i++) {
 		if (strcmp(argv[i], "-bg") == 0) background_mode = TRUE;
 		if (strcmp(argv[i], "-ip") == 0) show_ip = TRUE;
+
+		if (strcmp(argv[i], "?")==0 || strcmp(argv[i], "-?")==0 || strcmp(argv[i], "--?")==0 || strcmp(argv[i], "-h")==0 ||
+			strcmp(argv[i], "h")==0 || strcmp(argv[i], "-help")==0 || strcmp(argv[i], "--h")==0 || strcmp(argv[i], "--help")==0) {
+			printf( "-rcl|-recall [name]    load key settings from named profile\n"
+					"-hpib-hard    use the original HPIB hardware interface, assuming installed\n"
+					"-hpib-sim     simulate the HPIB interface in software (debug mode)\n"
+					"-hpib-net     simulate and re-direct transfers over an Ethernet connection\n"
+					"-ip           show IP address of Ethernet interface and exit\n"
+			);
+			xit(0);
+		}
 	}
 	
 	lprintf("HP%s v%d.%d\n", INST_STR, FIRMWARE_VER_MAJ, FIRMWARE_VER_MIN);
