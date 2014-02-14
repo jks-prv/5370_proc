@@ -12,13 +12,18 @@
 #define SIM_POLL_NET_COUNT		(1024-1)
 
 extern u1_t sim_key, sim_key_intr;
+extern bool iDump;
+extern int iSnap, iTrace;
+extern bool background_mode;
 
 #define N_PROFILE	16
 extern char conf_profile[N_PROFILE];
 
+void sim_reset();
 void sim_init();
 void sim_args(bool cmd_line, int argc, char *argv[]);
 void sim_main();
+void sim_proc_reset();
 void sim_processor();
 u4_t sim_insn_count();
 char *sim_input();
@@ -35,9 +40,5 @@ void trace_clear();
 void trace_on();
 char *tr_s();
 void tr_printf(int ignore);
-
-extern bool iDump;
-extern int iSnap, iTrace;
-extern bool background_mode;
 
 #endif

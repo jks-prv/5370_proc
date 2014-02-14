@@ -87,6 +87,7 @@ side effects of HPIB register access:
 extern bool hpib_causeIRQ, hps;
 
 void hpib_args(bool cmd_line, int argc, char *argv[]);
+void hpib_reset();
 u4_t hpib_recv(void *conn, char *buf);
 void hpib_input(char *buf);
 u4_t hpib_fast_binary(s2_t *ibp, u4_t nloop);

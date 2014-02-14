@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <ctype.h>
 
-scan_code front_pnl_key[] = {
+const scan_code front_pnl_key[] = {
 //	LCL_RMT,			TI,					TRG_LVL,			MEAN,				STD_DEV,		PT1,			_100,			P_TI_ONLY,		P_M_TI,
 	{GND,D4,0,0},		{LDS0,D0,0,1},		{LDS1,D0,0,1},		{LDS2,D0,0,3},		{LDS3,D0,0,3},	{LDS4,D0,0,4},	{LDS5,D0,0,4},	{LDS6,D0,0,5},	{LDS7,D0,0,5},
 
@@ -23,7 +23,7 @@ scan_code front_pnl_key[] = {
 						{LDS0,D3,0,2},		{LDS1,D3,0,2},		{LDS2,D3,0,0},		{LDS3,D3,0,0},	{LDS4,D3,0,0},									{GND,D5,0,8},
 };
 
-scan_code front_pnl_led[] = {
+const scan_code front_pnl_led[] = {
 //	LCL_RMT,			TI,					TRG_LVL,				MEAN,				STD_DEV,			PT1,				_100,				P_TI_ONLY,				P_M_TI,
 	{DSA,L3,"rmt",0},	{DSF,L0,"ti",1},	{DSE,L0,"trg_lvl",1},	{DSD,L0,"mean",3},	{DSC,L0,"sdev",3},	{DSB,L0,"1",4},		{DSA,L0,"100",4},	{DS9,L0,"ti_only",5},	{DS8,L0,"+/-_ti",5},
 
@@ -37,7 +37,7 @@ scan_code front_pnl_led[] = {
 						{DSF,L3,".1s",2},	{DSE,L3,"1s",2},		{DSD,L3,"devt",6},	{DSC,L3,"sref",6},	{DSB,L3,"man_rate",6},											{DS8,L3,"man_inp",5},
 };
 
-scan_code front_pnt_units[] = {
+const scan_code front_pnt_units[] = {
 //	ASTERISK,			KILO,				EVT,				LSTN
 	{DS7,L0," *",2},	{DS6,L0,"k",0},		{DS5,L0," evt",2},	{DS4,L2," lstn",2},
 
@@ -71,7 +71,7 @@ typedef struct {
 	u1_t segs;
 } seg7_t;
 
-seg7_t seg7[] = {
+const seg7_t seg7[] = {
 	{ '0',		(T|TL|TR|B|BL|BR) },
 	{ '1',		(TR|BR) },
 	{ '2',		(T|TR|M|B|BL) },
@@ -127,11 +127,18 @@ static u1_t dsp_leds_cache[N_LEDS];
 
 #define LED_ON(lp)	(dsp_leds_cache[lp->drive] & lp->sense)
 
-bool dsp_7seg_ok;
+static bool dsp_7seg_ok;
 
-void dsp_7seg_init(void)
+void dsp_7seg_init(bool ok)
 {
-	dsp_7seg_ok = TRUE;
+	int i;
+	
+	dsp_7seg_ok = ok;
+	
+	if (ok) {
+		for (i=0; i<N_7SEG; i++) dsp_7seg_cache[i] = dsp_char_cache[i] = 0;
+		for (i=0; i<N_LEDS; i++) dsp_leds_cache[i] = 0;
+	}
 }
 
 #define N_UNITS_SHOW sizeof(front_pnt_units) / sizeof(front_pnt_units[0])
@@ -143,8 +150,8 @@ void dsp_7seg_translate(char *s, double *fval)
 	u1_t sc;
 	char c, cc;
 	bool numeric = TRUE;
-	scan_code *u;
-	seg7_t *s7;
+	const scan_code *u;
+	const seg7_t *s7;
 	static char fnum[32], *fp;
 	bool saw_pt=FALSE;
 	
@@ -207,7 +214,7 @@ void dsp_7seg_translate(char *s, double *fval)
 void dsp_key_leds_translate(char *s)
 {
 	int i, j;
-	scan_code *u;
+	const scan_code *u;
 
 	*s = 0;
 	
@@ -225,6 +232,8 @@ void dsp_key_leds_translate(char *s)
 
 u4_t dsp_7seg_dp(u4_t pos)
 {
+	if (!dsp_7seg_ok) return 0;
+	
 	u1_t d = dsp_7seg_cache[pos];
 	d |= DP;
 	dsp_7seg_cache[pos] = d;
@@ -241,6 +250,8 @@ u4_t dsp_7seg_dp(u4_t pos)
 // i.e. we're being called from interpreted code
 u4_t dsp_7seg_write(u4_t pos, char c, u1_t d)
 {
+	if (!dsp_7seg_ok) return 0;
+	
 	dsp_char_cache[pos] = c;
 	dsp_7seg_cache[pos] = d;
 	bus_write(ADDR_7SEG(pos), d);
@@ -255,6 +266,8 @@ u4_t dsp_leds_read(u4_t a)
 
 u4_t dsp_leds_write(u4_t a, u1_t d)
 {
+	if (!dsp_7seg_ok) return 0;
+	
 	dsp_leds_cache[a] = d;
 	bus_write(ADDR_LEDS(a), d);
 	
@@ -265,7 +278,7 @@ void dsp_7seg_chr(u4_t pos, char c)
 {
 	int i;
 	u1_t d;
-	seg7_t *s7;
+	const seg7_t *s7;
 	
 	c = tolower(c);
 	
@@ -403,7 +416,7 @@ void preempt_reset_key(bool preempt)
 
 typedef struct {
 	u1_t key;
-	scan_code *lp;
+	const scan_code *lp;
 } key_last_t;
 
 #define	N_GROUPS	9
@@ -418,7 +431,7 @@ void config_file_update()
 {
 	int i, group;
 	static u4_t key_last_update;
-	scan_code *kp, *lp;
+	const scan_code *kp, *lp;
 	key_last_t *kl;
 	key_last_t key[N_GROUPS];
 
@@ -454,7 +467,7 @@ void config_file_update()
 		key_need_update = FALSE;
 		key_last_update = sys_now();
 
-		sprintf(dbuf, "/home/root/.5370.%s.conf", conf_profile);
+		sprintf(dbuf, "/home/root/.5370.%s.keys", conf_profile);
 		scallz("fopen", fp = fopen(dbuf, "w"));
 		for (i=1; i<N_GROUPS; i++) {
 			if (key_last[i].key) {
@@ -544,4 +557,10 @@ void process_key(u1_t key)
 			}
 		}
 	}
+}
+
+void front_panel_reset()
+{
+	n_kcb = 0;
+	cb_running = FALSE;
 }

@@ -113,17 +113,17 @@ u1_t ram_image[RAM_SIZE];
 #include "6800.core.h"
 
 #if defined(DEBUG) || defined(INSN_TRACE)
-	int iTrace = 0;
-	int itr = 0;
-	int iSnap = 0;
+	int iTrace;
+	int itr;
+	int iSnap;
 	bool iDump;
 #endif
 
-static u1_t IRQs = 0;
+static u1_t IRQs;
 
 #ifdef DEBUG
-	int irq_trace = 0;
-	int ispeed = 0;
+	int irq_trace;
+	int ispeed;
 	
 	u4_t op_coverage[N_OP];
 	
@@ -149,6 +149,21 @@ static u1_t IRQs = 0;
 #endif
 
 #define PEND_PRINT	8
+
+void sim_proc_reset()
+{
+	IRQs = 0;
+	
+#if defined(DEBUG) || defined(INSN_TRACE)
+	irq_trace = ispeed = 0;
+	iTrace = itr = iSnap = 0;
+	iDump = FALSE;
+#endif
+
+#ifdef EXT_ICOUNT
+	iCount = 0;
+#endif
+}
 
 void sim_processor()
 {
@@ -201,8 +216,6 @@ void sim_processor()
 	trace_init();
 #endif
 
-D_STMT(reset:)
-	
 #ifdef INT_ICOUNT
 	iCount = 0;
 #endif
@@ -558,4 +571,5 @@ branch_taken:
 #endif
 
 	if (!sys_reset) goto next_insn;
+	sys_reset = FALSE;
 }

@@ -68,6 +68,43 @@ void check_pmux()
 	if (fail) panic("check if cape-bone-5370 device tree loaded properly");
 }
 
+void bus_reset()
+{
+	// FIXME: is BUS_OE default high when BBB is reset?
+	GPIO_SET(2) = BUS_OE;	// Z
+	GPIO_OUTPUT(2, BUS_OE);
+
+    GPIO_INPUT(0, G0_DATA);
+    GPIO_INPUT(1, G1_DATA);
+    GPIO_INPUT(2, G2_DATA);
+
+	GPIO_CLR(0) = BUS_LRW | BUS_LRST;		// assert reset
+	GPIO_SET(0) = BUS_DIR;	// read
+	GPIO_OUTPUT(0, BUS_LRW | BUS_DIR | BUS_LRST);
+	
+	GPIO_SET(1) = BUS_LVMA;
+	GPIO_OUTPUT(1, BUS_LVMA);
+	
+    GPIO_OUTPUT(0, G0_ADDR);
+    GPIO_OUTPUT(1, G1_ADDR);
+    GPIO_OUTPUT(3, G3_ADDR);
+
+    GPIO_INPUT(0, BUS_LIRQ);
+    GPIO_INPUT(1, BUS_LNMI);
+
+	GPIO_CLR(2) = BUS_OE;	// enable
+	
+	// setup 1.25 MHz 5370 default bus clock using a timer
+	// assumes CLK_M_OSC = 6 MHz (24/4)
+	TIMER_TCLR(4) = T_MODE;
+	TIMER_TCRR(4) = -9;		// 6 MHz = 166.67 nS, 1.25 MHz / 2 (toggle) = 1600 nS
+	TIMER_TLDR(4) = -9;		// 1600/166.67 = 9.6, using 9 gives 1.33 MHz
+	TIMER_TCLR(4) = T_MODE | T_START;
+
+	// FIXME need some delay?
+	GPIO_SET(0) = BUS_LRST;
+}
+
 void bus_init()
 {
 	int i;
@@ -196,40 +233,6 @@ GPIO_IN(2) >> 0
 	//	PRCM_TIMER4, PRCM_TIMER5, PRCM_TIMER6, PRCM_TIMER7);
 
 	check_pmux();
-	
-	// FIXME: is BUS_OE default high when BBB is reset?
-	GPIO_SET(2) = BUS_OE;	// Z
-	GPIO_OUTPUT(2, BUS_OE);
-
-    GPIO_INPUT(0, G0_DATA);
-    GPIO_INPUT(1, G1_DATA);
-    GPIO_INPUT(2, G2_DATA);
-
-	GPIO_CLR(0) = BUS_LRW | BUS_LRST;		// assert reset
-	GPIO_SET(0) = BUS_DIR;	// read
-	GPIO_OUTPUT(0, BUS_LRW | BUS_DIR | BUS_LRST);
-	
-	GPIO_SET(1) = BUS_LVMA;
-	GPIO_OUTPUT(1, BUS_LVMA);
-	
-    GPIO_OUTPUT(0, G0_ADDR);
-    GPIO_OUTPUT(1, G1_ADDR);
-    GPIO_OUTPUT(3, G3_ADDR);
-
-    GPIO_INPUT(0, BUS_LIRQ);
-    GPIO_INPUT(1, BUS_LNMI);
-
-	GPIO_CLR(2) = BUS_OE;	// enable
-	
-	// setup 1.25 MHz 5370 default bus clock using a timer
-	// assumes CLK_M_OSC = 6 MHz (24/4)
-	TIMER_TCLR(4) = T_MODE;
-	TIMER_TCRR(4) = -9;		// 6 MHz = 166.67 nS, 1.25 MHz / 2 (toggle) = 1600 nS
-	TIMER_TLDR(4) = -9;		// 1600/166.67 = 9.6, using 9 gives 1.33 MHz
-	TIMER_TCLR(4) = T_MODE | T_START;
-
-	// FIXME need some delay?
-	GPIO_SET(0) = BUS_LRST;
 }
 
 u4_t bus_fast_read(u4_t addr)
@@ -279,7 +282,7 @@ CONV_ADDR_DATA_DCL(ad_idle);
 CONV_DATA_DCL(d_n0_clr_ovfl);
 CONV_DATA_DCL(d_n3_clr_ovfl);
 
-void bus_gpio_init()
+void bus_pru_gpio_init()
 {
 	// for hpib_fast_binary()
 #ifndef HPIB_FAST_BINARY_PRU

@@ -521,7 +521,7 @@ typedef enum { S_INIT, S_IDLE, S_LISTEN, S_TALK_INIT, S_TALKING, NSTATES } state
 #endif
 
 
-char *hip = "";			// set to point to interface input commands
+char *hip;				// set to point to interface input commands
 bool hpib_causeIRQ;		// ask simulator for an IRQ
 
 // show full register accesses else just the HPIB data is sent
@@ -530,15 +530,24 @@ bool hps = FALSE;
 
 static int state;
 static int loopct;
-static u1_t r3 = 0;
+static u1_t r3;
 static u1_t irqFF = 0;
 static bool input_done;
 static bool irq_en, nmi_en;
 
 // for binary mode
 static bool binary_mode;
-static u1_t tb1 = 0;
+static u1_t tb1;
 static bool fast_mode;
+
+void hpib_reset()
+{
+	state = S_INIT;
+	hip = "";
+	loopct = r3 = irqFF = 0;
+	binary_mode = tb1 = fast_mode = 0;
+	hpib_causeIRQ = input_done = irq_en = nmi_en = FALSE;
+}
 
 static u1_t hpib_sim(u2_t addr, u1_t wdata)
 {

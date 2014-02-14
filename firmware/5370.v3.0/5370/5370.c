@@ -64,7 +64,6 @@ dev_io_t dev_io[DEV_SIZE];
 
 static int tty;
 
-static bool store_keys = TRUE;
 static bool recall_file = FALSE;
 char conf_profile[N_PROFILE] = "default";
 
@@ -98,23 +97,6 @@ void sim_args(bool cmd_line, int argc, char *argv[])
 		if (strcmp(argv[i], "-npru") == 0) use_pru = FALSE;
 #endif
 	}
-}
-
-void sim_init()
-{
-	// try and improve our performance a bit
-    setpriority(PRIO_PROCESS, 0, -20);
-	scall("mlockall", mlockall(MCL_CURRENT | MCL_FUTURE));
-
-	// check that new polarity scheme didn't break anything
-	assert(WREG_O3_RST == WREG_O3_RST_GOOD);
-	assert(WREG_O2_IDLE == WREG_O2_IDLE_GOOD);
-	assert(WREG_O2_ENA == WREG_O2_ENA_GOOD);
-	assert(WREG_O2_ARM == WREG_O2_ARM_GOOD);
-
-	bus_init();
-	pru_start();
-	bus_gpio_init();
 }
 
 void send_pru_cmd(u4_t cmd)
@@ -561,11 +543,6 @@ void sim_main()
 {
 	u2_t i;
 	
-	if (!background_mode) {
-		tty = open("/dev/tty", O_RDONLY | O_NONBLOCK);
-		if (tty < 0) sys_panic("open tty");
-	}
-
 #ifdef BUS_TEST
 	printf("TESTING...\n\n");
 	void bus_test();
@@ -594,8 +571,6 @@ void sim_main()
 		}
 	}
 	
-	net_connect(SERVER, NULL, HPIB_TCP_PORT);
-
 	sim_processor();
 }
 
@@ -675,12 +650,13 @@ enum front_pnl_loc_e skey_misc[] = { P_TI_ONLY, P_M_TI, EXT_HOFF, PER_COMPL, EXT
 #define	N_DBUF	256
 static char ibuf[32], dbuf[N_DBUF];
 
-static bool recall_active = FALSE;
+static bool recall_active;
 static FILE *kfp;
 static int rcl_key;
-static bool self_test = TRUE;
+static bool self_test;
 static u4_t boot_time;
 
+// return zero if command processed locally
 char *sim_input()
 {
 	int n=0, k, key;
@@ -695,11 +671,11 @@ char *sim_input()
 		self_test = FALSE;
 	}
 	
-	if (store_keys && !self_test && !recall_active) config_file_update();
+	if (!self_test && !recall_active) config_file_update();
 	
 	if (recall_file) {
 		recall_active = TRUE;
-		sprintf(dbuf, "/home/root/.5370.%s.conf", conf_profile);
+		sprintf(dbuf, "/home/root/.5370.%s.keys", conf_profile);
 		kfp = fopen(dbuf, "r");
 		key_epoch = sys_now(); key_threshold = 0;
 		recall_file = FALSE;
@@ -761,11 +737,17 @@ char *sim_input()
 				"rc\t\tshow values of count-chain registers (one sample)\n"
 				"rcl|recall [name]   load key settings from current or named profile\n"
 				"sto|store name      save key settings to named profile\n"
+				"r\t\treset instrument\n"
 				"q\t\tquit\n"
 				"\n");
 			return 0;
 		}
 		
+		if ((*cp == 'r') && (n == 2)) {
+			sys_reset = TRUE;
+			return 0;
+		}
+
 		if (*cp == 'q') {
 			exit(0);
 		}
@@ -915,5 +897,43 @@ char *sim_input()
 		return cp;	// pass to caller
 	} else {
 		return 0;
+	}
+}
+
+// done on each push of 'reset' key (or reset command)
+void sim_reset()
+{
+	hold_off = FALSE;
+	boot_time = rcl_key = num_meas = meas_time = shifted_key = sim_key = sim_key_intr = 0;
+	self_test = TRUE;
+	recall_file = recall_active = FALSE;
+	kfp = 0;
+	
+	bus_reset();
+	front_panel_reset();
+	sim_proc_reset();
+	hpib_reset();
+}
+
+// only done once per app run
+void sim_init()
+{
+	// try and improve our performance a bit
+    setpriority(PRIO_PROCESS, 0, -20);
+	scall("mlockall", mlockall(MCL_CURRENT | MCL_FUTURE));
+
+	// check that new polarity scheme didn't break anything
+	assert(WREG_O3_RST == WREG_O3_RST_GOOD);
+	assert(WREG_O2_IDLE == WREG_O2_IDLE_GOOD);
+	assert(WREG_O2_ENA == WREG_O2_ENA_GOOD);
+	assert(WREG_O2_ARM == WREG_O2_ARM_GOOD);
+
+	bus_init();
+	pru_start();
+	bus_pru_gpio_init();
+
+	if (!background_mode) {
+		tty = open("/dev/tty", O_RDONLY | O_NONBLOCK);
+		if (tty < 0) sys_panic("open tty");
 	}
 }

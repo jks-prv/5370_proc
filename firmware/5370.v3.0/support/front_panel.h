@@ -6,6 +6,7 @@
 // override of ascii character set
 #define CHAR_MU		0x01		// e.g. as used in uSec
 
+void dsp_7seg_init(bool ok);
 u4_t dsp_7seg_dp(u4_t pos);
 u4_t dsp_7seg_write(u4_t pos, char c, u1_t d);
 u4_t dsp_leds_read(u4_t a);
@@ -16,7 +17,6 @@ void dsp_7seg_clr();
 void dsp_7seg_str(u4_t pos, char *str, bool clear);
 void dsp_7seg_num(u4_t lsd_pos, u4_t n, u4_t field_width, bool msd_first, bool zero_fill);
 
-void dsp_7seg_init(void);
 void dsp_7seg_translate(char *s, double *fval);
 
 void dsp_key_leds_translate(char *s);
@@ -107,9 +107,7 @@ typedef struct {
 	};
 } scan_code;
 
-extern scan_code front_pnl_key[], front_pnl_led[], front_pnt_units[];
-
-extern bool dsp_7seg_ok;
+extern const scan_code front_pnl_key[], front_pnl_led[], front_pnt_units[];
 
 u1_t check_char();
 bool key_down();
@@ -117,6 +115,7 @@ void wait_key_release();
 void config_file_update();
 void preempt_reset_key(bool preempt);
 void process_key(u1_t key);
+void front_panel_reset();
 
 // mechanism to allow a routine to get a callback on a front panel key push
 typedef void (*k_cb_fn)(u1_t key);

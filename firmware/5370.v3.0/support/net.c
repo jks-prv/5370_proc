@@ -25,7 +25,7 @@
 #include <netinet/ip.h>
 #include <arpa/inet.h>
 
-static int sfd, srv_sock, listening_port;
+static int sfd, srv_sock;
 
 int net_connect(net_type_e cs, char *host, int port)
 {
@@ -67,7 +67,6 @@ int net_connect(net_type_e cs, char *host, int port)
 		if (listen(sfd, 1) < 0) sys_panic("listen");
 		if (fcntl(sfd, F_SETFL, O_NONBLOCK) < 0) sys_panic("socket non-block");
 		lprintf("listening for TCP connection on port %d..\n", port);
-		listening_port = port;
 		return sfd;
 	}
 	
@@ -106,6 +105,13 @@ int net_connect(net_type_e cs, char *host, int port)
 
 	printf("connected to %s\n", host);	
 	return sfd;
+}
+
+void net_disconnect()
+{
+	close(sfd);
+	close(srv_sock);
+	srv_sock = 0;
 }
 
 #ifdef CLIENT_SIDE

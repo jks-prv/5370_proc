@@ -39,8 +39,9 @@
 
 #include ARCH_INCLUDE
 
+void bus_reset();
 void bus_init();
-void bus_gpio_init();
+void bus_pru_gpio_init();
 u4_t bus_fast_read(u4_t addr);
 void bus_fast_write(u4_t addr, u4_t data);
 void bus_delay();
