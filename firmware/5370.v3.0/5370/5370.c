@@ -64,7 +64,7 @@ dev_io_t dev_io[DEV_SIZE];
 
 static int tty;
 
-static bool recall_file = FALSE;
+static bool recall_file = FALSE, need_recall_file;
 char conf_profile[N_PROFILE] = "default";
 
 void sim_args(bool cmd_line, int argc, char *argv[])
@@ -74,7 +74,7 @@ void sim_args(bool cmd_line, int argc, char *argv[])
 	for (i=1; i<argc; i++) {
 	
 		if (strcmp(argv[i], "-rcl") == 0 || strcmp(argv[i], "-recall") == 0) {
-			recall_file = TRUE;
+			recall_file = need_recall_file = TRUE;
 			
 			if (((i+1) < argc) && (argv[i+1][0] != '-')) {
 				i++;
@@ -621,20 +621,18 @@ void writeDev(u2_t addr, u1_t data)
 	(dev_io[addr].dev_write)(addr, data);
 }
 
-#define	SELF_TEST_DELAY		2048
-#define	DLY(n)	(SELF_TEST_DELAY+(n))		// wait a bit for self-test to finish
-
 static u4_t key_epoch, key_threshold;
 
 // mechanism to spread out recall key presses over time
 static bool kdelay(delay)
 {
-	static u4_t key_delay;
+	static u4_t key_delay, total_delay;
 
 	key_delay = time_diff(sys_now(), key_epoch);
+	total_delay = delay + 100;
 	
-	if ((key_delay >= DLY(delay)) && (DLY(delay) > key_threshold)) {
-		key_threshold = DLY(delay);
+	if ((key_delay >= total_delay) && (total_delay > key_threshold)) {
+		key_threshold = total_delay;
 		return TRUE;
 	}
 	
@@ -650,10 +648,12 @@ enum front_pnl_loc_e skey_misc[] = { P_TI_ONLY, P_M_TI, EXT_HOFF, PER_COMPL, EXT
 #define	N_DBUF	256
 static char ibuf[32], dbuf[N_DBUF];
 
+#define	SELF_TEST_DELAY		2048
+
+static bool self_test;
 static bool recall_active;
 static FILE *kfp;
 static int rcl_key;
-static bool self_test;
 static u4_t boot_time;
 
 // return zero if command processed locally
@@ -661,29 +661,36 @@ char *sim_input()
 {
 	int n=0, k, key;
 	char *cp = ibuf;
+	char key_name[16];
 	
 	if (background_mode)
 		return 0;
 	
 	if (!boot_time) boot_time = sys_now();
 
+	// can't recall any keys until self-test is finished
 	if (self_test && boot_time && (time_diff(sys_now(), boot_time) > SELF_TEST_DELAY)) {
 		self_test = FALSE;
 	}
 	
-	if (!self_test && !recall_active) config_file_update();
-	
-	if (recall_file) {
-		recall_active = TRUE;
-		sprintf(dbuf, "/home/root/.5370.%s.keys", conf_profile);
-		kfp = fopen(dbuf, "r");
-		key_epoch = sys_now(); key_threshold = 0;
-		recall_file = FALSE;
+	if (!self_test && !need_recall_file && !recall_active) {
+		config_file_update();
 	}
 	
-	if (recall_active && kfp && kdelay(rcl_key * 256)) {
+	if (!self_test && need_recall_file) {
+		sprintf(dbuf, "/home/root/.5370.%s.keys", conf_profile);
+		if ((kfp = fopen(dbuf, "r")) != NULL) {
+			key_epoch = sys_now(); key_threshold = rcl_key = 0;
+			recall_active = TRUE;
+		} else {
+			printf("no key profile named \"%s\", will create one\n", conf_profile);
+		}
+		need_recall_file = FALSE;
+	}
+	
+	if (recall_active && kfp && !self_test && kdelay(rcl_key * 256)) {
 		if (fgets(dbuf, N_DBUF, kfp)) {
-			if (sscanf(dbuf, "rcl key 0x%02x", &key) == 1) {
+			if (sscanf(dbuf, "rcl key 0x%02x %16s", &key, key_name) == 2) {
 				cp = "k-\n"; n=3;	// virtual command to get key press thru code below
 				rcl_key++;
 			}
@@ -814,7 +821,7 @@ char *sim_input()
 			if (k == -1) {
 				sim_key = key;
 				sim_key_intr = 1;
-				printf("recall: key 0x%02x\n", key);
+				printf("recall: key 0x%02x %s\n", key, key_name);
 			} else {
 				cp[strlen(cp)-1] = 0;
 				printf("bad key command: \"%s\"\n", cp);
@@ -824,19 +831,24 @@ char *sim_input()
 			return 0;
 		}
 		
-		if (sscanf(cp, "rcl %16s", conf_profile)==1 || sscanf(cp, "recall %16s", conf_profile)==1) {
-			printf("recall key settings from profile \"%s\"\n", conf_profile);
-			recall_file = TRUE;
-			return 0;
-		}
-		
-		// recall using currently active config
-		if (strcmp(cp, "rcl")==0 || strcmp(cp, "recall")==0) {
-			recall_file = TRUE;
+		if (strcmp(cp, "rcl\n")==0 || strcmp(cp, "recall\n")==0) {
+			printf("recall key settings from current profile \"%s\"\n", conf_profile);
+			need_recall_file = TRUE;
 			return 0;
 		}
 
-		if (sscanf(cp, "sto %16s", conf_profile)==1 || sscanf(cp, "store %16s", conf_profile)==1) {
+		if (sscanf(cp, "rcl %16s", conf_profile)==1 || sscanf(cp, "recall %16s", conf_profile)==1) {
+			printf("recall key settings from profile \"%s\"\n", conf_profile);
+			need_recall_file = TRUE;
+			return 0;
+		}
+		
+		if (strcmp(cp, "sto\n")==0 || strcmp(cp, "store\n")==0) {
+			printf("usage: sto|store name\n");
+			return 0;
+		}
+
+		if (sscanf(cp, "store %16s", conf_profile)==1 || sscanf(cp, "sto %16s", conf_profile)==1) {
 			printf("store key settings to profile \"%s\"\n", conf_profile);
 			return 0;
 		}
@@ -852,7 +864,7 @@ char *sim_input()
 		}
 
 #ifdef DEBUG
-		if (*cp == 'r' && cp[1] == 'c') {
+		if (*cp == 'r' && cp[1] == 'c' && n==3) {
 			dump_regs = BIT_AREG(N0ST) | BIT_AREG(N1N2H) | BIT_AREG(N1N2L) | BIT_AREG(N0H) | BIT_AREG(N0L);
 			return 0;
 		}
@@ -906,7 +918,8 @@ void sim_reset()
 	hold_off = FALSE;
 	boot_time = rcl_key = num_meas = meas_time = shifted_key = sim_key = sim_key_intr = 0;
 	self_test = TRUE;
-	recall_file = recall_active = FALSE;
+	need_recall_file = recall_file;
+	recall_active = FALSE;
 	kfp = 0;
 	
 	bus_reset();
