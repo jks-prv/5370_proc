@@ -127,7 +127,7 @@ static u1_t dsp_leds_cache[N_LEDS];
 
 #define LED_ON(lp)	(dsp_leds_cache[lp->drive] & lp->sense)
 
-static bool dsp_7seg_ok;
+static bool dsp_7seg_ok, dsp_numeric;
 
 void dsp_7seg_init(bool ok)
 {
@@ -138,6 +138,7 @@ void dsp_7seg_init(bool ok)
 	if (ok) {
 		for (i=0; i<N_7SEG; i++) dsp_7seg_cache[i] = dsp_char_cache[i] = 0;
 		for (i=0; i<N_LEDS; i++) dsp_leds_cache[i] = 0;
+		dsp_numeric = FALSE;
 	}
 }
 
@@ -149,7 +150,6 @@ void dsp_7seg_translate(char *s, double *fval)
 	int i, j;
 	u1_t sc;
 	char c, cc;
-	bool numeric = TRUE;
 	const scan_code *u;
 	const seg7_t *s7;
 	static char fnum[32], *fp;
@@ -158,13 +158,8 @@ void dsp_7seg_translate(char *s, double *fval)
 	fp = fnum; *fp = 0;
 
 	for (i=0; i<N_7SEG; i++) {
-		cc = dsp_char_cache[i];
-		if (cc && (cc != ' ')) numeric = FALSE;
-	}
-
-	for (i=0; i<N_7SEG; i++) {
 		// simulate spacing of 7-segment leds when displaying non-strings
-		if (numeric && (i==2 || i==5 || i==8 || i==11 || i==14)) *s++ = ' ';
+		if (dsp_numeric && (i==2 || i==5 || i==8 || i==11 || i==14)) *s++ = ' ';
 	
 		sc = dsp_7seg_cache[i];
 		cc = dsp_char_cache[i];
@@ -193,8 +188,9 @@ void dsp_7seg_translate(char *s, double *fval)
 	}
 	
 	*s++ = ' ';
+	*s = 0;
 	if (saw_pt==FALSE) *fp++ = '.';
-	*fp++ = 0;
+	*fp = 0;
 	if (fval) sscanf(fnum, "%lf", fval);
 
 	for (j=0; j<=2; j++) {
@@ -251,6 +247,7 @@ u4_t dsp_7seg_dp(u4_t pos)
 u4_t dsp_7seg_write(u4_t pos, char c, u1_t d)
 {
 	if (!dsp_7seg_ok) return 0;
+	dsp_numeric = c? FALSE : TRUE;
 	
 	dsp_char_cache[pos] = c;
 	dsp_7seg_cache[pos] = d;
@@ -389,6 +386,8 @@ void display_ipaddr(u1_t *ipaddr)
 	dsp_7seg_dp(8);
 	dsp_7seg_num(13, ipaddr[3], 3, FALSE, FALSE);
 	dsp_7seg_dp(11);
+	
+	dsp_numeric = TRUE;		// force shown as a numeric
 }
 
 
@@ -533,9 +532,6 @@ void process_key(u1_t key)
 		if (key == KEY(RESET)) {
 			dsp_7seg_str(0, "reset", TRUE);
 			dsp_led_set(RESET);
-			while (key_down())
-				;
-			printf("reset\n\n");
 			sys_reset = TRUE;
 			return;
 		}

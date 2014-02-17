@@ -16,8 +16,8 @@
 #include <fcntl.h>
 
 // for IP address-mode part of front-panel settings UI
-typedef enum { AM_DHCP, AM_IP, AM_NM, AM_GW, AM_LAST } addr_mode_e;
-/*const*/ char *addr_mode_str[] = { "dhcp", "ip", "nm", "gw" };
+typedef enum { M_CANCEL, M_HALT, M_DHCP, M_IP, M_NM, M_GW, M_LAST } menu_e;
+/*const*/ char *menu_str[] = { "cancel", "halt", "dhcp", "ip", "nm", "gw" };
 
 // keys used when changing front-panel settings
 const struct {
@@ -32,7 +32,7 @@ const struct {
 
 // config info stored at the highest address in flash
 typedef struct {
-	addr_mode_e addr_mode;
+	int menu;
 	union {
 		u1_t if_ipinfo[3][4];
 		struct {
@@ -61,12 +61,13 @@ int main(int argc, char *argv[])
 	bool isReset = FALSE;
 	app_state_e app_state;
 	bool save_cfg = FALSE;
-	bool change_settings_ui(addr_mode_e *addr_mode, u1_t key, bool *skip_first, cfg_t *cfg);
+	bool change_settings_ui(menu_e *menu, u1_t key, bool *skip_first, cfg_t *cfg);
 	bool show_ip = FALSE;
 	bool config_valid, config_key = FALSE;
 	bool config_ip = FALSE, config_nm = FALSE, config_gw = FALSE, config_am = FALSE;
 	u4_t key;
-	addr_mode_e addr_mode;
+	menu_e menu;
+	int addr_mode;
 	int ip[4], nm[4], gw[4], bc[4];
 	
 	FILE *cfp, *efp;
@@ -106,8 +107,9 @@ reset:
 	// This is similar to the C runtime idea of zeroing the bss when a program is first run.
 	
 	if (isReset) {
+		isReset = FALSE;
 		net_disconnect();
-		skip_first = FALSE;
+		skip_first = save_cfg = config_key = config_ip = config_nm = config_gw = config_am = FALSE;
 	}
 
 	app_state = APP_START;
@@ -141,11 +143,14 @@ reset:
 			if (sscanf(lbuf, "gw %d.%d.%d.%d", &gw[0], &gw[1], &gw[2], &gw[3]) == 4) config_gw = TRUE; else
 				;
 		}
+		assert((addr_mode == 0) || (addr_mode == 1));
+		menu = cfg->menu = (addr_mode == 0)? M_DHCP : M_IP;
+		
 		if (config_key && config_ip && config_nm && config_gw && config_am) {
 			printf("valid config file %s\n", config_file);
 			config_valid = TRUE;
 
-			if (addr_mode != AM_DHCP) {
+			if (menu == M_IP) {
 				printf("setting interface address\n");
 				sprintf(lbuf, "ifconfig eth0 %d.%d.%d.%d netmask %d.%d.%d.%d",
 					ip[0], ip[1], ip[2], ip[3], nm[0], nm[1], nm[2], nm[3]);
@@ -160,15 +165,13 @@ reset:
 		fclose(cfp);
 	}
 
-	if (!config_valid) {		// configuration not valid, so set some defaults
-		addr_mode = cfg->addr_mode = AM_DHCP;
-		bcopy(default_ipinfo, cfg->if_ipinfo, sizeof(default_ipinfo));
-		save_cfg = TRUE;
+	if (!config_valid) {
+		menu = cfg->menu = M_DHCP;		// try DHCP first if not valid config
 	}
 
 #define ENET_RETRY 10
 
-	if (addr_mode == AM_DHCP) {
+	if (menu == M_DHCP) {	// see if interface configured by DHCP
 		gw[3]=gw[2]=gw[1]=gw[0]=0;	// ifconfig doesn't tell us the gateway, only the broadcast which we don't care about
 		
 		// sometimes the link is slow to come up, so retry a few times
@@ -189,7 +192,7 @@ reset:
 			delay(1000);
 		}
 	} else {
-		i=0;	// configured manually
+		i=0;	// interface configured manually above
 	}
 
 	if (i != ENET_RETRY) {
@@ -197,10 +200,10 @@ reset:
 			cfg->ip[i] = ip[i]; cfg->nm[i] = nm[i]; cfg->gw[i] = gw[i];
 		}
 
-		if (addr_mode == AM_DHCP) lprintf("via DHCP ");
+		if (menu == M_DHCP) lprintf("via DHCP ");
 		lprintf("eth0: ip %d.%d.%d.%d mask %d.%d.%d.%d ",
 			ip[0], ip[1], ip[2], ip[3], nm[0], nm[1], nm[2], nm[3]);
-		if (addr_mode != AM_DHCP) lprintf("gw %d.%d.%d.%d", gw[0], gw[1], gw[2], gw[3]);
+		if (menu != M_DHCP) lprintf("gw %d.%d.%d.%d", gw[0], gw[1], gw[2], gw[3]);
 		lprintf("\n");
 		dsp_7seg_str(0, "ip", TRUE);
 		display_ipaddr(cfg->ip);
@@ -209,6 +212,12 @@ reset:
 		dsp_7seg_str(0, "no dhcp?", TRUE);
 	}
 	
+	if (!config_valid && (i == ENET_RETRY)) {		// configuration not valid, DHCP failed, so set some defaults
+		menu = cfg->menu = M_IP;
+		bcopy(default_ipinfo, cfg->if_ipinfo, sizeof(default_ipinfo));
+		save_cfg = TRUE;
+	}
+
 	if (show_ip) xit(0);
 	delay(2000);	// show ip on display for a moment before continuing
 
@@ -217,40 +226,61 @@ reset:
 	// place a call here to setup your measurement extension code
 	meas_extend_example_init();
 
-	// reset key held down during a reboot -- drop into "change settings" mode
+	// reset key held down during a reboot -- drop into menu mode
 	preempt_reset_key(TRUE);
+	bool enter_menu = TRUE;
 	
-	if (bus_read(RREG_KEY_SCAN) == KEY(RESET)) {
-		app_state = APP_WAIT;
-		dsp_7seg_str(0, "ready", TRUE);
-		wait_key_release();
-		dsp_7seg_str(0, "chg settings", TRUE);
-		skip_first = TRUE;
-		
-		// light up the keys valid during "change settings"
-		for (i=0; settings_keys[i].key; i++) {
-			dsp_led_set(settings_keys[i].key);
-		}
-	}
-
 	while (1) {
 		u1_t key;
 		
+		sim_input();	// for remote debugging of menu mode
+
 		// while in the boot routine the reset key either starts the app or saves the changed config
-		key = bus_read(RREG_KEY_SCAN);
-		
+		key = handler_dev_display_read(RREG_KEY_SCAN);
+
+		if (enter_menu && (key == KEY(RESET))) {
+			enter_menu = FALSE;
+			app_state = APP_WAIT;
+			dsp_7seg_str(0, "ready", TRUE);
+			printf("menu mode -- ready\n");
+			wait_key_release();
+			dsp_led_clr(RESET);
+			key = KEY_IDLE;
+			dsp_7seg_str(0, "chg settings", TRUE);
+			skip_first = TRUE;
+			menu = M_HALT;		// first menu item displayed
+			
+			// light up the keys valid during menu mode
+			for (i=0; settings_keys[i].key; i++) {
+				dsp_led_set(settings_keys[i].key);
+			}
+		}
+
 		if (key == KEY(RESET)) {
 
-			if (addr_mode != AM_DHCP) addr_mode = AM_IP;
-			if (addr_mode != cfg->addr_mode) save_cfg = TRUE;
+			if (!skip_first && (menu == M_HALT)) {
+					dsp_7seg_str(0, "halting", TRUE);
+					system("halt");
+			} else
+			if (menu == M_CANCEL || (skip_first && (menu == M_HALT))) {
+				if (isReset) {		// if previous sim was interrupted must reset before starting new one
+					goto reset;
+				} else {
+					save_cfg = FALSE;
+				}
+			} else {
+				if (menu != M_DHCP) menu = M_IP;
+				if (menu != cfg->menu) save_cfg = TRUE;
+			}
 
 			if (save_cfg) {
 				dsp_7seg_str(0, "config changed", TRUE);
 				delay(2000);
 				wait_key_release();
-				cfg->addr_mode = addr_mode;
+				dsp_led_clr(RESET);
+				cfg->menu = menu;
 			
-				if (addr_mode == AM_DHCP) {
+				if (menu == M_DHCP) {
 					dsp_7seg_str(0, "using dhcp mode", TRUE);
 				} else {
 					dsp_7seg_str(0, "using ip mode", TRUE);
@@ -262,7 +292,7 @@ reset:
 				if ((cfp = fopen(config_file, "w")) == NULL) sys_panic(config_file);
 				printf("writing config file %s\n", config_file);
 				fprintf(cfp, "key 0xcafe5370\n");
-				fprintf(cfp, "am %d\n", cfg->addr_mode);
+				fprintf(cfp, "am %d\n", (cfg->menu == M_DHCP)? 0:1);
 				fprintf(cfp, "ip %d.%d.%d.%d\n", cfg->ip[0], cfg->ip[1], cfg->ip[2], cfg->ip[3]);
 				fprintf(cfp, "nm %d.%d.%d.%d\n", cfg->nm[0], cfg->nm[1], cfg->nm[2], cfg->nm[3]);
 				fprintf(cfp, "gw %d.%d.%d.%d\n", cfg->gw[0], cfg->gw[1], cfg->gw[2], cfg->gw[3]);
@@ -276,18 +306,30 @@ reset:
 			if (app_state != APP_BAD) {
 				dsp_7seg_str(0, "start", TRUE);
 				wait_key_release();
+				dsp_led_clr(RESET);
 				app_state = APP_START;
 			}
 		} else {
-			if (change_settings_ui(&addr_mode, key, &skip_first, cfg)) save_cfg = TRUE;
+			dsp_led_clr(RESET);
+			if (change_settings_ui(&menu, key, &skip_first, cfg)) save_cfg = TRUE;
 		}
 
 		if (app_state == APP_START) {
 			preempt_reset_key(FALSE);
 			sim_main();
-			printf("RESET\n");
+			dsp_7seg_str(0, "reset", TRUE);
+			printf("reset\n");
+			delay(1000);
+			
+			// this sim was interrupted, so can't restart a new sim without doing a reset first
 			isReset = TRUE;
-			goto reset;
+
+			// if key still down after delay enter menu mode, else treat as simple reset
+			if (bus_read(RREG_KEY_SCAN) == KEY(RESET)) {
+				enter_menu = TRUE;
+			} else {
+				goto reset;
+			}
 		}
 	}
 
@@ -295,37 +337,37 @@ reset:
 }
 
 
-bool change_settings_ui(addr_mode_e *addr_mode, u1_t key, bool *skip_first, cfg_t *cfg)
+bool change_settings_ui(menu_e *menu, u1_t key, bool *skip_first, cfg_t *cfg)
 {
 	int i;
 	bool save_cfg = FALSE;
 	s1_t ki;
 
-	// scroll up the ip address mode list
+	// scroll the menu list forward
 	if (key == KEY(TI)) {
 		if (*skip_first) {
 			*skip_first = FALSE;
 		} else {
-			*addr_mode = *addr_mode+1;
-			if (*addr_mode == AM_LAST) *addr_mode = 0;
+			*menu = *menu+1;
+			if (*menu == M_LAST) *menu = 0;
 		}
-addr_mode_up_down:
-		dsp_7seg_str(0, addr_mode_str[*addr_mode], TRUE);
-		if (*addr_mode != AM_DHCP) {
-			display_ipaddr(cfg->if_ipinfo[*addr_mode-AM_IP]);
+menu_up_down:
+		dsp_7seg_str(0, menu_str[*menu], TRUE);
+		if (((*menu == M_IP) || (*menu == M_NM) || (*menu == M_GW))) {
+			display_ipaddr(cfg->if_ipinfo[*menu-M_IP]);
 		}
 		wait_key_release();
 	} else
 
-	// scroll down the ip address mode list
+	// scroll the menu list backward
 	if (key == KEY(FREQ)) {
 		if (*skip_first) {
 			*skip_first = FALSE;
 		} else {
-			if (*addr_mode == 0) *addr_mode = AM_LAST;
-			*addr_mode = *addr_mode-1;
+			if (*menu == 0) *menu = M_LAST;
+			*menu = *menu-1;
 		}
-		goto addr_mode_up_down;
+		goto menu_up_down;
 	}
 	
 	// inc/dec a byte of the ip/nm/gw address
@@ -344,18 +386,18 @@ addr_mode_up_down:
 		u4_t td, tref = sys_now(), tcmp = 256, tinc = 32;
 		do {
 			td = time_diff(sys_now(), tref);
-			if ((*addr_mode != AM_DHCP) && (first_time || (td >= tcmp))) {
+			if (((*menu == M_IP) || (*menu == M_NM) || (*menu == M_GW)) && (first_time || (td >= tcmp))) {
 				if (ki > 0) {
-					cfg->if_ipinfo[*addr_mode-AM_IP][ki-1]++;
+					cfg->if_ipinfo[*menu-M_IP][ki-1]++;
 				} else {
-					cfg->if_ipinfo[*addr_mode-AM_IP][-ki-1]--;
+					cfg->if_ipinfo[*menu-M_IP][-ki-1]--;
 				}
-				display_ipaddr(cfg->if_ipinfo[*addr_mode-AM_IP]);
+				display_ipaddr(cfg->if_ipinfo[*menu-M_IP]);
 				first_time = FALSE;
 				tcmp += tinc;
 			}
 		} while (key_down());
-		save_cfg = TRUE;
+		save_cfg = TRUE;	// change has been made
 	}
 	
 	return save_cfg;

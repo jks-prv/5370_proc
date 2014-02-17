@@ -67,6 +67,8 @@ static int tty;
 static bool recall_file = FALSE, need_recall_file;
 char conf_profile[N_PROFILE] = "default";
 
+static bool sim_running = FALSE;
+
 void sim_args(bool cmd_line, int argc, char *argv[])
 {
 	int i;
@@ -95,6 +97,7 @@ void sim_args(bool cmd_line, int argc, char *argv[])
 		if (strcmp(argv[i], "-all") == 0) display_all = TRUE;
 		if (strcmp(argv[i], "-tr") == 0) trace_regs = TRUE;
 		if (strcmp(argv[i], "-npru") == 0) use_pru = FALSE;
+		if (strcmp(argv[i], "-rst") == 0) sim_key = KEY(RESET);
 #endif
 	}
 }
@@ -321,14 +324,18 @@ u1_t handler_dev_display_read(u2_t addr)
 	assert (addr == RREG_KEY_SCAN);
 
 	data = bus_read(addr);
-
+	
 	if (data != KEY_IDLE) {
 		process_key(data);
 	} else
 
 	if (sim_key) {
 		data = sim_key;
-		if (!sim_key_intr) sim_key = 0;		// allow it to be read twice, but generate interrupt only once
+		if (sim_running) {
+			if (!sim_key_intr) sim_key = 0;		// allow it to be read twice, but generate interrupt only once
+		} else {
+			sim_key = 0;	// only once for non-simulator uses
+		}
 		sim_key_intr = 0;
 		process_key(data);
 	}
@@ -571,7 +578,9 @@ void sim_main()
 		}
 	}
 	
+	sim_running = TRUE;
 	sim_processor();
+	sim_running = FALSE;
 }
 
 #ifdef REG_RECORD
@@ -811,7 +820,19 @@ char *sim_input()
 			if (sscanf(cp, "k m%d", &n) == 1) {		// misc keys 1..6
 				if (n >= 1 && n <= 6)
 					k = skey_misc[n-1];
-			}
+			} else
+#ifdef DEBUG
+			if (strcmp(cp, "k r\n") == 0) {			// for remote debugging of menu mode
+				k = RESET;
+			} else
+			if (strcmp(cp, "k d\n") == 0) {
+				k = TI;
+			} else
+			if (strcmp(cp, "k u\n") == 0) {
+				k = FREQ;
+			} else
+#endif
+			;
 			
 			if (k > 0) {
 				sim_key = KEY(k);
@@ -916,7 +937,7 @@ char *sim_input()
 void sim_reset()
 {
 	hold_off = FALSE;
-	boot_time = rcl_key = num_meas = meas_time = shifted_key = sim_key = sim_key_intr = 0;
+	boot_time = rcl_key = num_meas = meas_time = shifted_key;
 	self_test = TRUE;
 	need_recall_file = recall_file;
 	recall_active = FALSE;

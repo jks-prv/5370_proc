@@ -1,4 +1,4 @@
-[edited 14-feb-2014]
+[edited 17-feb-2014]
 
 This file elaborates on the Quick Start guide in the "README.txt" file.
 
@@ -7,18 +7,22 @@ FRONT PANEL MENU INTERFACE
 
 There is a simple menu interface that uses the front panel keys and display to quickly change a few parameters without having to access the BBB. Most importantly you can use this method to set the IP address of the BBB Ethernet interface.
 
-To enter menu mode hold down the 'reset' key, and keep holding, until you see the message 'ready' on the display. Do this after: an instrument power-on, a manual start of the app from the BBB or after an instrument reset created by momentarily pressing reset. The last method is a little confusing; you punch reset once to start an instrument reset, but then immediately hold reset down again to enter menu mode. This is the method you must use while the app is running.
+To enter menu mode hold down the 'reset' key, and keep holding, until you see the message 'ready' on the display. Do this after: an instrument power-on, a manual start of the app from the BBB or anytime while the app is running. To simply do a reset (and not enter menu mode) while the app is running don't hold the key down for more than one second.
 
-Once 'ready' is displayed let go of the reset key and the display will show 'chg settings'. The keys that are valid in menu mode now have their LEDs lit. The two keys in the 'function' column (TI, FREQ) will scroll the menu list up and down. The other keys change the menu item contents.
+Once 'ready' is displayed let go of the reset key and the display will show 'chg settings'. The keys that are valid in menu mode will now have their LEDs lit. The two keys in the 'function' column (TI, FREQ) will scroll the menu list up and down. The other keys change the menu item contents.
 
 Currently the menu items displayed are:
 
+    cancel         don't make any changes
+    halt           halt the BBB in preparation for power-off
     dhcp           use DHCP to set the Ethernet IP address
     ip             set the IP address manually
     nm             set the netmask manually
     gw             set the gateway manually
 
-For setting the numerical values use the lit keys in the 5370 'statistics' and 'sample size' columns to increment and decrement the values. Holding the key down will auto-repeat. To exit menu mode press the reset key. If you made a change the message 'config changed' will appear. Then 'using dhcp mode' or 'using ip mode' depending on if you left the dhcp menu entry showing when you exited (important: this is how you select dhcp mode). After a few seconds the message 'saving config' will appear. Then the instrument will then reset.
+For setting the numerical values of ip, nm and gw use the lit keys in the 5370 'statistics' and 'sample size' columns to increment and decrement the values. Holding the key down will auto-repeat.
+
+To exit menu mode, and/or invoke the menu action, press the reset key after displaying the relevant menu item (e.g. 'cancel' or 'halt'). For the IP addressing modes leave 'dhcp' displayed or one of the three manual IP address values depending on if you want the Ethernet to use DHCP or manual IP addressing going forward. If you made a change the message 'config changed' will appear. Then the message 'using dhcp mode' or 'using ip mode'. After a few seconds the message 'saving config' will appear. The instrument will then reset. For 'halt' the message 'halting' will appear and it will be safe to power-off the instrument after 10 seconds when Linux on the BBB has halted.
 
 
 MANUALLY RUNNING THE APP
@@ -52,23 +56,23 @@ KEYBOARD COMMANDS
 
 When the app has been started manually it responds to several commands (type "?" or "help" for a list). These are primarily to assist development when you're not sitting in the same room as the noisy beast:
 
-        d               show instrument display including units and key LEDs
-        h <HPIB cmd>    emulate HPIB command input, e.g. "h md2"
-        h?              prints reminder list of HPIB commands
-        k <fn1 .. fn4>  emulate function key 1-4 press, e.g. "k fn1" is TI key
-        k <gt1 .. gt4>  emulate gate time key 1-4 press
-        k <st1 .. st8>  emulate statistics key 1-8 press
-        k <ss1 .. ss5>  emulate sample size key 1-5 press
-        k <m1 .. m6>    emulate "misc" key 1-6 press (see code for mapping)
-                        1 TI only, 2 +/- TI, 3 ext h.off,
-                        4 per compl, 5 ext arm, 6 man rate
-        m               run measurement extension example code
-        s               show measurement statistics
-        rc              show values of count-chain registers (one sample)
-        rcl|recall [name]   load key settings from current or named profile
-        sto|store name      save key settings to named profile
-        r               reset instrument
-        q               quit
+    d               show instrument display including units and key LEDs
+    h <HPIB cmd>    emulate HPIB command input, e.g. "h md2"
+    h?              prints reminder list of HPIB commands
+    k <fn1 .. fn4>  emulate function key 1-4 press, e.g. "k fn1" is TI key
+    k <gt1 .. gt4>  emulate gate time key 1-4 press
+    k <st1 .. st8>  emulate statistics key 1-8 press
+    k <ss1 .. ss5>  emulate sample size key 1-5 press
+    k <m1 .. m6>    emulate "misc" key 1-6 press (see code for mapping)
+                    1 TI only, 2 +/- TI, 3 ext h.off,
+                    4 per compl, 5 ext arm, 6 man rate
+    m               run measurement extension example code
+    s               show measurement statistics
+    rc              show values of count-chain registers (one sample)
+    rcl|recall [name]   load key settings from current or named profile
+    sto|store name      save key settings to named profile
+    r               reset instrument
+    q               quit
 
 For the debug version of the app ("hd" command) there are some others (see code).
 
@@ -150,9 +154,9 @@ In the (hopefully unlikely) event that your BBB becomes "bricked" the BBB wiki l
 Versionitis:
 We all know stuff breaks when using different versions of things. All the BBBs used in testing have been hardware revision "A5C", "A6" and "A6A" boards. The software distribution of Angstrom Linux used was "2013.06.20" and "2013.09.04" found by doing:
 
-        mkdir -p /mnt/boot
-        mount /dev/mmcblk0p1 /mnt/boot
-        more /mnt/boot/ID.txt
+    mkdir -p /mnt/boot
+    mount /dev/mmcblk0p1 /mnt/boot
+    more /mnt/boot/ID.txt
 
 Or by looking at the ID.txt file in the "BEAGLEBONE" virtual USB drive that appears when you connect the BBB to a computer with a USB cable. These distributions use a Linux 3.8 kernel.
 
@@ -161,51 +165,51 @@ FILES
 
 The files on the github repository and on the BBB are organized as follows. The BBB only has the files from the firmware sub-directory and these files are in the root account home under a directory that reflects the software version e.g. /home/root/5370.v3.0/
 
-        firmware/<version>/     C code that runs on the BBB.
-        pcb/<version>/          Complete documentation for replicating or 
-                                modifying the PCB.
-        docs/                   Relevant documentation. 
+    firmware/<version>/     C code that runs on the BBB.
+    pcb/<version>/          Complete documentation for replicating or 
+                            modifying the PCB.
+    docs/                   Relevant documentation. 
         
-        firmware/5370[AB].ROM   Just for reference, packed-binary format copies
-                                of the ROM code from version A and B 
-                                instruments. The .h files of the ROM code 
-                                compiled with the code were derived from these.
+    firmware/5370[AB].ROM   Just for reference, packed-binary format copies
+                            of the ROM code from version A and B 
+                            instruments. The .h files of the ROM code 
+                            compiled with the code were derived from these.
         
-        firmware/<version>/
-            6800/6800*          The Motorola MC6800 microprocessor interpreter.
-            5370/5370*          Called from the interpreter for 5370 bus I/O.
-            5370/hpib*          The HPIB board emulator.
-            arch/sitara/*       Mapping from 5370 bus to BBB GPIO.
-            pru/*				PRU program and tools for generating bus cycles
-            					and measuring N0/N3 counter overflows.
-            support/*           Code to support the 7-seg display, LEDs, etc.
-            user/*              An example of code to extend the capabilities of
-                                the instrument.
-            unix_env/*          A few customization files for Angstrom Linux 
-                                including the device-tree file necessary to 
-                                setup the GPIO lines.
+    firmware/<version>
+        6800/6800*          The Motorola MC6800 microprocessor interpreter.
+        5370/5370*          Called from the interpreter for 5370 bus I/O.
+        5370/hpib*          The HPIB board emulator.
+        arch/sitara/*       Mapping from 5370 bus to BBB GPIO.
+        pru/*				PRU program and tools for generating bus cycles
+            				and measuring N0/N3 counter overflows.
+        support/*           Code to support the 7-seg display, LEDs, etc.
+        user/*              An example of code to extend the capabilities of
+                            the instrument.
+        unix_env/*          A few customization files for Angstrom Linux 
+                            including the device-tree file necessary to 
+                            setup the GPIO lines.
         
-        pcb/<version>/
-            5370.schematic.pdf  schematic as a PDF
-            5370.pro            KiCAD project file
-            5370.sch            KiCAD schematic source
-            5370.brd            KiCAD PCB layout source
-            5370.gvp            Gerbv (Gerber viewer) project file
-            5370.BOM.*          Bill-of-materials file: prices, part notes.
-            plot/5370-*.*       Gerber plots from KiCAD: 2-layer board, mask, 
-                                silkscreen and edge cut files.
-            plot/5370.drl       KiCAD drill file: Excellon format, inches,
-                                keep zeros, minimal header, absolute origin, 2:4
-            plot/makefile       Will zip all the files together.
-            test_fixture/       Files to support the test fixture built for use
-                                by the board assembly company.
+    pcb/<version>/
+        5370.schematic.pdf  schematic as a PDF
+        5370.pro            KiCAD project file
+        5370.sch            KiCAD schematic source
+        5370.brd            KiCAD PCB layout source
+        5370.gvp            Gerbv (Gerber viewer) project file
+        5370.BOM.*          Bill-of-materials file: prices, part notes.
+        plot/5370-*.*       Gerber plots from KiCAD: 2-layer board, mask, 
+                            silkscreen and edge cut files.
+        plot/5370.drl       KiCAD drill file: Excellon format, inches,
+                            keep zeros, minimal header, absolute origin, 2:4
+        plot/makefile       Will zip all the files together.
+        test_fixture/       Files to support the test fixture built for use
+                            by the board assembly company.
         
-        pcb/data.sheets/        Cut sheets for all components.
+    pcb/data.sheets/        Cut sheets for all components.
         
-        pcb/libraries.v1/       KiCAD-format library (schematic) and module 
-        pcb/modules.v1/         (footprint) files for all the components used. 
-                                No references are made to outside libraries to
-                                keep things simple.
+    pcb/libraries.v1/       KiCAD-format library (schematic) and module 
+    pcb/modules.v1/         (footprint) files for all the components used. 
+                            No references are made to outside libraries to
+                            keep things simple.
 
 
 DESIGN OVERVIEW

@@ -1,4 +1,4 @@
-[edited 14-feb-2014]
+[edited 17-feb-2014]
 
 This document describes the HP 5370 processor replacement board project.
 
@@ -50,12 +50,12 @@ The current Angstrom distribution doesn't have NTP configured properly by defaul
 
 Now type the following to fetch and install the software:
 
-	cd /home/root (if you're not there already)
+	cd  (takes you to "/home/root" if you're not there already)
 	curl -o 5370.tgz www.jks.com/5370/5370.tgz
 	tar xfz 5370.tgz
 	cd 5370
 	make install
 
-If there were no errors test the install by running the 5370 app manually. Just type the command "./hd" and then, after the 5370 has responded properly, control-C to stop. The "make install" above installs the app so it automatically runs when the BBB is next booted. You can type "reboot" to test this. Remember to type "halt" and wait 10 seconds before powering off.
+If there were no errors test the install by running the 5370 app manually. Just type the command "./hd" and then, after the 5370 seems to be working properly, control-C to stop. The "make install" above installs the app so it automatically runs when the BBB is next booted. You can type "reboot" to test this. Remember to type "halt" and wait 10 seconds before powering off.
 
 [ end of document ]
