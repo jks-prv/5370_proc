@@ -45,21 +45,22 @@ cfg_t cfg_buf;
 
 const u1_t default_ipinfo[3][4] = { /*ipaddr*/{10,0,0,10}, /*netmask*/{255,255,255,0}, /*gateway*/{10,0,0,1} };
 
-typedef enum { APP_START, APP_BAD, APP_WAIT } app_state_e;
-
 #define LBUF 256
 char lbuf[LBUF];
 
 bool background_mode = FALSE;
 
 static bool skip_first = FALSE;
+static bool menu_action = TRUE;
+
+typedef enum { S_MENU, S_MENU_POLL, S_MENU_DONE, S_START } app_state_t;
+static app_state_t app_state;
 
 int main(int argc, char *argv[])
 {
 	int i, n;
 	
-	bool isReset = FALSE;
-	app_state_e app_state;
+	bool wasRunning = FALSE;
 	bool save_cfg = FALSE;
 	bool change_settings_ui(menu_e *menu, u1_t key, bool *skip_first, cfg_t *cfg);
 	bool show_ip = FALSE;
@@ -81,6 +82,7 @@ int main(int argc, char *argv[])
 	for (i=1; i<argc; i++) {
 		if (strcmp(argv[i], "-bg") == 0) background_mode = TRUE;
 		if (strcmp(argv[i], "-ip") == 0) show_ip = TRUE;
+		if (strcmp(argv[i], "-no") == 0) menu_action = FALSE;
 
 		if (strcmp(argv[i], "?")==0 || strcmp(argv[i], "-?")==0 || strcmp(argv[i], "--?")==0 || strcmp(argv[i], "-h")==0 ||
 			strcmp(argv[i], "h")==0 || strcmp(argv[i], "-help")==0 || strcmp(argv[i], "--h")==0 || strcmp(argv[i], "--help")==0) {
@@ -101,18 +103,18 @@ int main(int argc, char *argv[])
 	hpib_args(TRUE, argc, argv);
 
 	sim_init();
+	
+	if (!menu_action) printf("menu action disabled\n");
 
 reset:
-	// to support the action of the 'reset' key most code files have a reset routine that zeros static variables.
+	// To support the action of the 'reset' key most code files have a reset routine that zeros static variables.
 	// This is similar to the C runtime idea of zeroing the bss when a program is first run.
 	
-	if (isReset) {
-		isReset = FALSE;
+	if (wasRunning) {
+		wasRunning = FALSE;
 		net_disconnect();
 		skip_first = save_cfg = config_key = config_ip = config_nm = config_gw = config_am = FALSE;
 	}
-
-	app_state = APP_START;
 
 	sim_reset();
 	dsp_7seg_init(TRUE);
@@ -129,7 +131,7 @@ reset:
 	dsp_7seg_num(12, FIRMWARE_VER_MIN, 0, TRUE, FALSE);
 	dsp_7seg_dp(12);
 	dsp_leds_clr_all();
-	delay(1000);
+	delay(2000);
 
 	if ((cfp = fopen(config_file, "r")) == NULL) {
 		if (errno != ENOENT) sys_panic(config_file);
@@ -154,9 +156,9 @@ reset:
 				printf("setting interface address\n");
 				sprintf(lbuf, "ifconfig eth0 %d.%d.%d.%d netmask %d.%d.%d.%d",
 					ip[0], ip[1], ip[2], ip[3], nm[0], nm[1], nm[2], nm[3]);
-				system(lbuf);
+				if (menu_action) system(lbuf);
 				sprintf(lbuf, "route add default %d.%d.%d.%d", gw[0], gw[1], gw[2], gw[3]);
-				system(lbuf);
+				if (menu_action) system(lbuf);
 			}
 		} else {
 			printf("invalid config file %s\n", config_file);
@@ -228,25 +230,31 @@ reset:
 
 	// reset key held down during a reboot -- drop into menu mode
 	preempt_reset_key(TRUE);
-	bool enter_menu = TRUE;
-	
+
+	// while in the boot routine the reset key either starts the app or saves the changed config
+	app_state = S_MENU;
+
 	while (1) {
 		u1_t key;
-		
+
 		sim_input();	// for remote debugging of menu mode
+		key = handler_dev_display_read(RREG_KEY_SCAN);	// called instead of bus_read() so simulated keys will be returned
 
-		// while in the boot routine the reset key either starts the app or saves the changed config
-		key = handler_dev_display_read(RREG_KEY_SCAN);
+		switch(app_state) {
+	
+		case S_MENU:
+			if (key != KEY(RESET)) {
+				app_state = S_START;
+				break;
+			}
 
-		if (enter_menu && (key == KEY(RESET))) {
-			enter_menu = FALSE;
-			app_state = APP_WAIT;
 			dsp_7seg_str(0, "ready", TRUE);
-			printf("menu mode -- ready\n");
+			printf("ready\n");
+			dsp_led_set(RESET);
 			wait_key_release();
 			dsp_led_clr(RESET);
-			key = KEY_IDLE;
 			dsp_7seg_str(0, "chg settings", TRUE);
+			printf("menu mode\n");
 			skip_first = TRUE;
 			menu = M_HALT;		// first menu item displayed
 			
@@ -254,20 +262,31 @@ reset:
 			for (i=0; settings_keys[i].key; i++) {
 				dsp_led_set(settings_keys[i].key);
 			}
-		}
 
-		if (key == KEY(RESET)) {
+			app_state = S_MENU_POLL;
+			break;
 
+		case S_MENU_POLL:
+			if (key == KEY(RESET)) {
+				dsp_led_set(RESET);
+				wait_key_release();
+				dsp_led_clr(RESET);
+				app_state = S_MENU_DONE;
+				break;
+			}
+
+			if (change_settings_ui(&menu, key, &skip_first, cfg)) save_cfg = TRUE;
+			break;
+
+		case S_MENU_DONE:
 			if (!skip_first && (menu == M_HALT)) {
-					dsp_7seg_str(0, "halting", TRUE);
-					system("halt");
+					dsp_7seg_str(0, "halted", TRUE);
+					printf("halted\n");
+					if (menu_action) system("halt");
 			} else
 			if (menu == M_CANCEL || (skip_first && (menu == M_HALT))) {
-				if (isReset) {		// if previous sim was interrupted must reset before starting new one
-					goto reset;
-				} else {
-					save_cfg = FALSE;
-				}
+				app_state = S_START;
+				break;
 			} else {
 				if (menu != M_DHCP) menu = M_IP;
 				if (menu != cfg->menu) save_cfg = TRUE;
@@ -276,8 +295,6 @@ reset:
 			if (save_cfg) {
 				dsp_7seg_str(0, "config changed", TRUE);
 				delay(2000);
-				wait_key_release();
-				dsp_led_clr(RESET);
 				cfg->menu = menu;
 			
 				if (menu == M_DHCP) {
@@ -299,43 +316,37 @@ reset:
 				fclose(cfp);
 
 				delay(2000);
-				isReset = TRUE;
+			}
+			
+			app_state = S_START;
+			break;
+		
+		case S_START:
+			if (wasRunning) {		// if previous sim was interrupted must reset before starting new one
 				goto reset;
 			}
-		
-			if (app_state != APP_BAD) {
-				dsp_7seg_str(0, "start", TRUE);
-				wait_key_release();
-				dsp_led_clr(RESET);
-				app_state = APP_START;
-			}
-		} else {
-			dsp_led_clr(RESET);
-			if (change_settings_ui(&menu, key, &skip_first, cfg)) save_cfg = TRUE;
-		}
-
-		if (app_state == APP_START) {
+			
 			preempt_reset_key(FALSE);
 			sim_main();
-			dsp_7seg_str(0, "reset", TRUE);
-			printf("reset\n");
+			preempt_reset_key(TRUE);
+			handler_dev_display_read(RREG_KEY_SCAN);	// flush extra sim reset key, if any
 			delay(1000);
 			
 			// this sim was interrupted, so can't restart a new sim without doing a reset first
-			isReset = TRUE;
+			wasRunning = TRUE;
 
-			// if key still down after delay enter menu mode, else treat as simple reset
-			if (bus_read(RREG_KEY_SCAN) == KEY(RESET)) {
-				enter_menu = TRUE;
+			// if key still down after one second delay enter menu mode, else treat as simple reset
+			if (handler_dev_display_read(RREG_KEY_SCAN) == KEY(RESET)) {
+				app_state = S_MENU;
 			} else {
 				goto reset;
 			}
+			break;
 		}
 	}
 
 	return 0;
 }
-
 
 bool change_settings_ui(menu_e *menu, u1_t key, bool *skip_first, cfg_t *cfg)
 {

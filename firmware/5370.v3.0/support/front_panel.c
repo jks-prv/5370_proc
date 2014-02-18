@@ -252,6 +252,7 @@ u4_t dsp_7seg_write(u4_t pos, char c, u1_t d)
 	dsp_char_cache[pos] = c;
 	dsp_7seg_cache[pos] = d;
 	bus_write(ADDR_7SEG(pos), d);
+	//if (c) { printf("%d", pos); if (c==' ') c='_'; if (c) printf(":%c ", c); else printf("=%02x ", d); if (pos==15) printf("\n"); fflush(stdout); }
 	
 	return 0;
 }
@@ -393,7 +394,7 @@ void display_ipaddr(u1_t *ipaddr)
 
 bool key_down()
 {
-	u1_t key = bus_read(RREG_KEY_SCAN);
+	u1_t key = handler_dev_display_read(RREG_KEY_SCAN);
 	return (key != KEY_IDLE);
 }
 
@@ -495,16 +496,16 @@ static bool cb_running;
 //
 // A key sequence is defined as multiple keys contained in a single column on the front panel
 // being pressed. This works because each row of keys on the front panel corresponds to a different
-// low-order bit returned by bus_read(RREG_KEY_SCAN).
+// low-order bit returned by handler_dev_display_read(RREG_KEY_SCAN).
 // So pressing several keys in a column results in multiple bits being or'd together.
 //
 // If keys across multiple columns are pressed this interferes with the display scan multiplexing and
 // you get odd display effects (try it while the instrument is operating normally).
 // Furthermore, a key sequence like this cannot be represented by the information returned from a single
-// call to bus_read(RREG_KEY_SCAN). So such key sequences cannot be used for a callback.
+// call to handler_dev_display_read(RREG_KEY_SCAN). So such key sequences cannot be used for a callback.
 //
 // Alternatively the local/remote key can be used as a "shift" key (as in calculators) to
-// select extended functions. This works because the value returned by bus_read(RREG_KEY_SCAN)
+// select extended functions. This works because the value returned by handler_dev_display_read(RREG_KEY_SCAN)
 // when local/remote has previously been held down has the high-order bit or'd in.
 //
 // When the local/remote key is first pressed, but before the second key to select the extended function

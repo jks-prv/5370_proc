@@ -316,6 +316,7 @@ void handler_dev_arm_write(u2_t addr, u1_t data)
 }
 
 u1_t sim_key, sim_key_intr;
+u4_t reset_key_down = 0;
 
 u1_t handler_dev_display_read(u2_t addr)
 {
@@ -331,11 +332,18 @@ u1_t handler_dev_display_read(u2_t addr)
 
 	if (sim_key) {
 		data = sim_key;
-		if (sim_running) {
-			if (!sim_key_intr) sim_key = 0;		// allow it to be read twice, but generate interrupt only once
+		
+		// simulate reset key down for an extended period
+		if (reset_key_down) {
+			if ((time_diff(sys_now(), reset_key_down) > 1250)) reset_key_down = 0;
 		} else {
-			sim_key = 0;	// only once for non-simulator uses
+			if (sim_running) {
+				if (!sim_key_intr) sim_key = 0;		// allow it to be read twice, but generate interrupt only once
+			} else {
+				sim_key = 0;	// only once for non-simulator uses
+			}
 		}
+		
 		sim_key_intr = 0;
 		process_key(data);
 	}
@@ -760,6 +768,7 @@ char *sim_input()
 		}
 		
 		if ((*cp == 'r') && (n == 2)) {
+			dsp_7seg_str(0, "reset", TRUE);
 			sys_reset = TRUE;
 			return 0;
 		}
@@ -821,9 +830,15 @@ char *sim_input()
 				if (n >= 1 && n <= 6)
 					k = skey_misc[n-1];
 			} else
+
 #ifdef DEBUG
-			if (strcmp(cp, "k r\n") == 0) {			// for remote debugging of menu mode
+			// for remote debugging of menu mode
+			if (strcmp(cp, "k r\n") == 0) {
 				k = RESET;
+			} else
+			if (strcmp(cp, "k rd\n") == 0) {
+				k = RESET;
+				reset_key_down = sys_now();
 			} else
 			if (strcmp(cp, "k d\n") == 0) {
 				k = TI;
