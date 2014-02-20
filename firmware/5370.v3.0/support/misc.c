@@ -32,8 +32,8 @@ void panic(char *str)
 	printf("PANIC: %s\n", str);
 
 #ifndef CLIENT_SIDE
-	dsp_7seg_str(0, "panic", TRUE);
-	dsp_7seg_str(6, str, FALSE);
+	dsp_7seg_str(DSP_LEFT, "panic", DSP_CLEAR);
+	dsp_7seg_str(POS(6), str, DSP_NO_CLEAR);
 #endif
 
 	xit(-1);

@@ -7,15 +7,28 @@
 #define CHAR_MU		0x01		// e.g. as used in uSec
 
 void dsp_7seg_init(bool ok);
-u4_t dsp_7seg_dp(u4_t pos);
-u4_t dsp_7seg_write(u4_t pos, char c, u1_t d);
 u4_t dsp_leds_read(u4_t a);
 u4_t dsp_leds_write(u4_t a, u1_t d);
 
-void dsp_7seg_chr(u4_t pos, char c);
+#define	DSP_CLEAR		TRUE
+#define	DSP_NO_CLEAR	FALSE
+
+void dsp_7seg_str(u4_t pos, char *str, bool display_clear);
 void dsp_7seg_clr();
-void dsp_7seg_str(u4_t pos, char *str, bool clear);
-void dsp_7seg_num(u4_t lsd_pos, u4_t n, u4_t field_width, bool msd_first, bool zero_fill);
+
+#define	POS(n)			n
+#define	DSP_LEFT		POS(0)
+#define	POS_IS_MSD		TRUE
+#define	POS_IS_LSD		FALSE
+#define	DEFAULT_WIDTH	0
+#define	FIELD_WIDTH(n)	n
+#define	ZERO_FILL		TRUE
+#define	SPACE_FILL		FALSE
+
+void dsp_7seg_num(u4_t pos, bool pos_isMSD, u4_t n, u4_t field_width, bool zero_fill);
+u4_t dsp_7seg_dp(u4_t pos);
+void dsp_7seg_chr(u4_t pos, char c);
+u4_t dsp_7seg_write(u4_t pos, char c, u1_t d);
 
 void dsp_7seg_translate(char *s, double *fval);
 

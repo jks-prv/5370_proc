@@ -287,7 +287,7 @@ void dsp_7seg_chr(u4_t pos, char c)
 	
 	if (i == TS_SEG7) d = SEG7_ALL;
 	
-	dsp_7seg_write(pos, c, d);
+	dsp_7seg_write(POS(pos), c, d);
 }
 
 void dsp_7seg_clr()
@@ -299,21 +299,21 @@ void dsp_7seg_clr()
 	}
 }
 
-void dsp_7seg_str(u4_t pos, char *str, bool clear)
+void dsp_7seg_str(u4_t pos, char *str, bool display_clear)
 {
 	int i;
 	char *s = str;
 	
-	if (clear) dsp_7seg_clr();
+	if (display_clear) dsp_7seg_clr();
 	
 	for (i=0; i<strlen(str); i++) {
 		dsp_7seg_chr(pos+i, *s++);
 	}
 }
 
-void dsp_7seg_num(u4_t lsd_pos, u4_t n, u4_t field_width, bool msd_first, bool zero_fill)
+void dsp_7seg_num(u4_t pos, bool pos_isMSD, u4_t n, u4_t field_width, bool zero_fill)
 {
-	u4_t i, r, di=0;
+	u4_t i, r, di=0, lsd_pos;
 	char d[16];
 	
 	for (i=0; (i < field_width) || (field_width == 0); i++) {
@@ -327,7 +327,9 @@ void dsp_7seg_num(u4_t lsd_pos, u4_t n, u4_t field_width, bool msd_first, bool z
 		d[di++] = zero_fill? '0':' ';	// leading blanking
 	}
 	
-	if (msd_first) lsd_pos += di-1;
+	lsd_pos = pos;
+	if (pos_isMSD) lsd_pos += di-1;
+	
 	for (i=0; i<di; i++) {
 		dsp_7seg_chr(lsd_pos-i, d[i]);
 	}
@@ -380,13 +382,13 @@ void dsp_unit_clr(u4_t loc)
 // display an IP address
 void display_ipaddr(u1_t *ipaddr)
 {
-	dsp_7seg_num(4, ipaddr[0], 3, FALSE, FALSE);
-	dsp_7seg_num(7, ipaddr[1], 3, FALSE, FALSE);
-	dsp_7seg_dp(5);
-	dsp_7seg_num(10, ipaddr[2], 3, FALSE, FALSE);
-	dsp_7seg_dp(8);
-	dsp_7seg_num(13, ipaddr[3], 3, FALSE, FALSE);
-	dsp_7seg_dp(11);
+	dsp_7seg_num(POS(4), POS_IS_LSD, ipaddr[0], FIELD_WIDTH(3), SPACE_FILL);
+	dsp_7seg_num(POS(7), POS_IS_LSD, ipaddr[1], FIELD_WIDTH(3), SPACE_FILL);
+	dsp_7seg_dp(POS(5));
+	dsp_7seg_num(POS(10), POS_IS_LSD, ipaddr[2], FIELD_WIDTH(3), SPACE_FILL);
+	dsp_7seg_dp(POS(8));
+	dsp_7seg_num(POS(13), POS_IS_LSD, ipaddr[3], FIELD_WIDTH(3), SPACE_FILL);
+	dsp_7seg_dp(POS(11));
 	
 	dsp_numeric = TRUE;		// force shown as a numeric
 }
@@ -531,7 +533,7 @@ void process_key(u1_t key)
 	
 	if (!reset_key_preempted) {
 		if (key == KEY(RESET)) {
-			dsp_7seg_str(0, "reset", TRUE);
+			dsp_7seg_str(DSP_LEFT, "reset", DSP_CLEAR);
 			dsp_led_set(RESET);
 			sys_reset = TRUE;
 			return;

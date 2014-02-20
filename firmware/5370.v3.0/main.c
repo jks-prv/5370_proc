@@ -125,11 +125,11 @@ reset:
 	}
 	
 	// display firmware version
-	dsp_7seg_str(0, INST_STR, TRUE);
-	dsp_7seg_chr(10, 'v');
-	dsp_7seg_num(11, FIRMWARE_VER_MAJ, 0, TRUE, FALSE);
-	dsp_7seg_num(12, FIRMWARE_VER_MIN, 0, TRUE, FALSE);
-	dsp_7seg_dp(12);
+	dsp_7seg_str(DSP_LEFT, INST_STR, DSP_CLEAR);
+	dsp_7seg_chr(POS(10), 'v');
+	dsp_7seg_num(POS(11), POS_IS_LSD, FIRMWARE_VER_MAJ, DEFAULT_WIDTH, SPACE_FILL);
+	dsp_7seg_num(POS(13), POS_IS_LSD, FIRMWARE_VER_MIN, FIELD_WIDTH(2), ZERO_FILL);
+	dsp_7seg_dp(POS(12));
 	dsp_leds_clr_all();
 	delay(2000);
 
@@ -207,11 +207,11 @@ reset:
 			ip[0], ip[1], ip[2], ip[3], nm[0], nm[1], nm[2], nm[3]);
 		if (menu != M_DHCP) lprintf("gw %d.%d.%d.%d", gw[0], gw[1], gw[2], gw[3]);
 		lprintf("\n");
-		dsp_7seg_str(0, "ip", TRUE);
+		dsp_7seg_str(DSP_LEFT, "ip", DSP_CLEAR);
 		display_ipaddr(cfg->ip);
 	} else {
 		lprintf("eth0: not configured from DHCP?");
-		dsp_7seg_str(0, "no dhcp?", TRUE);
+		dsp_7seg_str(DSP_LEFT, "no dhcp?", DSP_CLEAR);
 	}
 	
 	if (!config_valid && (i == ENET_RETRY)) {		// configuration not valid, DHCP failed, so set some defaults
@@ -248,12 +248,12 @@ reset:
 				break;
 			}
 
-			dsp_7seg_str(0, "ready", TRUE);
+			dsp_7seg_str(DSP_LEFT, "ready", DSP_CLEAR);
 			printf("ready\n");
 			dsp_led_set(RESET);
 			wait_key_release();
 			dsp_led_clr(RESET);
-			dsp_7seg_str(0, "chg settings", TRUE);
+			dsp_7seg_str(DSP_LEFT, "chg settings", DSP_CLEAR);
 			printf("menu mode\n");
 			skip_first = TRUE;
 			menu = M_HALT;		// first menu item displayed
@@ -280,7 +280,7 @@ reset:
 
 		case S_MENU_DONE:
 			if (!skip_first && (menu == M_HALT)) {
-					dsp_7seg_str(0, "halted", TRUE);
+					dsp_7seg_str(DSP_LEFT, "halted", DSP_CLEAR);
 					printf("halted\n");
 					if (menu_action) system("halt");
 			} else
@@ -293,18 +293,18 @@ reset:
 			}
 
 			if (save_cfg) {
-				dsp_7seg_str(0, "config changed", TRUE);
+				dsp_7seg_str(DSP_LEFT, "config changed", DSP_CLEAR);
 				delay(2000);
 				cfg->menu = menu;
 			
 				if (menu == M_DHCP) {
-					dsp_7seg_str(0, "using dhcp mode", TRUE);
+					dsp_7seg_str(DSP_LEFT, "using dhcp mode", DSP_CLEAR);
 				} else {
-					dsp_7seg_str(0, "using ip mode", TRUE);
+					dsp_7seg_str(DSP_LEFT, "using ip mode", DSP_CLEAR);
 				}
 
 				delay(2000);
-				dsp_7seg_str(0, "saving config", TRUE);
+				dsp_7seg_str(DSP_LEFT, "saving config", DSP_CLEAR);
 
 				if ((cfp = fopen(config_file, "w")) == NULL) sys_panic(config_file);
 				printf("writing config file %s\n", config_file);
@@ -363,7 +363,7 @@ bool change_settings_ui(menu_e *menu, u1_t key, bool *skip_first, cfg_t *cfg)
 			if (*menu == M_LAST) *menu = 0;
 		}
 menu_up_down:
-		dsp_7seg_str(0, menu_str[*menu], TRUE);
+		dsp_7seg_str(DSP_LEFT, menu_str[*menu], DSP_CLEAR);
 		if (((*menu == M_IP) || (*menu == M_NM) || (*menu == M_GW))) {
 			display_ipaddr(cfg->if_ipinfo[*menu-M_IP]);
 		}

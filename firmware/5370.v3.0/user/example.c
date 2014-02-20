@@ -19,7 +19,7 @@ void meas_extend_example(u1_t key)
 	double ti;
 
 	printf("measurement extension example called\n");
-	dsp_7seg_str(2, "extend", TRUE);
+	dsp_7seg_str(POS(2), "extend", DSP_CLEAR);
 
 	if (key & KEY(LCL_RMT)) {
 		printf("LCL/RMT\n");
@@ -78,7 +78,7 @@ void meas_extend_example(u1_t key)
 	wait_key_release();
 
 	printf("measurement extension example returning\n");
-	dsp_7seg_str(0, "", TRUE);
+	dsp_7seg_str(DSP_LEFT, "", DSP_CLEAR);
 }
 
 void meas_extend_example_init()
