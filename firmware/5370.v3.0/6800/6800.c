@@ -22,6 +22,8 @@
 #include <ctype.h>
 #include <string.h>
 
+#include "printf.h"
+
 // these are set in the makefile:
 // DEBUG
 // INSN_TRACE
@@ -198,12 +200,7 @@ void sim_processor()
 #endif
 
 #ifdef DBG_INTRS
-	u4_t i_level = 0, i_latched = 0;
 	u4_t dintr = 1;
-#endif
-
-#ifdef FASTER_INTERRUPTS
-	extern volatile bool got_irq;
 #endif
 
 #if defined(DEBUG) || defined(INSN_TRACE)
@@ -247,12 +244,11 @@ void sim_processor()
 	setI();	// no IRQ in initially
 
 next_insn:
-
-	if ((iCount & SIM_POLL_NET_COUNT) == 0) net_poll();
-
-	char *cp;
-	if (((iCount & SIM_POLL_INPUT_COUNT) == 0) && ((cp = sim_input()) != 0)) {
-		#include "6800.debug.c"
+	{
+		char *cp;
+		if (((iCount & SIM_POLL_INPUT_COUNT) == 0) && ((cp = sim_input()) != 0)) {
+			#include "6800.debug.c"
+		}
 	}
 
 //#define SHOW_INTERP
@@ -281,11 +277,6 @@ checkpending:
 	itr = 0;
 #endif
 	
-#ifdef FASTER_INTERRUPTS
-	if (got_irq || hpib_causeIRQ) {
-		got_irq = FALSE;
-#endif
-
 	if (CHECK_NMI()) {	// FIXME interrupt routine could set IRQs directly with proper locking
 		#ifdef DBG_INTRS
 			PFC(dintr, "*NMI*\n");
@@ -295,17 +286,7 @@ checkpending:
 		IRQs &= ~INT_NMI;
 	}
 
-#if 0
-	i_level = 0;
-	char *cp;
-	if ((cp = sim_input())) {
-		if (*cp == 'l' && cp[1] == '1') i_level = 1;
-		if (*cp == 'l' && cp[1] == '2') i_latched = 1;
-	}
-	if (CHECK_IRQ() || sim_key || i_level || i_latched) {
-#else
-	if (CHECK_IRQ() || sim_key) {
-#endif
+	if (CHECK_IRQ() || sim_key_intr) {
 		#ifdef DBG_INTRS
 			if (iPendCt == 0) PFC(dintr, "*IRQ* msk? %s\n" , getI()? "YES":"NO");
 		#endif
@@ -385,7 +366,6 @@ checkpending:
 			}
 			iPendCt = 0;
 			iPendPrint = PEND_PRINT;
-			i_latched = 0;
 #endif
 			goto doexecute;
 		}
@@ -408,10 +388,6 @@ checkpending:
 #endif
 
 doexecute: ;
-
-#ifdef FASTER_INTERRUPTS
-	}
-#endif
 
 #ifdef ROM_RAM_COVER
 	if(cover_sampling) rom_coverage[rPC-ROM_START] = 0xee;

@@ -27,7 +27,9 @@
 #include <sys/mman.h>
 #include <math.h>
 
-#ifdef DEBUG
+#include "printf.h"
+
+#if defined(DEBUG) || defined(SIM_INPUT_NET)
 static bool bug_stdev = FALSE;
 static bool bug_freq = FALSE;
 static bool gate1 = FALSE;
@@ -85,7 +87,7 @@ void sim_args(bool cmd_line, int argc, char *argv[])
 			}
 		}
 
-#ifdef DEBUG
+#if defined(DEBUG) || defined(SIM_INPUT_NET)
 		if (strcmp(argv[i], "-bug-stdev") == 0) bug_stdev = TRUE;
 		if (strcmp(argv[i], "-bug-freq") == 0) bug_freq = TRUE;
 		if (strcmp(argv[i], "-gt1") == 0) gate1 = TRUE;
@@ -324,8 +326,16 @@ u1_t handler_dev_display_read(u2_t addr)
 
 	assert (addr == RREG_KEY_SCAN);
 
+	// For reasons that are not understood, when the -O3 optimized version of the app are run in
+	// auto-start mode the reset key push is not detected most of the time unless this delay is added.
+	// Oddly, this bug doesn't appear if the optimized version is run from the command line, which makes no sense.
+	// It doesn't appear to be code getting optimized away or a missing volatile declaration but rather timing related.
+#ifndef DEBUG
+	delay(1);
+#endif
+
 	data = bus_read(addr);
-	
+
 	if (data != KEY_IDLE) {
 		process_key(data);
 	} else
@@ -386,7 +396,7 @@ void handler_dev_display_write(u2_t addr, u1_t data)
 #endif
 
 	if (ADDR_DEV(addr) == ADDR_7SEG(0)) {
-		dsp_7seg_write(addr - ADDR_7SEG(0), 0, data);
+		dsp_7seg_write(POS(addr - ADDR_7SEG(0)), 0, data);
 	} else
 	if (ADDR_DEV(addr) == ADDR_LEDS(0xf)) {	// remember ADDR_LEDS() is reversed
 		dsp_leds_write(0xf - (addr - ADDR_LEDS(0xf)), data);
@@ -676,12 +686,9 @@ static u4_t boot_time;
 // return zero if command processed locally
 char *sim_input()
 {
-	int n=0, k, key;
+	int i, n=0, k, key;
 	char *cp = ibuf;
 	char key_name[16];
-	
-	if (background_mode)
-		return 0;
 	
 	if (!boot_time) boot_time = sys_now();
 
@@ -721,8 +728,8 @@ char *sim_input()
 #ifdef DEBUG
  #ifdef HPIB_SIM
 	if (bug_stdev) {
-		if (kdelay(0)) hpib_input("tr\n");
-		if (kdelay(500)) hpib_input("ta+0.05\n");
+		if (kdelay(0)) hpib_input("tr\n", 0);
+		if (kdelay(500)) hpib_input("ta+0.05\n", 0);
 		if (kdelay(1000)) find_bug();
 	}
  #endif
@@ -738,10 +745,31 @@ char *sim_input()
 	}
 #endif
 
+#ifdef SIM_INPUT_NET
+	
+	// to aid debugging auto-start mode, interpret network i/o as commands
 	if (!n) {
+		n = net_poll(&cp);
+		if (n) cp[n] = 0;
+	}
+
+#else
+
+ #ifdef HPIB_SIM
+ 	// if commands come from tty then network i/o goes straight to HPIB
+ 	char *nb;
+ 	i = net_poll(&nb);
+	if (i) hpib_input(nb, i);
+ #endif
+
+	if (!n) {
+		if (background_mode)
+			return 0;
 		n = read(tty, cp, sizeof(ibuf));
 		if (n >= 1) cp[n] = 0;
 	}
+
+#endif
 	
 	if (n >= 1) {
 
@@ -768,7 +796,7 @@ char *sim_input()
 		}
 		
 		if ((*cp == 'r') && (n == 2)) {
-			dsp_7seg_str(0, "reset", TRUE);
+			dsp_7seg_str(DSP_LEFT, "reset", DSP_CLEAR);
 			sys_reset = TRUE;
 			return 0;
 		}
@@ -831,7 +859,7 @@ char *sim_input()
 					k = skey_misc[n-1];
 			} else
 
-#ifdef DEBUG
+#if defined(DEBUG) || defined(SIM_INPUT_NET)
 			// for remote debugging of menu mode
 			if (strcmp(cp, "k r\n") == 0) {
 				k = RESET;
@@ -917,7 +945,7 @@ char *sim_input()
 		// emulate input of an HPIB command
 		// e.g. "h md2" "h mr" "h md1" "h tb1" "h tb0"
 		if (*cp == 'h' && cp[1] == ' ') {
-			hpib_input(cp+2);	// presumes that hpib input is processed before another sim input
+			hpib_input(cp+2, 0);	// presumes that hpib input is processed before another sim input
 			num_meas = 0;
 			return 0;
 		}
