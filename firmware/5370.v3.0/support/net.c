@@ -25,6 +25,8 @@
 #include <netinet/ip.h>
 #include <arpa/inet.h>
 
+#include "printf.h"
+
 static int sfd, srv_sock;
 
 int net_connect(net_type_e cs, char *host, int port)
@@ -119,7 +121,6 @@ void net_disconnect()
 int net_client_read(int sfd, char *ib, int len, bool read_once)
 {
 	int n, rem = len;
-	static char nbuf[HPIB_PKT_BUFSIZE];	
 	
 	while (rem) {
 		n = read(sfd, ib, rem);
@@ -140,38 +141,40 @@ int net_client_read(int sfd, char *ib, int len, bool read_once)
 
 #else
 
-void net_poll()
+static char nbuf[HPIB_PKT_BUFSIZE];	
+
+u4_t net_poll(char **nb)
 {
 	int n;
 	struct addrinfo ai;
-	static char nbuf[HPIB_PKT_BUFSIZE];	
 	
 	if (!srv_sock) {
 		memset(&ai, 0, sizeof(struct addrinfo));
 		if ((n = accept(sfd, ai.ai_addr, &ai.ai_addrlen)) < 0) {
-			if (errno == EWOULDBLOCK) return;
+			if (errno == EWOULDBLOCK) return 0;
 			sys_panic("net_poll accept");
 		}
 
 		if (fcntl(n, F_SETFL, O_NONBLOCK) < 0) sys_panic("net_poll non-block");
 		srv_sock = n;
-		printf("incoming connection\n");
-	} else {
-		if ((n = read(srv_sock, nbuf, HPIB_PKT_BUFSIZE)) < 0) {
-			if (errno == EAGAIN) return;
-			sys_panic("net_poll read");
-		}
-
-		if (n) {
-#ifdef HPIB_SIM
-			hpib_input(nbuf);
-#endif
-		} else {
-			close(srv_sock);
-			srv_sock = 0;
-			printf("connection closed, listening..\n");
-		}
+		printf("connected\n");
 	}
+	
+	if ((n = read(srv_sock, nbuf, HPIB_PKT_BUFSIZE)) < 0) {
+		if (errno == EAGAIN) return 0;
+		sys_panic("net_poll read");
+	}
+
+	if (n) {
+		*nb = nbuf;
+	} else {
+		close(srv_sock);
+		srv_sock = 0;
+		printf("connection closed, listening..\n");
+		n = 0;
+	}
+	
+	return n;
 }
 
 bool net_no_connection()

@@ -6,7 +6,7 @@ typedef enum { CLIENT, SERVER } net_type_e;
 int net_connect(net_type_e cs, char *host, int port);
 void net_disconnect();
 int net_client_read(int sfd, char *ib, int len, bool read_once);
-void net_poll();
+u4_t net_poll(char **nb);
 bool net_no_connection();
 
 // just documentation

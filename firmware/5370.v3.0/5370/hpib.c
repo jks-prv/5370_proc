@@ -896,8 +896,9 @@ talk_init:
 	return rdata;
 }
 
-void hpib_input(char *buf)
+void hpib_input(char *buf, u4_t n)
 {
+	if (n) buf[n] = 0;
 	hip = buf;
 }
 

@@ -11,6 +11,7 @@
 
 
 // configuration options
+//#define SIM_INPUT_NET			// network connection talks to sim input instead of HPIB
 #define HPIB_SIM				// simulates the HPIB hardware board so the unmodified firmware can continue to work
 #define HPIB_FAST_BINARY_PRU	// use the PRU to collect HPIB fast binary data
 //#define INTERRUPTS			// real interrupts instead of polling (not fully working yet)

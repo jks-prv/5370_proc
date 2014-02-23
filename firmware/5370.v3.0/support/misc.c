@@ -2,6 +2,7 @@
 #include "sim.h"
 #include "5370.h"
 #include "front_panel.h"
+#include "net.h"
 
 #include <sys/file.h>
 #include <fcntl.h>
@@ -13,6 +14,11 @@
 #include <syslog.h>
 #include <stdlib.h>
 #include <stdarg.h>
+
+
+#ifdef SIM_INPUT_NET
+ #undef printf
+#endif
 
 void xit(int err)
 {
@@ -65,6 +71,12 @@ void lprintf(char *fmt, ...)
 	if (background_mode) {
 		syslog(LOG_INFO, "hp5370d: %s", s);
 	}
+
+#ifdef SIM_INPUT_NET
+	if (!net_no_connection()) {
+		net_send(s, strlen(s), NO_COPY(TRUE), FLUSH(TRUE));
+	}
+#endif
 
 	printf("%s", s);
 }

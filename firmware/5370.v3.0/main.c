@@ -15,6 +15,8 @@
 #include <stdlib.h>
 #include <fcntl.h>
 
+#include "printf.h"
+
 // for IP address-mode part of front-panel settings UI
 typedef enum { M_CANCEL, M_HALT, M_DHCP, M_IP, M_NM, M_GW, M_LAST } menu_e;
 /*const*/ char *menu_str[] = { "cancel", "halt", "dhcp", "ip", "nm", "gw" };
@@ -305,7 +307,6 @@ reset:
 
 				delay(2000);
 				dsp_7seg_str(DSP_LEFT, "saving config", DSP_CLEAR);
-
 				if ((cfp = fopen(config_file, "w")) == NULL) sys_panic(config_file);
 				printf("writing config file %s\n", config_file);
 				fprintf(cfp, "key 0xcafe5370\n");
