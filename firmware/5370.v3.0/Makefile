@@ -99,7 +99,7 @@ PASM_INCLUDES = $(wildcard pru/pasm/*.h)
 pas:	$(PASM_INCLUDES) $(PASM_SOURCE) Makefile
 	cc -Wall -D_UNIX_ -I./pru/pasm $(PASM_SOURCE) -o pas
 
-pru/pru_realtime.bin:	pas pru/pru_realtime.p pru/pru_realtime.hp
+pru/pru_realtime.bin:	pas pru/pru_realtime.p pru/pru_realtime.h pru/pru_realtime.hp
 	(cd pru; ../pas -V3 -b -L -l -D_PASM_ -D$(SETUP) pru_realtime.p)
 
 CAPE = cape-bone-5370-00A0
