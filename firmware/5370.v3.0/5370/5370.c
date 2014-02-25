@@ -691,6 +691,16 @@ char *sim_input()
 	char key_name[16];
 	
 	if (!boot_time) boot_time = sys_now();
+	
+	// check for 5370 power loss (even though we may still be running via USB power)
+	if (!(bus_read(RREG_LDACSR) & DSR_VOK)) {
+		printf("power loss\n");
+		while (!(bus_read(RREG_LDACSR) & DSR_VOK))
+			;
+		printf("power on\n");
+		sys_reset = TRUE;
+		return 0;
+	}
 
 	// can't recall any keys until self-test is finished
 	if (self_test && boot_time && (time_diff(sys_now(), boot_time) > SELF_TEST_DELAY)) {
