@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
 		}
 	}
 	
-	lprintf("HP%s v%d.%d\n", INST_STR, FIRMWARE_VER_MAJ, FIRMWARE_VER_MIN);
+	lprintf("HP%s v%d.%02d\n", INST_STR, FIRMWARE_VER_MAJ, FIRMWARE_VER_MIN);
     lprintf("compiled: %s %s\n", __DATE__, __TIME__);
 
 	sim_args(TRUE, argc, argv);

@@ -1,7 +1,7 @@
 # Makefile for compiling 5370 project
 
 VERSION_MAJ = 3
-VERSION_MIN = 0
+VERSION_MIN = 1
 
 #INSTRUMENT = HP5370A
 INSTRUMENT = HP5370B
@@ -137,20 +137,14 @@ bc:	$(RMT_DEPENDS) 5370/hpib_client.c
 v ver version:
 	@echo "you are running version" $(VERSION_MAJ)"."$(VERSION_MIN)
 
-DIST = 5370.v$(VERSION_MAJ).$(VERSION_MIN)
-
 tar:
 	make clean
-	@rm -f ../5370
-	@ln -s $(DIST) ../5370
-	tar cfz ../$(DIST).tgz ../$(DIST) ../5370
-	@rm -f ../5370.tgz
-	@ln -s $(DIST).tgz ../5370.tgz
+	tar cfz ../5370.tgz ../5370
 
 BBB_IP = $(IP_BBB_5370)
 
 scp: tar
-	scp ../$(DIST).tgz root@$(BBB_IP):/home/root
+	scp ../5370.tgz root@$(BBB_IP):/home/root
 
 clean:
-	-rm -rf $(RMT_BINARIES) $(wildcard hp5370d*) *.dSYM ../$(DIST).tgz ../5370.tgz pas $(addprefix pru/pru_realtime., bin lst txt)
+	-rm -rf $(RMT_BINARIES) $(wildcard hp5370d*) *.dSYM ../5370.tgz pas $(addprefix pru/pru_realtime., bin lst txt)
