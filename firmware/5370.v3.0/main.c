@@ -119,7 +119,6 @@ reset:
 	}
 
 	sim_reset();
-	dsp_7seg_init(TRUE);
 
 	if ((bus_read(RREG_LDACSR) | bus_read(RREG_KEY_SCAN) | bus_read(RREG_N0ST)) == 0) {
 		lprintf("no 5370 detected?\n");
@@ -127,6 +126,7 @@ reset:
 	}
 	
 	// display firmware version
+	dsp_7seg_init(TRUE);
 	dsp_7seg_str(DSP_LEFT, INST_STR, DSP_CLEAR);
 	dsp_7seg_chr(POS(10), 'v');
 	dsp_7seg_num(POS(11), POS_IS_LSD, FIRMWARE_VER_MAJ, DEFAULT_WIDTH, SPACE_FILL);
