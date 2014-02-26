@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
 		}
 	}
 	
-	lprintf("HP%s v%d.%02d\n", INST_STR, FIRMWARE_VER_MAJ, FIRMWARE_VER_MIN);
+	lprintf("HP%s v%d.%d\n", INST_STR, FIRMWARE_VER_MAJ, FIRMWARE_VER_MIN);
     lprintf("compiled: %s %s\n", __DATE__, __TIME__);
 
 	sim_args(TRUE, argc, argv);
@@ -134,7 +134,7 @@ reset:
 	dsp_7seg_str(DSP_LEFT, INST_STR, DSP_CLEAR);
 	dsp_7seg_chr(POS(10), 'v');
 	dsp_7seg_num(POS(11), POS_IS_LSD, FIRMWARE_VER_MAJ, DEFAULT_WIDTH, SPACE_FILL);
-	dsp_7seg_num(POS(13), POS_IS_LSD, FIRMWARE_VER_MIN, FIELD_WIDTH(2), ZERO_FILL);
+	dsp_7seg_num(POS(12), POS_IS_MSD, FIRMWARE_VER_MIN, FIELD_WIDTH(0), ZERO_FILL);
 	dsp_7seg_dp(POS(12));
 	dsp_leds_clr_all();
 	delay(2000);
