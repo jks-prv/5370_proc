@@ -692,12 +692,12 @@ char *sim_input()
 	
 	if (!boot_time) boot_time = sys_now();
 	
-	// check for 5370 power loss (even though we may still be running via USB power)
+	// check for 5370 power loss (we may still be running via USB power)
 	if (!(bus_read(RREG_LDACSR) & DSR_VOK)) {
-		printf("power loss\n");
+		printf("5370 power loss\n");
 		while (!(bus_read(RREG_LDACSR) & DSR_VOK))
-			;
-		printf("power on\n");
+			usleep(250000);
+		printf("5370 power on\n");
 		sys_reset = TRUE;
 		return 0;
 	}

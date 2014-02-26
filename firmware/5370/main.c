@@ -120,9 +120,13 @@ reset:
 
 	sim_reset();
 
-	if ((bus_read(RREG_LDACSR) | bus_read(RREG_KEY_SCAN) | bus_read(RREG_N0ST)) == 0) {
-		lprintf("no 5370 detected?\n");
-		panic("no 5370");
+	if (!(bus_read(RREG_LDACSR) & DSR_VOK)) {
+		lprintf("waiting for 5370 power\n");
+		while (!(bus_read(RREG_LDACSR) & DSR_VOK))
+			usleep(250000);
+		lprintf("5370 power on\n");
+	} else {
+		lprintf("5370 is powered on\n");
 	}
 	
 	// display firmware version

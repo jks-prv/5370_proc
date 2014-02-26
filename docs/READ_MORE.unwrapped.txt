@@ -1,6 +1,13 @@
-[edited 17-feb-2014]
+[edited 27-feb-2014]
 
 This file elaborates on the Quick Start guide in the "README.txt" file.
+
+
+POWERING THE BBB FROM THE USB-MINI PORT
+
+One solution to the annoyance of having to halt the BBB before the instrument is powered off is simply to keep the BBB running by providing it a secondary source of power via the USB-mini port. The BBB already understands how to select between two sources of power: the USB-mini and +5V barrel connectors (the latter of which is actually being delivered from the 5370 via the board expansion connectors). The app detects when the instrument has powered down and resumes running when power is restored. USB power could come from an external USB hub or charger. You may have to obtain a longer USB cable than the one supplied. Be certain to only use the USB-mini connector that is adjacent to the Ethernet RJ45 connector. Do not use the USB-A connector on the other end of the board as that port will not accept input power.
+
+Some of you might even figure out how to derive +5V for the USB-mini cable from the 5370 oven power supply card that is always powered if the instrument is off but the line cord is plugged in. But beware of the potential problem of conducting noise from the BBB to the reference oscillator over such a connection. Some experimentation and measurement is necessary. The planned USB/Ethernet connector card that replaces the current HPIB one at the back-panel could host a voltage regulator. Aligator clip connections to the '+25V UNREG' and GND test points on the oven power supply would alleviate the need for any soldering.
 
 
 FRONT PANEL MENU INTERFACE
@@ -83,7 +90,7 @@ To see what version of the software is in your build directory, go there ('cd ~/
 
 USING GIT TO TRACK SOFTWARE CHANGES
 
-The BBB is delivered with (or you have installed) the software in the /home/root/5370 build directory. Note that this is actually a symlink to the current version (e.g. 5370.v3.0). But it might be a good idea to use the version control system "git" to track changes made on the GitHub repository github.com/jks-prv/5370_proc where the latest changes are always available. There are several ways to configure git depending on your goals. If you expect to contribute changes to the software then you should setup an account on github.com and configure git on the BBB with your account information. You should also do this if you want to be notified by email when changes are made to the repository. There is info on the web about how to setup git and it won't be repeated here.
+The BBB is delivered with (or you have installed) the software in the /home/root/5370 build directory. But it might be a good idea to use the version control system "git" to track changes made on the GitHub repository github.com/jks-prv/5370_proc where the latest changes are always available. There are several ways to configure git depending on your goals. If you expect to contribute changes to the software then you should setup an account on github.com and configure git on the BBB with your account information. You should also do this if you want to be notified by email when changes are made to the repository. There is info on the web about how to setup git and it won't be repeated here.
 
 If you just want to use git to manually get changes then only a few commands are needed. To clone the repository initially:
 
@@ -97,7 +104,7 @@ To periodically update your copy with changes on GitHub:
 
 If you have made local changes to the software then pulling updates like this will fail if you have changed a file git is trying to update. In this case you must first configure git to establish a proper "branch" of the repository rather than just a simple clone (see web info). After that git will try to merge repository changes with your local changes and complain if it is unable to do so.
 
-Note that the build directory (e.g. 5370.v3.0) is in ~/5370_proc/firmware/ of the git clone.
+Note that the build directory '5370' is in ~/5370_proc/firmware/ of the git clone.
 
 
 NOTES ABOUT THE BEAGLEBONE BLACK
@@ -112,7 +119,7 @@ There are many resources on the web with info about the BBB.
 	ssh using USB:  http://learn.adafruit.com/ssh-to-beaglebone-black-over-usb
 
 USB ad-hoc networking:
-One way to ssh to the BBB is by using a USB cable as an ad-hoc network connection. This is useful because the BBB will appear at a fixed address of 192.168.7.2 on the USB attached computer. You can then simply say "ssh root@192.168.7.2" to login. A driver usually must be installed on the computer to use USB in this way. See http://learn.adafruit.com/ssh-to-beaglebone-black-over-usb for details.
+One way to ssh to the BBB is by using a USB cable as an ad-hoc network connection. This is useful because the BBB will appear at a fixed address of 192.168.7.2 on the USB attached computer. You can then simply say "ssh root@192.168.7.2" to login. A driver usually must be installed on the computer to use USB in this way. See http://learn.adafruit.com/ssh-to-beaglebone-black-over-usb for details. Note that you must use the USB-mini connector next to the Ethernet RJ45 for networking, not the USB-A connector on the other end of the board.
 
 Once logged-in you can use the "ifconfig eth0" command to see what IP address was assigned to the Ethernet connection (the number after "inet addr"). Note that this USB networking cannot be used to give the BBB an Internet connection because the attached computer isn't acting as a router (although there are supposed to be ways of doing this). The BBB doesn't get confused by having two network connections (Ethernet and USB) because they have different IP addresses and the default routing for Internet traffic should be automatically set to the Ethernet connection.
 
@@ -163,7 +170,7 @@ Or by looking at the ID.txt file in the "BEAGLEBONE" virtual USB drive that appe
 
 FILES
 
-The files on the github repository and on the BBB are organized as follows. The BBB only has the files from the firmware sub-directory and these files are in the root account home under a directory that reflects the software version e.g. /home/root/5370.v3.0/
+The files on the github repository and on the BBB are organized as follows. The BBB only has the files from the firmware sub-directory of the repository installed (i.e. /home/root/5370)
 
     firmware/<version>/     C code that runs on the BBB.
     pcb/<version>/          Complete documentation for replicating or 
