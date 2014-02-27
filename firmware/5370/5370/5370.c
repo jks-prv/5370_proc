@@ -694,10 +694,12 @@ char *sim_input()
 	
 	// check for 5370 power loss (we may still be running via USB power)
 	if (!(bus_read(RREG_LDACSR) & DSR_VOK)) {
-		printf("5370 power loss\n");
+		lprintf("5370 power loss\n");
+		usleep(1000000);
 		while (!(bus_read(RREG_LDACSR) & DSR_VOK))
 			usleep(250000);
-		printf("5370 power on\n");
+		lprintf("5370 power on\n");
+		usleep(1000000);
 		sys_reset = TRUE;
 		return 0;
 	}
