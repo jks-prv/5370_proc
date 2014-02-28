@@ -38,7 +38,7 @@ Fing in particular will automatically lookup the MAC address and show "Texas Ins
 
 You could also decide to assign a fixed address to the instrument outside of the range of addresses managed by DHCP. Set this address by using the front panel menu interface as described in the READ_MORE.txt file.
 
-Also possible is using a USB cable to establish a separate "ad-hoc" network connection and then logging in to the BBB over than and displaying the Ethernet IP address. Also by logging in using a serial port connection. See the READ_MORE.txt file for details.
+Also possible is using a USB cable to establish a separate "ad-hoc" network connection and then logging in to the BBB over that and displaying the Ethernet IP address. Also by logging in using a serial port connection. See the READ_MORE.txt file for details.
 
 Now login to the BBB. From the command line of another computer on your network try "ssh root@ip_address" (e.g. ssh root@192.168.1.2). Just type "return" for the password. Also see the READ_MORE.txt file and this link for other login suggestions: http://elinux.org/Beagleboard:Terminal_Shells
 
