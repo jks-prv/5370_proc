@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
 	i=1;
 	if ((i < argc) && (strcmp(argv[i], "-f") == 0)) { fast_mode = TRUE; i++; }
 	
-	sfd = net_connect(CLIENT, (i < argc)? argv[i]:HOST, HPIB_TCP_PORT);
+	sfd = net_connect(NET_HPIB, CLIENT, (i < argc)? argv[i]:HOST, HPIB_TCP_PORT);
 
 	if (fast_mode) {
 

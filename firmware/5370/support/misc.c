@@ -16,7 +16,7 @@
 #include <stdarg.h>
 
 
-#ifdef SIM_INPUT_NET
+#ifdef NET_PRINTF
  #undef printf
 #endif
 
@@ -72,13 +72,12 @@ void lprintf(char *fmt, ...)
 		syslog(LOG_INFO, "hp5370d: %s", s);
 	}
 
-#ifdef SIM_INPUT_NET
-	if (!net_no_connection()) {
-		net_send(s, strlen(s), NO_COPY(TRUE), FLUSH(TRUE));
-	}
+#ifndef CLIENT_SIDE
+	net_send(NET_TELNET, s, strlen(s), NO_COPY(TRUE), FLUSH(TRUE));
 #endif
 
 	printf("%s", s);
+	free(s);
 }
 
 int split(char *cp, int *argc, char *argv[], int nargs)

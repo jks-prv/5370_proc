@@ -114,7 +114,8 @@ reset:
 	
 	if (wasRunning) {
 		wasRunning = FALSE;
-		net_disconnect();
+		net_disconnect(NET_HPIB);
+		net_disconnect(NET_TELNET);
 		skip_first = save_cfg = config_key = config_ip = config_nm = config_gw = config_am = FALSE;
 	}
 
@@ -231,7 +232,8 @@ reset:
 	if (show_ip) xit(0);
 	delay(2000);	// show ip on display for a moment before continuing
 
-	net_connect(SERVER, NULL, HPIB_TCP_PORT);
+	net_connect(NET_HPIB, SERVER, NULL, HPIB_TCP_PORT);
+	net_connect(NET_TELNET, SERVER, NULL, TELNET_TCP_PORT);
 
 	// place a call here to setup your measurement extension code
 	meas_extend_example_init();

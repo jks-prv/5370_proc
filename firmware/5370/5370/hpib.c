@@ -462,12 +462,12 @@ void handler_dev_hpib_write(u2_t addr, u1_t d)
 void hpib_net_binary(bool fast_mode, u1_t wdata)
 {
 	if (fast_mode) {
-		u4_t *bp, nb;
-		bp = net_send(0, 0, NO_COPY(FALSE), FLUSH(FALSE));	// get buffer pointer
+		u1_t *bp, nb;
+		bp = net_send(NET_HPIB, 0, 0, NO_COPY(FALSE), FLUSH(FALSE));	// get buffer pointer
 
 		while (1) {		// send data as fast as possible
 			nb = hpib_fast_binary((s2_t *) bp, HPIB_MEAS_PER_FAST_PKT);		// enough data for a full packet
-			bp = net_send((char *) bp, nb, NO_COPY(TRUE), FLUSH(TRUE));
+			bp = net_send(NET_HPIB, (char *) bp, nb, NO_COPY(TRUE), FLUSH(TRUE));
 			if (bp == 0) break;		// only happens when client has closed the socket
 			{
 				u4_t now;
@@ -484,7 +484,7 @@ void hpib_net_binary(bool fast_mode, u1_t wdata)
 	} else {
 
 		// inefficient, but net_send() accumulates data in buffer before sending packet anyway
-		net_send((char*) &wdata, 1, NO_COPY(FALSE), FLUSH(FALSE));
+		net_send(NET_HPIB, (char*) &wdata, 1, NO_COPY(FALSE), FLUSH(FALSE));
 
 		u4_t now;
 		static u4_t last, meas;
@@ -804,17 +804,20 @@ talk_init:
 
 			if (hpib_dev == HPIB_NET) {
 				if (binary_mode) {
-					if (net_no_connection()) {	// send as ascii
-						char buf[8];
-						sprintf(buf, "%d-", wdata);
-						net_send(buf, strlen(buf), NO_COPY(FALSE), FLUSH(FALSE));
+					if (net_no_connection(NET_HPIB)) {
+						// send as ASCII
+						printf("%d-", wdata);
 					} else {
 						// send in binary as usual
 						hpib_net_binary(fast_mode, wdata);
 					}
 				} else {
-					// send ASCII
-					net_send((char*) &wdata, 1, NO_COPY(FALSE), FLUSH((wdata=='\n')? TRUE:FALSE));
+					// send as ASCII
+					if (net_no_connection(NET_HPIB)) {
+						if (hps) printf("W0_data_out=<%c> %02x ", wdata, wdata); else printf("%c", wdata);
+					} else {
+						net_send(NET_HPIB, (char*) &wdata, 1, NO_COPY(FALSE), FLUSH((wdata=='\n')? TRUE:FALSE));
+					}
 				}
 			} else {
 				assert(hpib_dev == HPIB_SIMU);
@@ -838,11 +841,11 @@ talk_init:
 
 			// in binary mode from here
 			if (hpib_dev == HPIB_NET) {
-				if (net_no_connection()) {
-					net_send("\n", 1, NO_COPY(FALSE), FLUSH(TRUE));
+				if (net_no_connection(NET_HPIB)) {
+					printf("\n");
 				} else {
 					if (++loopct >= HPIB_MEAS_PER_PKT) {	// accumulate a full packet before sending
-						net_send(0, 0, NO_COPY(FALSE), FLUSH(TRUE));
+						net_send(NET_HPIB, 0, 0, NO_COPY(FALSE), FLUSH(TRUE));
 						loopct = 0;
 					}
 				}
@@ -854,7 +857,7 @@ talk_init:
 			if (*hip) {		// break out of binary mode if new input available (typically a "tb0")
 				D_HPIB(printf("exit binary mode receiving: %s", hip));
 
-				if (hpib_dev == HPIB_NET) net_send(0, 0, NO_COPY(FALSE), FLUSH(TRUE));		// flush any partial output
+				if (hpib_dev == HPIB_NET) net_send(NET_HPIB, 0, 0, NO_COPY(FALSE), FLUSH(TRUE));		// flush any partial output
 
 				state = S_IDLE;
 				goto idle;

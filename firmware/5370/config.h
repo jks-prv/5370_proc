@@ -11,7 +11,7 @@
 
 
 // configuration options
-//#define SIM_INPUT_NET			// network connection talks to sim input instead of HPIB
+#define NET_PRINTF
 #define HPIB_SIM				// simulates the HPIB hardware board so the unmodified firmware can continue to work
 #define HPIB_FAST_BINARY_PRU	// use the PRU to collect HPIB fast binary data
 //#define INTERRUPTS			// real interrupts instead of polling (not fully working yet)
@@ -28,6 +28,9 @@
  //#define HPIB_RECORD			// record HPIB bus cycles for use in developing HPIB_SIM
  //#define FREQ_DEBUG
 #endif
+
+#define HPIB_TCP_PORT	5370
+#define TELNET_TCP_PORT	5371
 
 #if defined(HPIB_RECORD) || defined(HPIB_SIM_DEBUG) || defined(FREQ_DEBUG)
  #define REG_RECORD

@@ -73,8 +73,6 @@ side effects of HPIB register access:
 
 
 // for transfers of HPIB measurement data over the network
-#define HPIB_TCP_PORT	5370
-
 #define HPIB_PKT_BUFSIZE	(1048-1)
 
 #define HPIB_BYTES_PER_PKT		1000

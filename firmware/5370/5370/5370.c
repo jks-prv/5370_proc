@@ -29,7 +29,7 @@
 
 #include "printf.h"
 
-#if defined(DEBUG) || defined(SIM_INPUT_NET)
+#if defined(DEBUG) || defined(NET_PRINTF)
 static bool bug_stdev = FALSE;
 static bool bug_freq = FALSE;
 static bool gate1 = FALSE;
@@ -87,7 +87,7 @@ void sim_args(bool cmd_line, int argc, char *argv[])
 			}
 		}
 
-#if defined(DEBUG) || defined(SIM_INPUT_NET)
+#if defined(DEBUG) || defined(NET_PRINTF)
 		if (strcmp(argv[i], "-bug-stdev") == 0) bug_stdev = TRUE;
 		if (strcmp(argv[i], "-bug-freq") == 0) bug_freq = TRUE;
 		if (strcmp(argv[i], "-gt1") == 0) gate1 = TRUE;
@@ -757,22 +757,18 @@ char *sim_input()
 	}
 #endif
 
-#ifdef SIM_INPUT_NET
-	
-	// to aid debugging auto-start mode, interpret network i/o as commands
+#ifdef HPIB_SIM
+ 	// handle HPIB data over the network
+ 	char *nb;
+ 	i = net_poll(NET_HPIB, &nb);
+	if (i) hpib_input(nb, i);
+#endif
+
+ 	// handle keyboard commands over the network
 	if (!n) {
-		n = net_poll(&cp);
+		n = net_poll(NET_TELNET, &cp);
 		if (n) cp[n] = 0;
 	}
-
-#else
-
- #ifdef HPIB_SIM
- 	// if commands come from tty then network i/o goes straight to HPIB
- 	char *nb;
- 	i = net_poll(&nb);
-	if (i) hpib_input(nb, i);
- #endif
 
 	if (!n) {
 		if (background_mode)
@@ -781,8 +777,6 @@ char *sim_input()
 		if (n >= 1) cp[n] = 0;
 	}
 
-#endif
-	
 	if (n >= 1) {
 
 		if ((n == 1) || (*cp == '?') || (strcmp(cp, "help\n") == 0) || ((*cp == 'h') && (n == 2))) {
@@ -871,7 +865,7 @@ char *sim_input()
 					k = skey_misc[n-1];
 			} else
 
-#if defined(DEBUG) || defined(SIM_INPUT_NET)
+#if defined(DEBUG) || defined(NET_PRINTF)
 			// for remote debugging of menu mode
 			if (strcmp(cp, "k r\n") == 0) {
 				k = RESET;

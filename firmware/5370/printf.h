@@ -3,7 +3,7 @@
 
 #include "config.h"
 
-#ifdef SIM_INPUT_NET
+#ifdef NET_PRINTF
  #define printf		lprintf
 #endif
 
