@@ -1,4 +1,4 @@
-[edited 27-feb-2014]
+[edited 1-mar-2014]
 
 This file elaborates on the Quick Start guide in the "README.txt" file.
 
@@ -161,9 +161,7 @@ In the (hopefully unlikely) event that your BBB becomes "bricked" the BBB wiki l
 Versionitis:
 We all know stuff breaks when using different versions of things. All the BBBs used in testing have been hardware revision "A5C", "A6" and "A6A" boards. The software distribution of Angstrom Linux used was "2013.06.20" and "2013.09.04" found by doing:
 
-    mkdir -p /mnt/boot
-    mount /dev/mmcblk0p1 /mnt/boot
-    more /mnt/boot/ID.txt
+    more /etc/dogtag
 
 Or by looking at the ID.txt file in the "BEAGLEBONE" virtual USB drive that appears when you connect the BBB to a computer with a USB cable. These distributions use a Linux 3.8 kernel.
 

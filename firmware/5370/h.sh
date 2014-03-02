@@ -2,7 +2,7 @@
 # wrapper for running the 5370 app
 
 # hack to see if we're running on a BBB
-if test ! -d /lib/firmware; then
+if test ! -f /etc/dogtag; then
 	$*
 	exit 0
 fi
