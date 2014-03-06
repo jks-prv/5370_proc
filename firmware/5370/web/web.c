@@ -184,7 +184,7 @@ void *web_server(void *none)
   u4_t current_timer = 0, last_timer = timer_ms();
 
   mg_set_option(server, "listening_port", WEBSERVER_PORT);
-  printf("webserver on port %s\n", mg_get_option(server, "listening_port"));
+  lprintf("webserver on port %s\n", mg_get_option(server, "listening_port"));
 
   // Okay to loop like this because mg_poll_server() does a select() with
   // a 100 msec timeout which will idle this thread most of the time.
