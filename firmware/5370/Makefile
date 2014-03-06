@@ -63,19 +63,27 @@ VPATH += ./support
 VPATH += ./misc
 VPATH += ./user
 VPATH += ./pru ./pru/pasm
+VPATH += ./web
+VPATH += ./pkgs/mongoose
 
-INC = $(addprefix -I, $(VPATH))
+INC = $(addprefix -I,$(VPATH))
+
+EDATA = embedded_data.c
 
 RMT_SOURCE = 5370/5370.c 5370/test.c 5370/hpib.c 5370/bug.c main.c 6800/6800.c 6800/6800.trace.c
 RMT_SOURCE += arch/$(ARCH)/bus.c arch/$(ARCH)/timer.c
 RMT_SOURCE += support/misc.c support/net.c support/front_panel.c user/example.c
 RMT_SOURCE += pru/prussdrv.c pru/pru_realtime.c
+RMT_SOURCE += web/web.c web/$(EDATA)
+RMT_SOURCE += $(wildcard pkgs/mongoose/*.c)
 
 RMT_INCLUDES = config.h boot.h sim.h
 RMT_INCLUDES += 5370.h 5370_regs.h hpib.h 6800.h 6800.cc.h 6800.core.h 6800.insns.h
 RMT_INCLUDES += arch/chip.h arch/$(ARCH)/$(CHIP).h arch/$(ARCH)/$(ARCH).h arch/$(ARCH)/bus.h arch/$(ARCH)/timer.h
 RMT_INCLUDES += support/misc.h support/net.h support/front_panel.h
 RMT_INCLUDES += $(wildcard pru/*.h)
+RMT_INCLUDES += web/web.h
+RMT_INCLUDES += $(wildcard pkgs/mongoose/*.h)
 
 RMT_BINARIES = hd.bin h.bin bc
 RMT_DEPENDS = $(RMT_SOURCE) $(RMT_INCLUDES) Makefile 6800.debug.c pru/pru_realtime.bin
@@ -101,6 +109,10 @@ pas:	$(PASM_INCLUDES) $(PASM_SOURCE) Makefile
 
 pru/pru_realtime.bin:	pas pru/pru_realtime.p pru/pru_realtime.h pru/pru_realtime.hp
 	(cd pru; ../pas -V3 -b -L -l -D_PASM_ -D$(SETUP) pru_realtime.p)
+
+WEB = 5370.html 5370.js
+web/$(EDATA): $(addprefix web/,$(WEB))
+	(cd web; perl mkdata.pl $(WEB) >$(EDATA))
 
 CAPE = cape-bone-5370-00A0
 PRU  = cape-bone-5370-P-00A0
@@ -147,4 +159,4 @@ scp: tar
 	scp ../5370.tgz root@$(BBB_IP):/home/root
 
 clean:
-	-rm -rf $(RMT_BINARIES) $(wildcard hp5370d*) *.dSYM ../5370.tgz pas $(addprefix pru/pru_realtime., bin lst txt)
+	-rm -rf $(RMT_BINARIES) $(wildcard hp5370d*) *.dSYM ../5370.tgz pas $(addprefix pru/pru_realtime.,bin lst txt) web/$(EDATA)

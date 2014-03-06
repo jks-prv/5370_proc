@@ -1,4 +1,4 @@
-[edited 1-mar-2014]
+[edited 7-mar-2014]
 
 This file elaborates on the Quick Start guide in the "README.txt" file.
 
@@ -18,14 +18,10 @@ connector. Do not use the USB-A connector on the other end of the board as that
 port will not accept input power.
 
 Some of you might even figure out how to derive +5V for the USB-mini cable from
-the 5370 oven power supply card that is always powered if the instrument is off
-but the line cord is plugged in. But beware of the potential problem of
-conducting noise from the BBB to the reference oscillator over such a
-connection. Some experimentation and measurement is necessary. The planned
-USB/Ethernet connector card that replaces the current HPIB one at the back-panel
-could host a voltage regulator. Aligator clip connections to the '+25V UNREG'
-and GND test points on the oven power supply would alleviate the need for any
-soldering.
+the portion of the 5370 power supply that is always powered on if the instrument
+is off but the line cord is plugged in (hint: big filter caps -- see schematic).
+The planned USB/Ethernet connector card that replaces the current HPIB one at
+the back-panel could host a voltage regulator and hold-up capacitor.
 
 
 FRONT PANEL MENU INTERFACE
@@ -87,7 +83,7 @@ If auto-starting is enabled the app will run in the background at the next boot.
 
 After running 'make' (m) two versions of the app are compiled: 'hd' has
 debugging checks enabled and 'h' is fully optimized for speed. You can also say
-'m bc' to build the HPIB-over-network client app.
+'m bc' to build the HPIB-over-Ethernet client app.
 
 There are a few command line arguments for 'hd' and 'h':
 
@@ -129,6 +125,44 @@ sitting in the same room as the noisy beast:
 
 For the debug version of the app ("hd" command) there are some others (see
 code).
+
+It is also possible to connect to the app when it is running in the background
+after being auto-started. Use telnet (note: not ssh) to make a simple
+terminal-based connection:
+
+    telnet ip_address|hostname|localhost 5371
+
+Note that the port number 5371 is different from port 5370 used by the
+HPIB-over-Ethernet service and port 5372 used for the instrument web interface
+(see below).
+
+An example run from the instrument's own BBB (hence 'localhost'). Note that
+'~^\' (tilda followed by control-backslash) is the escape sequence to exit
+telnet. This is different than the '~.' needed to exit the ssh you're probably
+using to connect to the BBB.
+
+    root@my-5370:telnet localhost 5371
+    d
+    display:             99 .63     ns
+    keys: ti mean 1 ti_only 
+    ~^\Quit
+    root@my-5370:
+
+The app also contains a small web server that listens for browser connections to
+port 5372. The resulting web page shows a scrollable list of all the output
+messages from the app and allows keyboard commands to be sent to the app. In
+your browser use a URL of the form:
+
+    ip_address|hostname|localhost:5372
+
+e.g.
+    192.168.0.101:5372
+    my-5370:5372
+
+Port 5372 is used because the Angstrom distribution on the Beagle already has
+another web server listening on port 80 (the default port for browser
+connections). Although it is possible to disable this other web server and
+change the define 'WEBSERVER_PORT' in web.h and re-install.
 
 
 SOFTWARE VERSIONS
@@ -412,10 +446,10 @@ terminal-based connection to the port:
 
     telnet ip_address|hostname|localhost 5370
 
-An example run from the instrument's BBB (hence 'localhost'). Note that '~^\'
-(tilda followed by control-backslash) is the escape sequence to exit telnet.
-This is different than the '~.' needed to exit the ssh you're probably using to
-connect to the BBB.
+An example run from the instrument's own BBB (hence 'localhost'). Note that
+'~^\' (tilda followed by control-backslash) is the escape sequence to exit
+telnet. This is different than the '~.' needed to exit the ssh you're probably
+using to connect to the BBB.
 
     root@my-5370:telnet localhost 5370
     md2

@@ -3,6 +3,7 @@
 #include "5370.h"
 #include "front_panel.h"
 #include "net.h"
+#include "web.h"
 
 #include <sys/file.h>
 #include <fcntl.h>
@@ -55,25 +56,29 @@ void sys_panic(char *str)
 	panic("sys_panic");
 }
 
+#define VBUF 4096
+
 void lprintf(char *fmt, ...)
 {
+	int sl;
 	char *s;
 	va_list ap;
-	char b[256];
 	
-	if ((s = malloc(256)) == NULL)
+	if ((s = malloc(VBUF)) == NULL)
 		panic("log malloc");
 
 	va_start(ap, fmt);
-	vsnprintf(s, 256, fmt, ap);
+	vsnprintf(s, VBUF, fmt, ap);
 	va_end(ap);
+	sl = strlen(s);		// because vsnprintf returns length disregarding limit, not the actual
 
 	if (background_mode) {
 		syslog(LOG_INFO, "hp5370d: %s", s);
 	}
 
 #ifndef CLIENT_SIDE
-	net_send(NET_TELNET, s, strlen(s), NO_COPY(TRUE), FLUSH(TRUE));
+	net_send(NET_TELNET, s, sl, NO_COPY(TRUE), FLUSH(TRUE));
+	app_to_webserver(s, sl);
 #endif
 
 	printf("%s", s);
@@ -111,10 +116,10 @@ u4_t time_diff(u4_t t1, u4_t t2)
 
 void delay(u4_t msec)
 {
-	u4_t tref = sys_now(), diff;
+	u4_t tref = timer_ms(), diff;
 	
 	do {
-		diff = time_diff(sys_now(), tref);
+		diff = time_diff(timer_ms(), tref);
 	} while (diff < msec);
 }
 

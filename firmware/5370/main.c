@@ -6,6 +6,7 @@
 #include "misc.h"
 #include "chip.h"
 #include "net.h"
+#include "web.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -14,6 +15,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <fcntl.h>
+#include <sched.h>
 
 #include "printf.h"
 
@@ -105,6 +107,7 @@ int main(int argc, char *argv[])
 	hpib_args(TRUE, argc, argv);
 
 	sim_init();
+	web_server_init();
 	
 	if (!menu_action) printf("menu action disabled\n");
 
@@ -116,6 +119,7 @@ reset:
 		wasRunning = FALSE;
 		net_disconnect(NET_HPIB);
 		net_disconnect(NET_TELNET);
+		web_server_stop();
 		skip_first = save_cfg = config_key = config_ip = config_nm = config_gw = config_am = FALSE;
 	}
 
@@ -124,8 +128,10 @@ reset:
 	if (!(bus_read(RREG_LDACSR) & DSR_VOK)) {
 		lprintf("waiting for 5370 power\n");
 		usleep(1000000);
-		while (!(bus_read(RREG_LDACSR) & DSR_VOK))
+		while (!(bus_read(RREG_LDACSR) & DSR_VOK)) {
+			sched_yield();
 			usleep(250000);
+		}
 		lprintf("5370 power on\n");
 		usleep(1000000);
 	} else {
@@ -234,6 +240,7 @@ reset:
 
 	net_connect(NET_HPIB, SERVER, NULL, HPIB_TCP_PORT);
 	net_connect(NET_TELNET, SERVER, NULL, TELNET_TCP_PORT);
+	web_server_start();
 
 	// place a call here to setup your measurement extension code
 	meas_extend_example_init();
@@ -403,9 +410,9 @@ menu_up_down:
 	
 	if (ki) {
 		bool first_time = TRUE;
-		u4_t td, tref = sys_now(), tcmp = 256, tinc = 32;
+		u4_t td, tref = timer_ms(), tcmp = 256, tinc = 32;
 		do {
-			td = time_diff(sys_now(), tref);
+			td = time_diff(timer_ms(), tref);
 			if (((*menu == M_IP) || (*menu == M_NM) || (*menu == M_GW)) && (first_time || (td >= tcmp))) {
 				if (ki > 0) {
 					cfg->if_ipinfo[*menu-M_IP][ki-1]++;

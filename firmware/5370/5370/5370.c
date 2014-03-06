@@ -10,6 +10,7 @@
 #include "chip.h"
 #include "timer.h"
 #include "pru_realtime.h"
+#include "web.h"
 
 #include ARCH_INCLUDE
 
@@ -26,6 +27,7 @@
 #include <sys/resource.h>
 #include <sys/mman.h>
 #include <math.h>
+#include <sched.h>
 
 #include "printf.h"
 
@@ -280,7 +282,7 @@ void handler_dev_arm_write(u2_t addr, u1_t data)
 	// FIXME: is this test valid for all measurement modes? O2_ARM_EN instead? TI +/- vs +only mode?
 	if ((addr == WREG_O2) && isActive(O2_MAN_ARM, data)) {
 		num_meas++;
-		if (meas_time == 0) meas_time = sys_now();
+		if (meas_time == 0) meas_time = timer_ms();
 
 #ifdef DEBUG
 		if (trace_regs) { printf("* "); fflush(stdout); }
@@ -345,7 +347,7 @@ u1_t handler_dev_display_read(u2_t addr)
 		
 		// simulate reset key down for an extended period
 		if (reset_key_down) {
-			if ((time_diff(sys_now(), reset_key_down) > 1250)) reset_key_down = 0;
+			if ((time_diff(timer_ms(), reset_key_down) > 1250)) reset_key_down = 0;
 		} else {
 			if (sim_running) {
 				if (!sim_key_intr) sim_key = 0;		// allow it to be read twice, but generate interrupt only once
@@ -655,7 +657,7 @@ static bool kdelay(delay)
 {
 	static u4_t key_delay, total_delay;
 
-	key_delay = time_diff(sys_now(), key_epoch);
+	key_delay = time_diff(timer_ms(), key_epoch);
 	total_delay = delay + 100;
 	
 	if ((key_delay >= total_delay) && (total_delay > key_threshold)) {
@@ -672,8 +674,9 @@ enum front_pnl_loc_e skey_stat[] = { MEAN, STD_DEV, MIN, MAX, DSP_REF, CLR_REF, 
 enum front_pnl_loc_e skey_samp[] = { PT1, _100, _1K, _10K, _100K };
 enum front_pnl_loc_e skey_misc[] = { P_TI_ONLY, P_M_TI, EXT_HOFF, PER_COMPL, EXT_ARM, MAN_RATE };
 
+#define	N_IBUF	64
 #define	N_DBUF	256
-static char ibuf[32], dbuf[N_DBUF];
+static char ibuf[N_IBUF], dbuf[N_DBUF];
 
 #define	SELF_TEST_DELAY		2048
 
@@ -690,14 +693,16 @@ char *sim_input()
 	char *cp = ibuf;
 	char key_name[16];
 	
-	if (!boot_time) boot_time = sys_now();
+	if (!boot_time) boot_time = timer_ms();
 	
 	// check for 5370 power loss (we may still be running via USB power)
 	if (!(bus_read(RREG_LDACSR) & DSR_VOK)) {
 		lprintf("5370 power loss\n");
 		usleep(1000000);
-		while (!(bus_read(RREG_LDACSR) & DSR_VOK))
+		while (!(bus_read(RREG_LDACSR) & DSR_VOK)) {
+			sched_yield();
 			usleep(250000);
+		}
 		lprintf("5370 power on\n");
 		usleep(1000000);
 		sys_reset = TRUE;
@@ -705,7 +710,7 @@ char *sim_input()
 	}
 
 	// can't recall any keys until self-test is finished
-	if (self_test && boot_time && (time_diff(sys_now(), boot_time) > SELF_TEST_DELAY)) {
+	if (self_test && boot_time && (time_diff(timer_ms(), boot_time) > SELF_TEST_DELAY)) {
 		self_test = FALSE;
 	}
 	
@@ -716,7 +721,7 @@ char *sim_input()
 	if (!self_test && need_recall_file) {
 		sprintf(dbuf, "/home/root/.5370.%s.keys", conf_profile);
 		if ((kfp = fopen(dbuf, "r")) != NULL) {
-			key_epoch = sys_now(); key_threshold = rcl_key = 0;
+			key_epoch = timer_ms(); key_threshold = rcl_key = 0;
 			recall_active = TRUE;
 		} else {
 			printf("no key profile named \"%s\", will create one\n", conf_profile);
@@ -771,9 +776,21 @@ char *sim_input()
 	}
 
 	if (!n) {
+		n = webserver_to_app(cp, N_IBUF-2);	// N_IBUF-2: leave room for \n\0
+		
+		if (n) {
+			cp[n] = 0;
+			if (cp[n-1] != '\n') {
+				strcat(cp, "\n");	// make sure there is a trailing \n
+				n++;
+			}
+		}
+	}
+
+	if (!n) {
 		if (background_mode)
 			return 0;
-		n = read(tty, cp, sizeof(ibuf));
+		n = read(tty, cp, N_IBUF);
 		if (n >= 1) cp[n] = 0;
 	}
 
@@ -808,6 +825,8 @@ char *sim_input()
 		}
 
 		if (*cp == 'q') {
+			printf("quit\n");
+			delay(1000);	// let webserver show message
 			exit(0);
 		}
 		
@@ -872,7 +891,7 @@ char *sim_input()
 			} else
 			if (strcmp(cp, "k rd\n") == 0) {
 				k = RESET;
-				reset_key_down = sys_now();
+				reset_key_down = timer_ms();
 			} else
 			if (strcmp(cp, "k d\n") == 0) {
 				k = TI;
@@ -926,7 +945,7 @@ char *sim_input()
 		// measure number of measurements-per-second
 		if (*cp == 's' && n==2) {
 			if (num_meas) {
-				printf("%.1f meas/s\n", (float)num_meas / ((float)(sys_now()-meas_time)/1000.0));
+				printf("%.1f meas/s\n", (float)num_meas / ((float)(timer_ms()-meas_time)/1000.0));
 				num_meas = meas_time = 0;
 			}
 
