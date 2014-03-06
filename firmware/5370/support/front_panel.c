@@ -463,11 +463,11 @@ void config_file_update()
 	}
 	
 	// only update file periodically
-	if (key_need_update && (time_diff(sys_now(), key_last_update) > 10000)) {
+	if (key_need_update && (time_diff(timer_ms(), key_last_update) > 10000)) {
 		FILE *fp;
 		
 		key_need_update = FALSE;
-		key_last_update = sys_now();
+		key_last_update = timer_ms();
 
 		sprintf(dbuf, "/home/root/.5370.%s.keys", conf_profile);
 		scallz("fopen", fp = fopen(dbuf, "w"));

@@ -472,7 +472,7 @@ void hpib_net_binary(bool fast_mode, u1_t wdata)
 			{
 				u4_t now;
 				static u4_t last, meas;
-				now = sys_now();
+				now = timer_ms();
 				if (time_diff(now, last) >= 1000) {
 					printf("%d meas/sec\n", meas);
 					last = now;
@@ -488,7 +488,7 @@ void hpib_net_binary(bool fast_mode, u1_t wdata)
 
 		u4_t now;
 		static u4_t last, meas;
-		now = sys_now();
+		now = timer_ms();
 		if (time_diff(now, last) >= 1000) {
 			meas /= 5;
 			printf("%d meas/sec", meas);

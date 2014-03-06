@@ -85,7 +85,7 @@ void pru_start()
 	bin = background_mode? "/usr/local/bin/hp5370d_realtime.bin" : "pru/pru_realtime.bin";
     if (prussdrv_exec_program(PRU_NUM, bin)) panic("prussdrv_exec_program");
     
-    u4_t key1 = sys_now_us();
+    u4_t key1 = timer_us();
     u4_t key2 = key1 >> 8;
     pru->p[0] = key1;
     pru->p[1] = key2;

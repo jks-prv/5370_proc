@@ -426,7 +426,7 @@ doexecute: ;
 		u4_t now;
 		static u4_t last, last_iCount;
 
-		now = sys_now();
+		now = timer_ms();
 		if (time_diff(now, last) >= 1000) {
 			printf("%4dK i/sec\n", (iCount-last_iCount)/1024);
 			last = now;

@@ -34,10 +34,10 @@ void xit(int err);
 int split(char *cp, int *argc, char *argv[], int nargs);
 
 #ifdef CLIENT_SIDE
- #define sys_now() 0
+ #define timer_ms() 0
 #else
- u4_t sys_now(void);
- u4_t sys_now_us(void);
+ u4_t timer_ms(void);
+ u4_t timer_us(void);
 #endif
 
 u4_t time_diff(u4_t t1, u4_t t2);

@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 
-u4_t sys_now(void)
+u4_t timer_ms(void)
 {
 	struct timeval tv;
 
@@ -13,7 +13,7 @@ u4_t sys_now(void)
     return tv.tv_sec*1000 + tv.tv_usec/1000;
 }
 
-u4_t sys_now_us(void)
+u4_t timer_us(void)
 {
 	struct timeval tv;
 
