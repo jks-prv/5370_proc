@@ -5,6 +5,9 @@
 
 #define	INDEX_HTML		"5370.html"
 
+#define	WS_OPCODE_TEXT		1
+#define	WS_OPCODE_BINARY	2
+
 void app_to_webserver(char *s, int sl);
 int webserver_to_app(char *s, int sl);
 

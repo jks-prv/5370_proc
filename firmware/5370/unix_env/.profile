@@ -8,6 +8,7 @@ fi
 # export PATH
 
 export PATH=.:$PATH
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
 
 export LS_OPTIONS='--color=auto'
 export PROJ=5370

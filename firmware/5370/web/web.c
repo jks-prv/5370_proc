@@ -163,7 +163,7 @@ static int iterate_callback(struct mg_connection *c, enum mg_event ev)
 			if (nb) {
 				assert(!nb->done && nb->buf && nb->len);
 				DBG("iterate_callback:WEBSOCKET: %d <%s>\n", nb->len, nb->buf);
-				mg_websocket_write(c, 1, nb->buf, nb->len);
+				mg_websocket_write(c, WS_OPCODE_TEXT, nb->buf, nb->len);
 				nb->done = TRUE;
 			} else {
 				break;
