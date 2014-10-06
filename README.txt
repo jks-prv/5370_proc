@@ -1,10 +1,11 @@
-[edited 27-feb-2014]
+[edited 6-oct-2014]
 
 This document describes the HP 5370 processor replacement board project.
 
 Version 3.x uses an inexpensive BeagleBone Black (BBB) single-board computer as
-the host for the 5370 application code (app). The BBB runs Angstrom Linux from
-the 2GB on-board eMMC flash memory.
+the host for the 5370 application code (app). The BBB runs Linux from the
+on-board eMMC flash memory, either the Angstrom distribution on the rev B BBBs
+with 2GB of eMMC or Debian on the rev C BBBs with 4GB of eMMC.
 
 
 QUICK START
@@ -44,7 +45,7 @@ front panel display after instrument power on. You'll need this address for a
 subsequent command to login to Linux running on the BBB (see below). After
 turning on the instrument it will take less than 30 seconds for the BBB to boot
 and begin running the 5370 app. The version number of the app will appear on the
-display, e.g. "v3.1". If you're running a DHCP server on your network the
+display, e.g. "v3.2". If you're running a DHCP server on your network the
 assigned IP address will then be shown on the display (e.g. 192.168.1.2). If not
 a default IP address will be shown that can be changed via the front panel as
 described in the READ_MORE.txt file. There are four blue LEDs on the BBB that
@@ -70,9 +71,9 @@ released software.
 
 
 8. Installing your own BBB and software:
-The software is designed to work with the Angstrom Linux distribution installed
-on a new BBB. If you've installed something else (e.g. Ubuntu) then things
-probably won't work.
+The software is designed to work with the Angstrom or Debian Linux distribution
+installed on a new BBB. If you've installed something else (e.g. Ubuntu) then
+things probably won't work.
 
 Attach the BBB to the board being very careful to observe that the RJ45 Ethernet
 connector of the BBB goes over the notch in the white silkscreen outline on the

@@ -23,9 +23,12 @@
 	#define assert_exit(e)
 #endif
 
+#define panic(str) _panic(str, __FILE__, __LINE__)
+#define sys_panic(str) _sys_panic(str, __FILE__, __LINE__)
+
 void lprintf(char *fmt, ...);
-void panic(char *str);
-void sys_panic(char *str);
+void _panic(char *str, char *file, int line);
+void _sys_panic(char *str, char *file, int line);
 void xit(int err);
 
 #define scall(x, y) if ((y) < 0) sys_panic(x);

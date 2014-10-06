@@ -1,7 +1,29 @@
-# Makefile for compiling 5370 project
+#
+# Makefile for 5370 processor board project
+#
+
+#
+# This Makefile can be run on both a build machine (I use a MacBook Pro) and the
+# BeagleBone Black target (Angstrom or Debian release).
+# Which machine you're on is figured out by this:
+#
+#	DEBIAN_ANGSTROM_DEVSYS = $(shell grep -q -s Debian /etc/dogtag; echo $$?)
+#	DEBIAN = 0
+#	ANGSTROM = 1
+#	DEVSYS = 2
+#	ifeq ($(DEBIAN_ANGSTROM_DEVSYS),$(DEBIAN))
+#		...
+#	ifeq ($(DEBIAN_ANGSTROM_DEVSYS),$(DEVSYS))
+#		...
+#
+# The '/etc/dogtag' file is present on the Beagle and not on the dev machine.
+# Grep returns 0 if "Debian" is found in /etc/dogtag, 1 if it isn't and 2 if /etc/dogtag doesn't exist.
+# This same mechanism is used in the wrapper shell script because device tree files need to be
+# loaded only on the Beagle.
+#
 
 VERSION_MAJ = 3
-VERSION_MIN = 1
+VERSION_MIN = 2
 
 #INSTRUMENT = HP5370A
 INSTRUMENT = HP5370B
@@ -51,112 +73,171 @@ CHIP_INCLUDE = \"AM3359.h\"
 PCB_NAME = \"TIME-NUTS_PCB\"
 endif
 
-SIM_FLAGS = -D$(INSTRUMENT) -D$(SETUP) -DARCH_INCLUDE=$(ARCH_INCLUDE) -D$(CHIP) -DCHIP_INCLUDE=$(CHIP_INCLUDE) -DPCB_NAME=$(PCB_NAME)
-VERSION = -DFIRMWARE_VER_MAJ=$(VERSION_MAJ) -DFIRMWARE_VER_MIN=$(VERSION_MIN)
+DEBIAN_ANGSTROM_DEVSYS = $(shell grep -q -s Debian /etc/dogtag; echo $$?)
+DEBIAN = 0
+ANGSTROM = 1
+DEVSYS = 2
 
-VPATH = .
-VPATH += ./5370
-VPATH += ./6800
-VPATH += ./arch
-VPATH += ./arch/$(ARCH)
-VPATH += ./support
-VPATH += ./misc
-VPATH += ./user
-VPATH += ./pru ./pru/pasm
-VPATH += ./web
-VPATH += ./pkgs/mongoose
-
-INC = $(addprefix -I,$(VPATH))
+OBJ_DIR = obj
+OBJ_DIR_O3 = $(OBJ_DIR)_O3
+DIRS = . 5370 6800 arch arch/$(ARCH) pru support user web $(wildcard pkgs/*)
+VPATH = $(DIRS)
+I = $(addprefix -I,$(DIRS))
+H = $(wildcard $(addsuffix /*.h,$(DIRS)))
+H += 6800/6800.debug.h
+C = $(wildcard $(addsuffix /*.c,$(DIRS)))
+CFILES = $(subst web/$(EDATA),,$(C)) web/$(EDATA)
 
 EDATA = embedded_data.c
+BINS = hd.bin h.bin bc
 
-RMT_SOURCE = 5370/5370.c 5370/test.c 5370/hpib.c 5370/bug.c main.c 6800/6800.c 6800/6800.trace.c
-RMT_SOURCE += arch/$(ARCH)/bus.c arch/$(ARCH)/timer.c
-RMT_SOURCE += support/misc.c support/net.c support/front_panel.c user/example.c
-RMT_SOURCE += pru/prussdrv.c pru/pru_realtime.c
-RMT_SOURCE += web/web.c web/$(EDATA)
-RMT_SOURCE += $(wildcard pkgs/mongoose/*.c)
+#ALL_DEPS = pru/pru_realtime.bin
+SRC_DEPS = Makefile pru/pru_realtime.bin $(EDATA)
+BIN_DEPS =
 
-RMT_INCLUDES = config.h boot.h sim.h
-RMT_INCLUDES += 5370.h 5370_regs.h hpib.h 6800.h 6800.cc.h 6800.core.h 6800.insns.h
-RMT_INCLUDES += arch/chip.h arch/$(ARCH)/$(CHIP).h arch/$(ARCH)/$(ARCH).h arch/$(ARCH)/bus.h arch/$(ARCH)/timer.h
-RMT_INCLUDES += support/misc.h support/net.h support/front_panel.h
-RMT_INCLUDES += $(wildcard pru/*.h)
-RMT_INCLUDES += web/web.h
-RMT_INCLUDES += $(wildcard pkgs/mongoose/*.h)
+ifeq ($(DEBIAN_ANGSTROM_DEVSYS),$(DEVSYS))
+	ROOT_DIR = \".\"
+endif
+ifeq ($(DEBIAN_ANGSTROM_DEVSYS),$(DEBIAN))
+	ROOT_DIR = \"/root\"
+endif
+ifeq ($(DEBIAN_ANGSTROM_DEVSYS),$(ANGSTROM))
+	ROOT_DIR = \"/home/root\"
+endif
 
-RMT_BINARIES = hd.bin h.bin bc
-RMT_DEPENDS = $(RMT_SOURCE) $(RMT_INCLUDES) Makefile 6800.debug.c pru/pru_realtime.bin
-RMT_FLAGS = $(SIM_FLAGS) $(VERSION) -Wno-int-to-void-pointer-cast -lpthread
-RMT_DIRS += -L/usr/local/lib -I/usr/local/include $(INC)
+LIBS = -L/usr/local/lib -lpthread
+SIM_FLAGS = -D$(INSTRUMENT) -D$(SETUP) -DARCH_INCLUDE=$(ARCH_INCLUDE) -D$(CHIP) -DCHIP_INCLUDE=$(CHIP_INCLUDE) -DPCB_NAME=$(PCB_NAME)
+VERSION = -DFIRMWARE_VER_MAJ=$(VERSION_MAJ) -DFIRMWARE_VER_MIN=$(VERSION_MIN)
+FLAGS = -Wno-int-to-void-pointer-cast $(I) -I/usr/local/include $(SIM_FLAGS) $(VERSION) -DROOT_DIR=$(ROOT_DIR)
+CSRC = $(notdir $(CFILES))
+OBJECTS = $(CSRC:%.c=$(OBJ_DIR)/%.o)
+O3_OBJECTS = $(CSRC:%.c=$(OBJ_DIR_O3)/%.o)
 
 all: hd.bin h.bin
 h: h.bin
 hd: hd.bin
 
 # interpreter with debugging enabled
-hd.bin:	$(RMT_DEPENDS)
-	cc -DDEBUG -DINSN_TRACE -g $(RMT_FLAGS) $(RMT_SOURCE) $(RMT_DIRS) -o $@
+hd.bin:	$(OBJ_DIR) $(OBJECTS) $(BIN_DEPS)
+	cc -g $(OBJECTS) $(LIBS) -o $@
 
 # full -O3 optimization
-h.bin:	$(RMT_DEPENDS)
-	cc -O3 $(RMT_FLAGS) $(RMT_SOURCE) $(RMT_DIRS) -o $@
+h.bin:	$(OBJ_DIR_O3) $(O3_OBJECTS) $(BIN_DEPS)
+	cc -O3 $(O3_OBJECTS) $(LIBS) -o $@
+
+$(OBJ_DIR)/%.o: %.c $(H) $(SRC_DEPS)
+	cc -g -DDEBUG -DINSN_TRACE $(FLAGS) -c -o $@ $<
+
+$(OBJ_DIR_O3)/%.o: %.c $(H) $(SRC_DEPS)
+	cc -O3 $(FLAGS) -c -o $@ $<
+
+$(OBJ_DIR):
+	@mkdir -p $(OBJ_DIR)
+
+$(OBJ_DIR_O3):
+	@mkdir -p $(OBJ_DIR_O3)
 
 PASM_SOURCE = $(wildcard pru/pasm/*.c)
 PASM_INCLUDES = $(wildcard pru/pasm/*.h)
-pas:	$(PASM_INCLUDES) $(PASM_SOURCE) Makefile
+pas: $(PASM_INCLUDES) $(PASM_SOURCE) Makefile
 	cc -Wall -D_UNIX_ -I./pru/pasm $(PASM_SOURCE) -o pas
 
-pru/pru_realtime.bin:	pas pru/pru_realtime.p pru/pru_realtime.h pru/pru_realtime.hp
+pru/pru_realtime.bin: pas pru/pru_realtime.p pru/pru_realtime.h pru/pru_realtime.hp
 	(cd pru; ../pas -V3 -b -L -l -D_PASM_ -D$(SETUP) pru_realtime.p)
 
 WEB = 5370.html 5370.js
 web/$(EDATA): $(addprefix web/,$(WEB))
 	(cd web; perl mkdata.pl $(WEB) >$(EDATA))
 
-CAPE = cape-bone-5370-00A0
-PRU  = cape-bone-5370-P-00A0
+debug:
+	@echo DEBIAN_ANGSTROM_DEVSYS = $(DEBIAN_ANGSTROM_DEVSYS)
+	@echo SRC_DEPS: $(SRC_DEPS)
+	@echo BIN_DEPS: $(BIN_DEPS)
+	@echo ALL_DEPS: $(ALL_DEPS)
+	@echo WEB: $(WEB)
+	@echo VPATH: $(VPATH)
+	@echo H: $(H)
+	@echo C: $(C)
+	@echo OBJECTS: $(OBJECTS)
+
+DEV = 5370
+CAPE = cape-bone-$(DEV)-00A0
+PRU  = cape-bone-$(DEV)-P-00A0
 TEST = cape-bone-test-00A0
 
 install: hd.bin h.bin
+ifeq ($(DEBIAN_ANGSTROM_DEVSYS),$(DEVSYS))
+	@echo only run \'make install\' on target
+else
 	cp h.bin hp5370d
 	cp pru/pru_realtime.bin hp5370d_realtime.bin
 	install -D -s -o root -g root hp5370d /usr/local/bin/hp5370d
 	install -D -o root -g root hp5370d_realtime.bin /usr/local/bin/hp5370d_realtime.bin
-	rm hp5370d hp5370d_realtime.bin
+	rm -f hp5370d hp5370d_realtime.bin
 	install -o root -g root unix_env/hp5370d /etc/init.d
 	install -o root -g root unix_env/hp5370d.service /etc/systemd/system
 	install -D -o root -g root -m 0644 unix_env/$(CAPE).dts /lib/firmware/$(CAPE).dts
 	install -D -o root -g root -m 0644 unix_env/$(PRU).dts /lib/firmware/$(PRU).dts
 #	install -D -o root -g root -m 0644 unix_env/$(TEST).dts /lib/firmware/$(TEST).dts
-	/usr/lib/connman/test/set-global-timeservers pool.ntp.org
-	install -D -o root -g root -m 0644 unix_env/.bashrc /home/root/.bashrc
-	install -D -o root -g root -m 0644 unix_env/.profile /home/root/.profile
-	systemctl enable hp5370d
-# disable Gnome display manager (on HDMI port) to improve real-time response and decrease boot time
-	systemctl disable gdm
+	install -D -o root -g root -m 0644 unix_env/.bashrc ~root/.bashrc
+	install -D -o root -g root -m 0644 unix_env/.profile ~root/.profile
 
+# disable display manager (on HDMI port) to improve real-time response and decrease boot time
+ifeq ($(DEBIAN_ANGSTROM_DEVSYS),$(DEBIAN))
+	systemctl enable hp5370d.service
+#	update-rc.d hp5370d defaults
+#	update-rc.d hp5370d enable
+	update-rc.d lightdm disable
+endif
+ifeq ($(DEBIAN_ANGSTROM_DEVSYS),$(ANGSTROM))
+	systemctl enable hp5370d
+	systemctl disable gdm
+	/usr/lib/connman/test/set-global-timeservers pool.ntp.org
+endif
+endif
+
+ifeq ($(DEBIAN_ANGSTROM_DEVSYS),$(DEBIAN))
+enable disable start stop status:
+	systemctl --lines=100 $@ hp5370d.service
+endif
+ifeq ($(DEBIAN_ANGSTROM_DEVSYS),$(DEBIAN_USING_UPDATE_RC))
+enable disable:
+	update-rc.d hp5370d $@
+start stop:
+	/etc/init.d/hp5370d $@
+status:
+	@ls -la /etc/rc?.d/*hp5370d
+endif
+ifeq ($(DEBIAN_ANGSTROM_DEVSYS),$(ANGSTROM))
 enable disable start stop status:
 	systemctl --lines=100 $@ hp5370d
+endif
 
 log:
 	journalctl -b | grep 5370
 
 # client code example of transfering HPIB binary data over a TCP connection
-bc:	$(RMT_DEPENDS) 5370/hpib_client.c
-	cc -O3 -DCLIENT_SIDE $(RMT_FLAGS) 5370/hpib_client.c support/misc.c support/net.c $(RMT_DIRS) -o $@
+BCFILES = 5370/hpib_client.c support/misc.c support/net.c
+bc:	$(H) $(BCFILES)
+	cc -O3 -DCLIENT_SIDE $(FLAGS) $(BCFILES) $(LIBS) -o $@
 
 v ver version:
 	@echo "you are running version" $(VERSION_MAJ)"."$(VERSION_MIN)
 
-tar:
-	make clean
-	tar cfz ../5370.tgz ../5370
-
+DIST = 5370
 BBB_IP = $(IP_BBB_5370)
 
+tar:
+	make clean
+	tar cfz ../$(DIST).tgz ../$(DIST)
+
 scp: tar
-	scp ../5370.tgz root@$(BBB_IP):/home/root
+	scp ../$(DIST).tgz root@$(BBB_IP):~root
+
+# selectively transfer files to the target so everything isn't compiled each time
+EXCLUDE = "/obj" "/obj_O3" "*.dSYM" "*.bin"
+rsync:
+	rsync -av --delete $(addprefix --exclude , $(EXCLUDE)) . root@$(BBB_IP):~root/$(DIST)
 
 clean:
-	-rm -rf $(RMT_BINARIES) $(wildcard hp5370d*) *.dSYM ../5370.tgz pas $(addprefix pru/pru_realtime.,bin lst txt) web/$(EDATA)
+	-rm -rf $(OBJ_DIR) $(OBJ_DIR_O3) $(BINS) $(wildcard hp5370d*) *.dSYM ../$(DIST).tgz pas $(addprefix pru/pru_realtime.,bin lst txt) web/$(EDATA)

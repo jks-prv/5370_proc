@@ -247,7 +247,7 @@ next_insn:
 	{
 		char *cp;
 		if (((iCount & SIM_POLL_INPUT_COUNT) == 0) && ((cp = sim_input()) != 0)) {
-			#include "6800.debug.c"
+			#include "6800.debug.h"
 		}
 	}
 

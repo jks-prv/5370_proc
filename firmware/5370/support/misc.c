@@ -30,13 +30,13 @@ void xit(int err)
 	exit(err);
 }
 
-void panic(char *str)
+void _panic(char *str, char *file, int line)
 {
 	if (background_mode) {
-		syslog(LOG_ERR, "PANIC: %s\n", str);
+		syslog(LOG_ERR, "PANIC: \"%s\" %s line %d\n", str, file, line);
 	}
 	
-	printf("PANIC: %s\n", str);
+	printf("PANIC: \"%s\" %s line %d\n", str, file, line);
 
 #ifndef CLIENT_SIDE
 	dsp_7seg_str(DSP_LEFT, "panic", DSP_CLEAR);
@@ -46,14 +46,14 @@ void panic(char *str)
 	xit(-1);
 }
 
-void sys_panic(char *str)
+void _sys_panic(char *str, char *file, int line)
 {
 	if (background_mode) {
 		syslog(LOG_ERR, "%s: %m\n", str);
 	}
 	
 	perror(str);
-	panic("sys_panic");
+	_panic("sys_panic", file, line);
 }
 
 #define VBUF 4096

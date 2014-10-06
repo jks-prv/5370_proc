@@ -719,7 +719,7 @@ char *sim_input()
 	}
 	
 	if (!self_test && need_recall_file) {
-		sprintf(dbuf, "/home/root/.5370.%s.keys", conf_profile);
+		sprintf(dbuf, "%s/.5370.%s.keys", ROOT_DIR, conf_profile);
 		if ((kfp = fopen(dbuf, "r")) != NULL) {
 			key_epoch = timer_ms(); key_threshold = rcl_key = 0;
 			recall_active = TRUE;

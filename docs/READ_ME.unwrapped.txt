@@ -1,8 +1,8 @@
-[edited 27-feb-2014]
+[edited 6-oct-2014]
 
 This document describes the HP 5370 processor replacement board project.
 
-Version 3.x uses an inexpensive BeagleBone Black (BBB) single-board computer as the host for the 5370 application code (app). The BBB runs Angstrom Linux from the 2GB on-board eMMC flash memory.
+Version 3.x uses an inexpensive BeagleBone Black (BBB) single-board computer as the host for the 5370 application code (app). The BBB runs Linux from the on-board eMMC flash memory, either the Angstrom distribution on the rev B BBBs with 2GB of eMMC or Debian on the rev C BBBs with 4GB of eMMC.
 
 
 QUICK START
@@ -18,7 +18,7 @@ github.com/jks-prv/5370_proc/blob/master/READ_MORE.txt
 
 4. Although the new board will run the instrument fine without a network connection you'll probably want one to do any development. There are several ways to connect the BBB to a network and the easiest is probably by using a wired Ethernet connection (not included) from the RJ45 jack on the BBB to a network hub or router port. It is also easiest if your network is running a DHCP server (usually in the network router) that assigns IP addresses.
 
-5. Be prepared to note the assigned IP address that will be shown on the 5370 front panel display after instrument power on. You'll need this address for a subsequent command to login to Linux running on the BBB (see below). After turning on the instrument it will take less than 30 seconds for the BBB to boot and begin running the 5370 app. The version number of the app will appear on the display, e.g. "v3.1". If you're running a DHCP server on your network the assigned IP address will then be shown on the display (e.g. 192.168.1.2). If not a default IP address will be shown that can be changed via the front panel as described in the READ_MORE.txt file. There are four blue LEDs on the BBB that should blink as booting progresses (fron the "top" edge of the board down: heartbeat, SD card access, process running, eMMC/filesystem access). If you're having trouble determining the IP address see step 8 below for some suggestions.
+5. Be prepared to note the assigned IP address that will be shown on the 5370 front panel display after instrument power on. You'll need this address for a subsequent command to login to Linux running on the BBB (see below). After turning on the instrument it will take less than 30 seconds for the BBB to boot and begin running the 5370 app. The version number of the app will appear on the display, e.g. "v3.2". If you're running a DHCP server on your network the assigned IP address will then be shown on the display (e.g. 192.168.1.2). If not a default IP address will be shown that can be changed via the front panel as described in the READ_MORE.txt file. There are four blue LEDs on the BBB that should blink as booting progresses (fron the "top" edge of the board down: heartbeat, SD card access, process running, eMMC/filesystem access). If you're having trouble determining the IP address see step 8 below for some suggestions.
 
 6. Your instrument should now respond as usual although you will notice it is somewhat faster. Before powering off the instrument it is strongly recommended you first halt Linux and then wait ten seconds to avoid possible unrecoverable filesystem corruption (although this is unlikely). Definitely do not power off during the booting process when lots of filesystem writes are occurring. You can halt by using the front panel menu interface or by logging into the BBB via ssh and typing 'halt'. It is also possible to keep the BBB running by using a USB-mini cable from an external hub or USB charger to keep it powered up, even with the instrument powered down. This has the advantage of providing 'instant on' when the instrument is next powered on (i.e. no Linux booting required). See the READ_MORE.txt file for details. 
 
@@ -26,7 +26,7 @@ github.com/jks-prv/5370_proc/blob/master/READ_MORE.txt
 
 
 8. Installing your own BBB and software:
-The software is designed to work with the Angstrom Linux distribution installed on a new BBB. If you've installed something else (e.g. Ubuntu) then things probably won't work.
+The software is designed to work with the Angstrom or Debian Linux distribution installed on a new BBB. If you've installed something else (e.g. Ubuntu) then things probably won't work.
 
 Attach the BBB to the board being very careful to observe that the RJ45 Ethernet connector of the BBB goes over the notch in the white silkscreen outline on the board. The connector pins are not polarized so don't get this wrong. See photos on http://www.jks.com/5370/5370.html
 

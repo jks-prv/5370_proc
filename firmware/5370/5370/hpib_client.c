@@ -1,5 +1,7 @@
 // an example of how to open a tcp connection to instrument and perform & decode a binary transfer
 
+#ifdef CLIENT_SIDE
+
 #include "misc.h"
 #include "5370.h"
 #include "hpib.h"
@@ -159,3 +161,5 @@ int main(int argc, char *argv[])
 	// switch out of binary mode
 	net_hpib(sfd, "tb0md1", FALSE);
 }
+
+#endif

@@ -469,7 +469,7 @@ void config_file_update()
 		key_need_update = FALSE;
 		key_last_update = timer_ms();
 
-		sprintf(dbuf, "/home/root/.5370.%s.keys", conf_profile);
+		sprintf(dbuf, "%s/.5370.%s.keys", ROOT_DIR, conf_profile);
 		scallz("fopen", fp = fopen(dbuf, "w"));
 		for (i=1; i<N_GROUPS; i++) {
 			if (key_last[i].key) {

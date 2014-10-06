@@ -1,4 +1,4 @@
-[edited 7-mar-2014]
+[edited 6-oct-2014]
 
 This file elaborates on the Quick Start guide in the "README.txt" file.
 
@@ -106,7 +106,7 @@ e.g.
     192.168.0.101:5372
     my-5370:5372
 
-Port 5372 is used because the Angstrom distribution on the Beagle already has another web server listening on port 80 (the default port for browser connections). Although it is possible to disable this other web server and change the define 'WEBSERVER_PORT' in web.h and re-install.
+Port 5372 is used because the Angstrom/Debian distributions on the Beagle already have another web server listening on port 80 (the default port for browser connections). Although it is possible to disable this other web server and change the define 'WEBSERVER_PORT' in web.h and re-install.
 
 
 SOFTWARE VERSIONS
@@ -152,7 +152,7 @@ Using a serial port:
 Another possibility for connecting is using a USB-to-serial-port cable. That is, serial port on the BBB-side and a virtual serial port via USB on an attached computer. The BBB has a 6-pin header for this purpose. However, when plugged into the 5370 board there in not sufficient clearance for the usual adapter cable mentioned on the BBB Wiki. Instead use the low-profile adapter sold by Tindie: https://www.tindie.com/products/spirilis/beaglebone-black-ftdi-friction-fit/ The USB cable that comes with the Tindie product is short, but necessary because it is a special small size, so a USB-A-to-USB-A extension cable may be required. On a serial connection login as "root" with no password just as with ssh.
 
 WiFi:
-It is possible to use a USB WiFi dongle under Angstrom but commentary on the net says this is difficult to get working. You probably don't want a WiFi adapter radiating inside the 5370 anyway. We suppose it would be okay to run the dongle outside the 5370 on the end of a USB extension cable.
+It is possible to use a USB WiFi dongle under Angstrom/Debian but commentary on the net says this may be difficult to get working. You probably don't want a WiFi adapter radiating inside the 5370 anyway. We suppose it would be okay to run the dongle outside the 5370 on the end of a USB extension cable.
 
 Setting a fixed IP address:
 Your DHCP server likely has a mechanism to associate a fixed IP address with the unique Ethernet "MAC" address of the BBB. This is very convenient as DHCP servers don't always assign the same IP address each time the BBB boots. Run the "ifconfig eth0" command and note the string after "HWaddr" (e.g. 56:32:BD:B6:0F:DB). This is the MAC address. Add an entry to the DHCP server that has this address and the IP address you want to use.
@@ -166,7 +166,7 @@ Command shortcuts:
 There are a bunch of shortcut command aliases in the file /home/root/.bashrc Of course these can't be used until the 5370 software is installed for the first time, which will be true if you purchased the board with the BBB installed. So you can just type "m" instead of "make", "mi" for "make install" etc.
 
 Random BBB annoyances:
-There are a number of small, but irritating, problems with Angstrom on the BBB. Here are some suggestions for dealing with them.
+There are a number of small, but irritating, problems with the BBB. Here are some suggestions for dealing with them.
 
 Ethernet appears deaf:
 The Ethernet port doesn't seem to reliably get an IP address from the DHCP server. Instead it will default to one of those self-assigned 169.xxx addresses which won't work. This seems to be true occasionally for USB networking as well. We don't know any other solution than to reboot.
@@ -181,13 +181,13 @@ If you're logged in but notice additional attempts to connect with ssh or scp gi
 This means the file "/etc/dropbear/dropbear_rsa_host_key" on the BBB has been corrupted or needs to be removed because of incompatibility with the keys in the ~/.ssh/known_hosts file on the machine you're trying to connect from. If you have this problem please email us as the fix is a little involved.
 
 BBB bricked:
-In the (hopefully unlikely) event that your BBB becomes "bricked" the BBB wiki link above shows how to re-flash an Angstrom distribution onto the eMMC. You would of course then need to re-install the 5370 software as well.
+In the (hopefully unlikely) event that your BBB becomes "bricked" the BBB wiki link above shows how to re-flash an Angstrom/Debian distribution onto the eMMC. You would of course then need to re-install the 5370 software as well.
 
 Versionitis:
-We all know stuff breaks when using different versions of things. All the BBBs used in testing have been hardware revision "A5C", "A6" and "A6A" boards. The software distribution of Angstrom Linux used was "2013.06.20" and "2013.09.04" found by doing:
+We all know stuff breaks when using different versions of things. All the BBBs used in testing have been hardware revision "A5C", "A6", "A6A", "B" and "C" boards. The software distribution of Angstrom Linux used was "2013.06.20" and "2013.09.04", or "2014-04-23" for Debian, found by doing:
 
     more /etc/dogtag
-
+    
 Or by looking at the ID.txt file in the "BEAGLEBONE" virtual USB drive that appears when you connect the BBB to a computer with a USB cable. These distributions use a Linux 3.8 kernel.
 
 
@@ -215,7 +215,7 @@ The files on the github repository and on the BBB are organized as follows. The 
         support/*           Code to support the 7-seg display, LEDs, etc.
         user/*              An example of code to extend the capabilities of
                             the instrument.
-        unix_env/*          A few customization files for Angstrom Linux 
+        unix_env/*          A few customization files for the Linux distribution
                             including the device-tree file necessary to 
                             setup the GPIO lines.
         

@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
 	int ip[4], nm[4], gw[4], bc[4];
 	
 	FILE *cfp, *efp;
-	char *config_file = "/home/root/.5370.config";
+	char *config_file = ROOT_DIR "/.5370.config";
 
 	cfg_t *cfg = &cfg_buf;
 	
@@ -186,7 +186,7 @@ reset:
 		menu = cfg->menu = M_DHCP;		// try DHCP first if not valid config
 	}
 
-#define ENET_RETRY 10
+#define ENET_RETRY 20
 
 	if (menu == M_DHCP) {	// see if interface configured by DHCP
 		gw[3]=gw[2]=gw[1]=gw[0]=0;	// ifconfig doesn't tell us the gateway, only the broadcast which we don't care about

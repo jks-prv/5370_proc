@@ -61,7 +61,7 @@ void check_pmux()
 	for (p=pins; p->pin; p++) {
 		pm = pmux[(0x800 + p->offset) >> 2];
 		if (pm != p->pinmux) {
-			printf("pin %d pinmux is 0x%x should be 0x%x\n", p->pin, pm, p->pinmux);
+			lprintf("pin %d pinmux is 0x%x should be 0x%x\n", p->pin, pm, p->pinmux);
 			fail = 1;
 		}
 	}

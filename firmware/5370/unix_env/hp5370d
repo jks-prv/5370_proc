@@ -1,15 +1,17 @@
 #!/bin/sh
 ### BEGIN INIT INFO
 # Provides: hp5370d
-# Default-Start:  2345
-# Default-Stop:   016
+# Default-Start:  2 3 4 5
+# Default-Stop:   0 1 6
+# Required-Start:
+# Required-Stop:
 # Short-Description: run hp5370 daemon
 # Description: run hp5370 daemon
 ### END INIT INFO
 
 HP5370D=hp5370d
 HP5370D_EXEC=/usr/local/bin/$HP5370D
-HP5370D_ARGS=-bg
+HP5370D_ARGS="-bg"
 DEV=5370
 #DEV=test
 CAPE=cape-bone-${DEV}-00A0
@@ -22,13 +24,9 @@ SLOTS=`ls /sys/devices/bone_capemgr.*/slots`
 case "$1" in
 
   start)
-    if [ $UID -ne 0 ] ; then
-        echo "User has insufficient privilege."
-        exit 1
-    fi
     echo "Starting hp5370d"
 
-	if [ /lib/firmware/${CAPE}.dts -nt /lib/firmware/${CAPE}.dtbo ] ; then
+	if ! test /lib/firmware/${CAPE}.dts -nt /lib/firmware/${CAPE}.dtbo ; then
 		echo compile ${DEV} device tree;
 		dtc -O dtb -o /lib/firmware/${CAPE}.dtbo -b 0 -@ /lib/firmware/${CAPE}.dts;
 # don't unload old slot because this is known to cause panics; must reboot
@@ -40,7 +38,7 @@ case "$1" in
 		sleep 2;
 	fi
 
-	if [ /lib/firmware/${PRU}.dts -nt /lib/firmware/${PRU}.dtbo ] ; then
+	if ! test /lib/firmware/${PRU}.dts -nt /lib/firmware/${PRU}.dtbo ; then
 		echo compile ${DEV_PRU} device tree;
 		(cd /lib/firmware; dtc -O dtb -o ${PRU}.dtbo -b 0 -@ ${PRU}.dts);
 # don't unload old slot because this is known to cause panics; must reboot
@@ -68,11 +66,6 @@ case "$1" in
     ;;
 
   stop)
-    if [ $UID -ne 0 ] ; then
-        echo "User has insufficient privilege."
-        exit 1
-    fi
-
 	if [ $DEV != "test" ] ; then
 		echo -n "Stopping hp5370d: "
 		start-stop-daemon --stop --name $HP5370D
