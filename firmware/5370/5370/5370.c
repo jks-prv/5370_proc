@@ -766,13 +766,34 @@ char *sim_input()
  	// handle HPIB data over the network
  	char *nb;
  	i = net_poll(NET_HPIB, &nb);
-	if (i) hpib_input(nb, i);
+	if (i) {
+		if (strncmp(nb, "GET ", 4) == 0) {
+			nb = dbuf;
+			sprintf(nb, "attempted web connection on port %d, you want port %s instead\n",
+				HPIB_TCP_PORT, WEBSERVER_PORT);
+			printf("%s", nb);
+			// nothing we tried could get message to show up in browser, unlike below
+			//net_send(NET_HPIB, nb, strlen(nb), NO_COPY(TRUE), FLUSH(TRUE));
+			net_disconnect(NET_HPIB);
+		} else {
+			hpib_input(nb, i);
+		}
+	}
 #endif
 
  	// handle keyboard commands over the network
 	if (!n) {
 		n = net_poll(NET_TELNET, &cp);
-		if (n) cp[n] = 0;
+		if (n) {
+			cp[n] = 0;
+			if (strncmp(cp, "GET ", 4) == 0) {
+				// this message will show up in browser due to net_send(NET_TELNET, ...) in lprintf()
+				lprintf("attempted web connection on port %d, you want port %s instead\n",
+					TELNET_TCP_PORT, WEBSERVER_PORT);
+				net_disconnect(NET_TELNET);
+				n = 0;
+			}
+		}
 	}
 
 	if (!n) {

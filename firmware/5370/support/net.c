@@ -111,9 +111,14 @@ int net_connect(net_conn_t t, net_cs_t cs, char *host, int port)
 
 void net_disconnect(net_conn_t t)
 {
-	if (sfd[t]) close(sfd[t]);
 	if (srv_sock[t]) close(srv_sock[t]);
 	srv_sock[t] = 0;
+}
+
+void net_reset(net_conn_t t)
+{
+	if (sfd[t]) close(sfd[t]);
+	net_disconnect(t);
 }
 
 #ifdef CLIENT_SIDE
@@ -189,7 +194,7 @@ u1_t *net_send(net_conn_t t, char *cb, u4_t nb, bool no_copy, bool flush)
 	static int send_idx;
 	char *buf = (char *) &tx_buf[t][0];
 	int cnt = send_idx;
-	
+
 	if (!srv_sock[t]) return 0;
 
 	if (nb) {

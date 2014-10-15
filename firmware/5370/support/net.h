@@ -8,6 +8,7 @@ typedef enum { NET_HPIB, NET_TELNET } net_conn_t;
 
 int net_connect(net_conn_t t, net_cs_t cs, char *host, int port);
 void net_disconnect(net_conn_t t);
+void net_reset(net_conn_t t);
 int net_client_read(int sfd, char *ib, int len, bool read_once);
 u4_t net_poll(net_conn_t t, char **nb);
 bool net_no_connection(net_conn_t t);

@@ -77,7 +77,10 @@ void lprintf(char *fmt, ...)
 	}
 
 #ifndef CLIENT_SIDE
+	// copy printf output to any active telnet connection
 	net_send(NET_TELNET, s, sl, NO_COPY(TRUE), FLUSH(TRUE));
+
+	// copy printf output to any active browser connection
 	app_to_webserver(s, sl);
 #endif
 
