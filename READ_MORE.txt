@@ -1,4 +1,4 @@
-[edited 6-oct-2014]
+[edited 15-oct-2014]
 
 This file elaborates on the Quick Start guide in the "README.txt" file.
 
@@ -62,9 +62,8 @@ values depending on if you want the Ethernet to use DHCP or manual IP addressing
 going forward. If you made a change the message 'config changed' will appear.
 Then the message 'using dhcp mode' or 'using ip mode'. After a few seconds the
 message 'saving config' will appear. The instrument will then reset. For 'halt'
-the message 'halting' will appear and it will be safe to power-off the
-instrument after 10 seconds when Linux on the BBB has halted.
-
+the message 'halting...' will appear and it will be safe to power-off the
+instrument after the display goes blank.
 
 MANUALLY RUNNING THE APP
 

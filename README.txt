@@ -1,4 +1,4 @@
-[edited 6-oct-2014]
+[edited 15-oct-2014]
 
 This document describes the HP 5370 processor replacement board project.
 
@@ -55,15 +55,17 @@ having trouble determining the IP address see step 8 below for some suggestions.
 
 6. Your instrument should now respond as usual although you will notice it is
 somewhat faster. Before powering off the instrument it is strongly recommended
-you first halt Linux and then wait ten seconds to avoid possible unrecoverable
-filesystem corruption (although this is unlikely). Definitely do not power off
-during the booting process when lots of filesystem writes are occurring. You can
-halt by using the front panel menu interface or by logging into the BBB via ssh
-and typing 'halt'. It is also possible to keep the BBB running by using a
-USB-mini cable from an external hub or USB charger to keep it powered up, even
-with the instrument powered down. This has the advantage of providing 'instant
-on' when the instrument is next powered on (i.e. no Linux booting required). See
-the READ_MORE.txt file for details. 
+you first halt Linux to avoid possible unrecoverable filesystem corruption
+(although this is unlikely). Definitely do not power off during the booting
+process when lots of filesystem writes are occurring. You can halt by using the
+front panel menu interface or by logging into the BBB via ssh and typing 'halt'.
+When halting from the front-panel menu the message 'halting...' will appear and
+it will be safe to power-off the instrument after the display goes blank. It is
+also possible to keep the BBB running by using a USB-mini cable from an external
+hub or USB charger to keep it powered up, even with the instrument powered down.
+This has the advantage of providing 'instant on' when the instrument is next
+powered on (i.e. no Linux booting required). See the READ_MORE.txt file for
+details. 
 
 7. Look at the file READ_MORE.txt to learn about how to use, modify and
 re-compile the app. This file also discusses using "git" to track changes to the

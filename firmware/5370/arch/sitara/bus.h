@@ -60,6 +60,7 @@
 #define GPIO1_AVAIL	0x10050000
 #define GPIO1_EMMC	0xc00000ff
 #define GPIO1_UNK	0x0ff00f00
+#define	GPIO1_LEDS	0x01e00000
 
 
 // on GPIO2:

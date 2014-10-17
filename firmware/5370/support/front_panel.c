@@ -91,7 +91,7 @@ const seg7_t seg7[] = {
 	{ 'f',		(T|TL|BL|M) },
 	{ 'g',		(T|TL|TR|M|B|BR) },
 	{ 'h',		(TL|M|BL|BR) },
-	{ 'i',		(TR|BR) },
+	{ 'i',		(BR) },
 	{ 'j',		(B|BR) },
 	{ 'k',		(T|TL|M|BL|BR) },
 	{ 'l',		(TL|B|BL) },

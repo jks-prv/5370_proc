@@ -113,7 +113,7 @@ void send_pru_cmd(u4_t cmd)
 	assert(pru->cmd == PRU_DONE);
 	pru->cmd = cmd;
 	
-	for (i=0; pru->cmd != PRU_DONE; i++) {
+	if (cmd != PRU_HALT) for (i=0; pru->cmd != PRU_DONE; i++) {
 		if ((i & 0xffffff) == 0xffffff)
 			printf("PRU not responding?\n");
 	}
@@ -124,8 +124,6 @@ void send_pru_cmd(u4_t cmd)
 
 u1_t bus_read(u2_t addr)
 {
-	CONV_ADDR_DCL(a_gen);
-	CONV_DATA_DCL(d_gen);
 	u1_t data;
 	u4_t t;
 	
@@ -144,9 +142,6 @@ u1_t bus_read(u2_t addr)
 
 void bus_write(u2_t addr, u1_t data)
 {
-	CONV_ADDR_DCL(a_gen);
-	CONV_DATA_DCL(d_gen);
-	
 	if (use_pru) {
 		CONV_ADDR(pru->_, a_gen, addr);
 		CONV_WRITE_DATA(pru2->_, d_gen, data);

@@ -9,11 +9,13 @@
 #define PRU_BUS_CLK_STOP	5
 #define PRU_BUS_CLK_START	6
 #define	PRU_TI_MEAS			7
+#define	PRU_HALT			8
 
 #define	PRU_COUNT		1
 
 
 // no -I path when using pasm
+#include "../arch/sitara/bus.h"
 #include "../arch/sitara/sitara.h"
 #include "../5370/5370_regs.h"
 

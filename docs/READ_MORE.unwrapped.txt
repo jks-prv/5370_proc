@@ -1,4 +1,4 @@
-[edited 6-oct-2014]
+[edited 15-oct-2014]
 
 This file elaborates on the Quick Start guide in the "README.txt" file.
 
@@ -29,8 +29,7 @@ Currently the menu items displayed are:
 
 For setting the numerical values of ip, nm and gw use the lit keys in the 5370 'statistics' and 'sample size' columns to increment and decrement the values. Holding the key down will auto-repeat.
 
-To exit menu mode, and/or invoke the menu action, press the reset key after displaying the relevant menu item (e.g. 'cancel' or 'halt'). For the IP addressing modes leave 'dhcp' displayed or one of the three manual IP address values depending on if you want the Ethernet to use DHCP or manual IP addressing going forward. If you made a change the message 'config changed' will appear. Then the message 'using dhcp mode' or 'using ip mode'. After a few seconds the message 'saving config' will appear. The instrument will then reset. For 'halt' the message 'halting' will appear and it will be safe to power-off the instrument after 10 seconds when Linux on the BBB has halted.
-
+To exit menu mode, and/or invoke the menu action, press the reset key after displaying the relevant menu item (e.g. 'cancel' or 'halt'). For the IP addressing modes leave 'dhcp' displayed or one of the three manual IP address values depending on if you want the Ethernet to use DHCP or manual IP addressing going forward. If you made a change the message 'config changed' will appear. Then the message 'using dhcp mode' or 'using ip mode'. After a few seconds the message 'saving config' will appear. The instrument will then reset. For 'halt' the message 'halting...' will appear and it will be safe to power-off the instrument after the display goes blank.
 
 MANUALLY RUNNING THE APP
 

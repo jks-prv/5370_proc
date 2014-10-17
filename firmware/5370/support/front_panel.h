@@ -4,7 +4,7 @@
 #define N_7SEG	16
 
 // override of ascii character set
-#define CHAR_MU		0x01		// e.g. as used in uSec
+#define CHAR_MU			0x01		// e.g. as used in uSec
 
 void dsp_7seg_init(bool ok);
 u4_t dsp_leds_read(u4_t a);

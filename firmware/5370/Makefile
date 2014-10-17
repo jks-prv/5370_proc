@@ -97,24 +97,21 @@ BIN_DEPS =
 
 ifeq ($(DEBIAN_ANGSTROM_DEVSYS),$(DEVSYS))
 	LINUX_DIST = DIST_DEVSYS
-	HALT_STR = \"halted\"
 	ROOT_DIR = \".\"
 endif
 ifeq ($(DEBIAN_ANGSTROM_DEVSYS),$(DEBIAN))
 	LINUX_DIST = DIST_DEBIAN
-	HALT_STR = \"halting..\"
 	ROOT_DIR = \"/root\"
 endif
 ifeq ($(DEBIAN_ANGSTROM_DEVSYS),$(ANGSTROM))
 	LINUX_DIST = DIST_ANGSTROM
-	HALT_STR = \"halted\"
 	ROOT_DIR = \"/home/root\"
 endif
 
 LIBS = -L/usr/local/lib -lpthread
 SIM_FLAGS = -D$(INSTRUMENT) -D$(SETUP) -DARCH_INCLUDE=$(ARCH_INCLUDE) -D$(CHIP) -DCHIP_INCLUDE=$(CHIP_INCLUDE) -DPCB_NAME=$(PCB_NAME)
 VERSION = -DFIRMWARE_VER_MAJ=$(VERSION_MAJ) -DFIRMWARE_VER_MIN=$(VERSION_MIN)
-FLAGS = -Wno-int-to-void-pointer-cast $(I) -I/usr/local/include $(SIM_FLAGS) $(VERSION) -DROOT_DIR=$(ROOT_DIR) -DHALT_STR=$(HALT_STR) -D$(LINUX_DIST)
+FLAGS = -Wno-int-to-void-pointer-cast $(I) -I/usr/local/include $(SIM_FLAGS) $(VERSION) -DROOT_DIR=$(ROOT_DIR) -D$(LINUX_DIST)
 CSRC = $(notdir $(CFILES))
 OBJECTS = $(CSRC:%.c=$(OBJ_DIR)/%.o)
 O3_OBJECTS = $(CSRC:%.c=$(OBJ_DIR_O3)/%.o)

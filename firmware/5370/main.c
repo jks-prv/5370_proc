@@ -7,6 +7,7 @@
 #include "chip.h"
 #include "net.h"
 #include "web.h"
+#include "pru_realtime.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -117,8 +118,8 @@ reset:
 	
 	if (wasRunning) {
 		wasRunning = FALSE;
-		net_disconnect(NET_HPIB);
-		net_disconnect(NET_TELNET);
+		net_reset(NET_HPIB);
+		net_reset(NET_TELNET);
 		web_server_stop();
 		skip_first = save_cfg = config_key = config_ip = config_nm = config_gw = config_am = FALSE;
 	}
@@ -297,9 +298,26 @@ reset:
 
 		case S_MENU_DONE:
 			if (!skip_first && (menu == M_HALT)) {
-					dsp_7seg_str(DSP_LEFT, "halted", DSP_CLEAR);
-					printf("halted\n");
-					if (menu_action) system("halt");
+			
+					// Debian takes a while to halt, but nicely clears the GPIOs so the
+					// display goes blank right when halted.
+					// Angstrom with Gnome disabled halts very fast, but doesn't
+					// clear the GPIOs like Debian. So we get the PRU to poll the LEDs
+					// until they go off, then blank the display.
+					dsp_7seg_str(DSP_LEFT, " halting...", DSP_CLEAR);
+					printf("halting...\n");
+					
+					#ifdef DIST_DEBIAN
+						if (menu_action) system("halt");
+						exit(0);
+					#endif
+
+					#ifdef DIST_ANGSTROM
+						dsp_7seg_chr(POS(0), ' ');		 // preload address & data
+						send_pru_cmd(PRU_HALT);
+						if (menu_action) system("halt");
+						exit(0);
+					#endif
 			} else
 			if (menu == M_CANCEL || (skip_first && (menu == M_HALT))) {
 				app_state = S_START;

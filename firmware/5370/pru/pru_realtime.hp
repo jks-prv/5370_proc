@@ -110,6 +110,15 @@
 	jmp		r.ra3.w0
 .endm
 
+.macro jsr4
+.mparam	dst
+	jal		r.ra4.w0, dst
+.endm
+
+.macro rtn4
+	jmp		r.ra4.w0
+.endm
+
 
 // get/put elements from a .struct
 
