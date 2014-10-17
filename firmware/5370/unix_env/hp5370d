@@ -26,7 +26,7 @@ case "$1" in
   start)
     echo "Starting hp5370d"
 
-	if ! test /lib/firmware/${CAPE}.dts -nt /lib/firmware/${CAPE}.dtbo ; then
+	if test ! -e /lib/firmware/${CAPE}.dtbo -o /lib/firmware/${CAPE}.dts -nt /lib/firmware/${CAPE}.dtbo ; then
 		echo compile ${DEV} device tree;
 		dtc -O dtb -o /lib/firmware/${CAPE}.dtbo -b 0 -@ /lib/firmware/${CAPE}.dts;
 # don't unload old slot because this is known to cause panics; must reboot
@@ -38,7 +38,7 @@ case "$1" in
 		sleep 2;
 	fi
 
-	if ! test /lib/firmware/${PRU}.dts -nt /lib/firmware/${PRU}.dtbo ; then
+	if test ! -e /lib/firmware/${PRU}.dtbo -o /lib/firmware/${PRU}.dts -nt /lib/firmware/${PRU}.dtbo ; then
 		echo compile ${DEV_PRU} device tree;
 		(cd /lib/firmware; dtc -O dtb -o ${PRU}.dtbo -b 0 -@ ${PRU}.dts);
 # don't unload old slot because this is known to cause panics; must reboot
