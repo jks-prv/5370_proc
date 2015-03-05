@@ -69,6 +69,7 @@ typedef volatile struct {
 
 extern com2_t *pru2;
 
+void send_pru_cmd(u4_t cmd);
 void pru_start();
 
 #endif

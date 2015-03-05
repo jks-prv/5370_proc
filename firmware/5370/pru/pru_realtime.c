@@ -67,6 +67,19 @@ static void *pruDataMem;
 com_t *pru;
 com2_t *pru2;
 
+void send_pru_cmd(u4_t cmd)
+{
+	u4_t i;
+	
+	assert(pru->cmd == PRU_DONE);
+	pru->cmd = cmd;
+	
+	if (cmd != PRU_HALT) for (i=0; pru->cmd != PRU_DONE; i++) {
+		if ((i & 0xffffff) == 0xffffff)
+			printf("PRU not responding?\n");
+	}
+}
+
 void pru_start()
 {
     unsigned int ret;
@@ -92,10 +105,10 @@ void pru_start()
     pru->p[2] = 0;
     pru->p[3] = 0;
     pru2->m2_offset = 0xbeefcafe;
-    pru->cmd = PRU_PING;
-    while (pru->cmd != PRU_DONE);
+    send_pru_cmd(PRU_PING);
     if (pru->p[2] != (key1+key2)) panic("PRU didn't start");
     if (pru->p[3] != 0xbeefcafe) panic("PRU com2_t at wrong offset?");
+    send_pru_cmd(PRU_CLEAR);
     lprintf("PRU started\n");
 
 #if 0

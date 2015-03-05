@@ -106,19 +106,6 @@ void sim_args(bool cmd_line, int argc, char *argv[])
 	}
 }
 
-void send_pru_cmd(u4_t cmd)
-{
-	u4_t i;
-	
-	assert(pru->cmd == PRU_DONE);
-	pru->cmd = cmd;
-	
-	if (cmd != PRU_HALT) for (i=0; pru->cmd != PRU_DONE; i++) {
-		if ((i & 0xffffff) == 0xffffff)
-			printf("PRU not responding?\n");
-	}
-}
-
 
 // when the PRU is in use counting overflows it must also proxy regular bus cycles to prevent bus contention
 
@@ -273,7 +260,7 @@ void handler_dev_arm_write(u2_t addr, u1_t data)
 	}
 #endif
 
-	// let PRU count overflows while measuring
+	// let PRU count N0/N3 overflows while measuring
 	// FIXME: is this test valid for all measurement modes? O2_ARM_EN instead? TI +/- vs +only mode?
 	if ((addr == WREG_O2) && isActive(O2_MAN_ARM, data)) {
 		num_meas++;
@@ -285,7 +272,13 @@ void handler_dev_arm_write(u2_t addr, u1_t data)
 		freq_record(0, REG_STR, 0, 0, 0, "* ");
 
 		if (use_pru) {
-			assert(pru->count == PRU_DONE);
+			#if 0
+			//assert(pru->count == PRU_DONE);
+			if (pru->count != PRU_DONE) {
+				printf("write O2_MAN_ARM: pru->count != PRU_DONE? [i.e. PRU never saw EOM]\n");
+			}
+			#endif
+			
 			bus_write(addr, data);	// let arm command go through
 			n3_ovfl_sent = n0_ovfl_sent = ovfl_none = 0;
 
