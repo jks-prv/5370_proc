@@ -1,16 +1,15 @@
-[edited 15-oct-2014]
+[edited 04-may-2015]
 
 This file elaborates on the Quick Start guide in the "README.txt" file.
 
-
-POWERING THE BBB FROM THE USB-MINI PORT
+### Powering the BBB from the USB-mini port
 
 One solution to the annoyance of having to halt the BBB before the instrument is powered off is simply to keep the BBB running by providing it a secondary source of power via the USB-mini port. The BBB already understands how to select between two sources of power: the USB-mini and +5V barrel connectors (the latter of which is actually being delivered from the 5370 via the board expansion connectors). The app detects when the instrument has powered down and resumes running when power is restored. USB power could come from an external USB hub or charger. You may have to obtain a longer USB cable than the one supplied. Be certain to only use the USB-mini connector that is adjacent to the Ethernet RJ45 connector. Do not use the USB-A connector on the other end of the board as that port will not accept input power.
 
 Some of you might even figure out how to derive +5V for the USB-mini cable from the portion of the 5370 power supply that is always powered on if the instrument is off but the line cord is plugged in (hint: big filter caps -- see schematic). The planned USB/Ethernet connector card that replaces the current HPIB one at the back-panel could host a voltage regulator and hold-up capacitor.
 
 
-FRONT PANEL MENU INTERFACE
+### Front panel menu interface
 
 There is a simple menu interface that uses the front panel keys and display to quickly change a few parameters without having to access the BBB. Most importantly you can use this method to set the IP address of the BBB Ethernet interface.
 
@@ -31,7 +30,7 @@ For setting the numerical values of ip, nm and gw use the lit keys in the 5370 '
 
 To exit menu mode, and/or invoke the menu action, press the reset key after displaying the relevant menu item (e.g. 'cancel' or 'halt'). For the IP addressing modes leave 'dhcp' displayed or one of the three manual IP address values depending on if you want the Ethernet to use DHCP or manual IP addressing going forward. If you made a change the message 'config changed' will appear. Then the message 'using dhcp mode' or 'using ip mode'. After a few seconds the message 'saving config' will appear. The instrument will then reset. For 'halt' the message 'halting...' will appear and it will be safe to power-off the instrument after the display goes blank.
 
-MANUALLY RUNNING THE APP
+### Manually running the app
 
 Disabling app auto-start at boot time:
 You'll probably want to stop the app from auto-starting at boot time while
@@ -58,7 +57,7 @@ There are a few command line arguments for 'hd' and 'h':
 For the store/recall commands a key is considered "pushed" if the corresponding LED is lit. The current key state is saved in the file ~/.5370.[profile_name].keys every 5 seconds or so. If no profile name is given "default" is used. Thanks to John Miles for suggesting this feature.
 
 
-KEYBOARD COMMANDS
+### Keyboard commands
 
 When the app has been started manually it responds to several commands (type "?" or "help" for a list). These are primarily to assist development when you're not sitting in the same room as the noisy beast:
 
@@ -102,19 +101,20 @@ The app also contains a small web server that listens for browser connections to
     ip_address|hostname|localhost:5372
 
 e.g.
+
     192.168.0.101:5372
     my-5370:5372
 
 Port 5372 is used because the Angstrom/Debian distributions on the Beagle already have another web server listening on port 80 (the default port for browser connections). Although it is possible to disable this other web server and change the define 'WEBSERVER_PORT' in web.h and re-install.
 
 
-SOFTWARE VERSIONS
+### Software versions
 To see what version of the software is in your build directory, go there ('cd ~/5370') and type 'm v' or 'm version'. The version is also shown on the instrument display when the app starts.
 
 
-USING GIT TO TRACK SOFTWARE CHANGES
+### Using git to track software changes
 
-The BBB is delivered with (or you have installed) the software in the /home/root/5370 build directory. But it might be a good idea to use the version control system "git" to track changes made on the GitHub repository github.com/jks-prv/5370_proc where the latest changes are always available. There are several ways to configure git depending on your goals. If you expect to contribute changes to the software then you should setup an account on github.com and configure git on the BBB with your account information. You should also do this if you want to be notified by email when changes are made to the repository. There is info on the web about how to setup git and it won't be repeated here.
+The BBB is delivered with (or you have installed) the software in the /home/root/5370 build directory. But it might be a good idea to use the version control system "git" to track changes made on the GitHub repository [github.com/jks-prv/5370_proc](http://github.com/jks-prv/5370_proc) where the latest changes are always available. There are several ways to configure git depending on your goals. If you expect to contribute changes to the software then you should setup an account on [github.com](http://github.com) and configure git on the BBB with your account information. You should also do this if you want to be notified by email when changes are made to the repository. There is info on the web about how to setup git and it won't be repeated here.
 
 If you just want to use git to manually get changes then only a few commands are needed. To clone the repository initially:
 
@@ -131,24 +131,24 @@ If you have made local changes to the software then pulling updates like this wi
 Note that the build directory '5370' is in ~/5370_proc/firmware/ of the git clone.
 
 
-NOTES ABOUT THE BEAGLEBONE BLACK
+### Notes about the beaglebone black
 
 BBB resources:
 There are many resources on the web with info about the BBB.
 
-	BBB Wiki:  http://elinux.org/Beagleboard:BeagleBoneBlack
-	Adafruit tutorials:  http://learn.adafruit.com/category/beaglebone
-	List of BBB distributors:  http://beagleboard.org/Products
-	BBB login help:  http://elinux.org/Beagleboard:Terminal_Shells
-	ssh using USB:  http://learn.adafruit.com/ssh-to-beaglebone-black-over-usb
+[BBB Wiki: elinux.org/Beagleboard:BeagleBoneBlack](http://elinux.org/Beagleboard:BeagleBoneBlack)  
+[Adafruit tutorials: learn.adafruit.com/category/beaglebone](http://learn.adafruit.com/category/beaglebone)  
+[List of BBB distributors: beagleboard.org/Products](http://beagleboard.org/Products)  
+[BBB login help: elinux.org/Beagleboard:Terminal_Shells](http://elinux.org/Beagleboard:Terminal_Shells)  
+[ssh using USB: learn.adafruit.com/ssh-to-beaglebone-black-over-usb](http://learn.adafruit.com/ssh-to-beaglebone-black-over-usb)
 
 USB ad-hoc networking:
-One way to ssh to the BBB is by using a USB cable as an ad-hoc network connection. This is useful because the BBB will appear at a fixed address of 192.168.7.2 on the USB attached computer. You can then simply say "ssh root@192.168.7.2" to login. A driver usually must be installed on the computer to use USB in this way. See http://learn.adafruit.com/ssh-to-beaglebone-black-over-usb for details. Note that you must use the USB-mini connector next to the Ethernet RJ45 for networking, not the USB-A connector on the other end of the board.
+One way to ssh to the BBB is by using a USB cable as an ad-hoc network connection. This is useful because the BBB will appear at a fixed address of 192.168.7.2 on the USB attached computer. You can then simply say "ssh root@192.168.7.2" to login. A driver usually must be installed on the computer to use USB in this way. See [learn.adafruit.com/ssh-to-beaglebone-black-over-usb](http://learn.adafruit.com/ssh-to-beaglebone-black-over-usb) for details. Note that you must use the USB-mini connector next to the Ethernet RJ45 for networking, not the USB-A connector on the other end of the board.
 
 Once logged-in you can use the "ifconfig eth0" command to see what IP address was assigned to the Ethernet connection (the number after "inet addr"). Note that this USB networking cannot be used to give the BBB an Internet connection because the attached computer isn't acting as a router (although there are supposed to be ways of doing this). The BBB doesn't get confused by having two network connections (Ethernet and USB) because they have different IP addresses and the default routing for Internet traffic should be automatically set to the Ethernet connection.
 
 Using a serial port:
-Another possibility for connecting is using a USB-to-serial-port cable. That is, serial port on the BBB-side and a virtual serial port via USB on an attached computer. The BBB has a 6-pin header for this purpose. However, when plugged into the 5370 board there in not sufficient clearance for the usual adapter cable mentioned on the BBB Wiki. Instead use the low-profile adapter sold by Tindie: https://www.tindie.com/products/spirilis/beaglebone-black-ftdi-friction-fit/ The USB cable that comes with the Tindie product is short, but necessary because it is a special small size, so a USB-A-to-USB-A extension cable may be required. On a serial connection login as "root" with no password just as with ssh.
+Another possibility for connecting is using a USB-to-serial-port cable. That is, serial port on the BBB-side and a virtual serial port via USB on an attached computer. The BBB has a 6-pin header for this purpose. However, when plugged into the 5370 board there in not sufficient clearance for the usual adapter cable mentioned on the BBB Wiki. Instead use the low-profile adapter sold by Tindie: [tindie.com/products/spirilis/beaglebone-black-ftdi-friction-fit](https://www.tindie.com/products/spirilis/beaglebone-black-ftdi-friction-fit) The USB cable that comes with the Tindie product is short, but necessary because it is a special small size, so a USB-A-to-USB-A extension cable may be required. On a serial connection login as "root" with no password just as with ssh.
 
 WiFi:
 It is possible to use a USB WiFi dongle under Angstrom/Debian but commentary on the net says this may be difficult to get working. You probably don't want a WiFi adapter radiating inside the 5370 anyway. We suppose it would be okay to run the dongle outside the 5370 on the end of a USB extension cable.
@@ -190,7 +190,7 @@ We all know stuff breaks when using different versions of things. All the BBBs u
 Or by looking at the ID.txt file in the "BEAGLEBONE" virtual USB drive that appears when you connect the BBB to a computer with a USB cable. These distributions use a Linux 3.8 kernel.
 
 
-FILES
+### Files
 
 The files on the github repository and on the BBB are organized as follows. The BBB only has the files from the firmware sub-directory of the repository installed (i.e. /home/root/5370)
 
@@ -241,7 +241,7 @@ The files on the github repository and on the BBB are organized as follows. The 
                             keep things simple.
 
 
-DESIGN OVERVIEW
+### Design overview
 
 The idea is to run the unmodified instrument rom firmware by emulating the Motorola MC6800 processor used on the original 5370 processor board. The assumption is that the BeagleBone Black processor will be able to run the 5370 firmware, with the MC6800 interpreter, fast enough to outperform the original 1.5 MHz MC6800. This turns out to be the case, even with bit-banging the 5370 bus cycles using the BBB's GPIOs.
 
@@ -256,7 +256,7 @@ The "device tree" mechanism must be used to configure the properties of the GPIO
 Linux process scheduling can pause the execution of the app for arbitrary amounts of time. This is a serious problem during a long measurement when the firmware normally expects to run continuously to properly account for overflows of the 16-bit hardware N0 and N3 (event) counters. This problem is solved by using one of the integrated "programmable real-time unit" (PRU) sub-systems on the AM3335 processor chip of the BBB. A small program on the PRU generates all 5370 bus cycles and counter overflow measurements independently of Linux on the main CPU. See the "pru/" directory for the source.
 
 
-TRANSFERRING MEASUREMENTS OVER THE NETWORK
+### Transferring measurements over the network
 
 A client-side example program 5370/hpib_client.c can be run on another computer to connect to the 5370 over a network connection and do HPIB-style transfers including regular (12K meas/sec) and the new fast (39K meas/sec) binary mode. The program is written in standard C and meant to be built with a "make bc" command on a generic Unix/Linux system. It uses ordinary TCP-based socket I/O found in support/net.c to connect to, not surprisingly, port number 5370.
 
@@ -276,7 +276,7 @@ An example run from the instrument's own BBB (hence 'localhost'). Note that '~^\
     root@my-5370:
 
 
-EXPANDING INSTRUMENT FUNCTIONALITY
+### Expanding instrument functionality
 
 In the file user/example.c is an example of how you might add some code to be called when a certain combination of front-panel keys are pressed. The routine meas_extend_example_init() is called from main.c at app startup time. It calls register_key_callback() to have the routine meas_extend_example() called whenever the MEAN and MIN keys are pressed together (or MEAN when LCL/RMT is used as a "shift"-style key).
 
