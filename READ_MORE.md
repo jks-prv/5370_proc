@@ -1,6 +1,6 @@
 [edited 04-may-2015]
 
-This file elaborates on the Quick Start guide in the "README.txt" file.
+This file elaborates on the Quick Start guide in the [README.md](http://github.com/jks-prv/5370_proc/blob/master/README.md) file.
 
 ### Powering the BBB from the USB-mini port
 
