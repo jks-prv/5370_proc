@@ -3227,7 +3227,7 @@ static void handle_delete(struct connection *conn, const char *path) {
   } else if (S_ISDIR(st.st_mode)) {
     remove_directory(path);
     send_http_error(conn, 204, NULL);
-  } else if (!remove(path) == 0) {
+  } else if (!(remove(path) == 0)) {
     send_http_error(conn, 204, NULL);
   } else {
     send_http_error(conn, 423, NULL);

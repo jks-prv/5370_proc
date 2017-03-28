@@ -9,7 +9,7 @@
 /plugin/;
 
 / {
-	compatible = "ti,beaglebone", "ti,beaglebone-black";
+	compatible = "ti,beaglebone", "ti,beaglebone-black", "ti,beaglebone-green";
 
 	/* identification */
 	part-number = "cape-bone-5370";
@@ -20,31 +20,31 @@
 		__overlay__ {
 			cape_5370_pins: pinmux_cape_5370_pins {
 				pinctrl-single,pins = <
-								/* 0x20=rx, 0x10=pu, 0x08=pdis */
-					0x90 0x0a	/* p807 clk/timer4 out m2 */
-					0x98 0x37	/* p810 ld7 io m7 */
-					0x34 0x37	/* p811 ld6 io m7 */
-					0x30 0x37	/* p812 ld5 io m7 */
-					0x24 0x37	/* p813 ld4 io m7 */
-					0x28 0x37	/* p814 ld3 io m7 */
-					0x3c 0x37	/* p815 ld2 io m7 */
-					0x38 0x37	/* p816 ld1 io m7 */
-					0x2c 0x37	/* p817 ld0 io m7 */
-					0x8c 0x0f	/* p818 oe out m7 */
-					0x20 0x0f	/* p819 dir out m7 */
-					0x7c 0x0f	/* p826 lvma out m7 */
-
-					0x70 0x0f	/* p911 lrst out m7 */
-					0x4c 0x37	/* p916 lnmi in m7 */
+								/* 0x40=slow, 0x20=rx, 0x10=pu, 0x08=pdis */
+					0x070 0x0f	/* p911 lrst out m7 */
+					0x04c 0x37	/* p916 lnmi in m7 */
 					0x15c 0x37	/* p917 lirq in m7 */
 					0x158 0x0f	/* p918 lrw out m7 */
 					0x154 0x0f	/* p921 la6 out m7 */
 					0x150 0x0f	/* p922 la5 out m7 */
-					0x44 0x0f	/* p923 la4 out m7 */
+					0x044 0x0f	/* p923 la4 out m7 */
 					0x184 0x0f	/* p924 la3 out m7 */
 					0x180 0x0f	/* p926 la2 out m7 */
 					0x1a4 0x0f	/* p927 la1 out m7 */
 					0x198 0x0f	/* p930 la0 out m7 */
+
+					0x090 0x0a	/* p807 clk/timer4 out m2 */
+					0x098 0x37	/* p810 ld7 io m7 */
+					0x034 0x37	/* p811 ld6 io m7 */
+					0x030 0x37	/* p812 ld5 io m7 */
+					0x024 0x37	/* p813 ld4 io m7 */
+					0x028 0x37	/* p814 ld3 io m7 */
+					0x03c 0x37	/* p815 ld2 io m7 */
+					0x038 0x37	/* p816 ld1 io m7 */
+					0x02c 0x37	/* p817 ld0 io m7 */
+					0x08c 0x0f	/* p818 oe out m7 */
+					0x020 0x0f	/* p819 dir out m7 */
+					0x07c 0x0f	/* p826 lvma out m7 */
 				>;
 			};
 		};

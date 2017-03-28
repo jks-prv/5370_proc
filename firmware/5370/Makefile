@@ -177,13 +177,16 @@ else
 	install -D -s -o root -g root hp5370d /usr/local/bin/hp5370d
 	install -D -o root -g root hp5370d_realtime.bin /usr/local/bin/hp5370d_realtime.bin
 	rm -f hp5370d hp5370d_realtime.bin
+#
 	install -o root -g root unix_env/hp5370d /etc/init.d
 	install -o root -g root unix_env/hp5370d.service /etc/systemd/system
 	install -D -o root -g root -m 0644 unix_env/$(CAPE).dts /lib/firmware/$(CAPE).dts
 	install -D -o root -g root -m 0644 unix_env/$(PRU).dts /lib/firmware/$(PRU).dts
 #	install -D -o root -g root -m 0644 unix_env/$(TEST).dts /lib/firmware/$(TEST).dts
-	install -D -o root -g root -m 0644 unix_env/.bashrc ~root/.bashrc
-	install -D -o root -g root -m 0644 unix_env/.profile ~root/.profile
+#
+	install -D -o root -g root -m 0644 unix_env/bashrc ~root/.bashrc
+	install -D -o root -g root -m 0644 unix_env/bashrc.local ~root/.bashrc.local
+	install -D -o root -g root -m 0644 unix_env/profile ~root/.profile
 
 # disable display manager (on HDMI port) to improve real-time response and decrease boot time
 ifeq ($(DEBIAN_ANGSTROM_DEVSYS),$(DEBIAN))
@@ -228,19 +231,27 @@ v ver version:
 	@echo "you are running version" $(VERSION_MAJ)"."$(VERSION_MIN)
 
 DIST = 5370
-BBB_IP = $(IP_BBB_5370)
+REPO_NAME = 5370_proc
 
 tar:
 	make clean
 	tar cfz ../$(DIST).tgz ../$(DIST)
 
 scp: tar
-	scp ../$(DIST).tgz root@$(BBB_IP):~root
+	scp ../$(DIST).tgz root@$(HOST):~root
 
 # selectively transfer files to the target so everything isn't compiled each time
 EXCLUDE = "/obj" "/obj_O3" "*.dSYM" "*.bin" "pas" "pru/pru_realtime.txt" "pru/pru_realtime.lst"
-rsync:
-	rsync -av --delete $(addprefix --exclude , $(EXCLUDE)) . root@$(BBB_IP):~root/$(DIST)
+RSYNC = rsync -av --delete $(addprefix --exclude , $(EXCLUDE)) . root@$(HOST):~root/$(DIST)
+rsync_su:
+rsync_bit:
+	sudo $(RSYNC)
 
 clean:
 	-rm -rf $(OBJ_DIR) $(OBJ_DIR_O3) $(BINS) $(wildcard hp5370d*) *.dSYM ../$(DIST).tgz pas $(addprefix pru/pru_realtime.,bin lst txt) web/$(EDATA)
+
+# used by scgit alias
+copy_to_git:
+	make clean
+	@echo $(GITAPP)
+	rsync -av --delete --exclude .git --exclude .DS_Store . $(GITAPP)/$(REPO_NAME)/firmware/5370

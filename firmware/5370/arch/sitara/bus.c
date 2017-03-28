@@ -19,30 +19,30 @@ typedef struct {
 } pinmux_t;
 
 pinmux_t pins[] = {
-	{807, 0x090, PMUX_OUTPUT | PMUX_M2},
-	{810, 0x098, PMUX_INOUT | PMUX_M7},
-	{811, 0x034, PMUX_INOUT | PMUX_M7},
-	{812, 0x030, PMUX_INOUT | PMUX_M7},
-	{813, 0x024, PMUX_INOUT | PMUX_M7},
-	{814, 0x028, PMUX_INOUT | PMUX_M7},
-	{815, 0x03c, PMUX_INOUT | PMUX_M7},
-	{816, 0x038, PMUX_INOUT | PMUX_M7},
-	{817, 0x02c, PMUX_INOUT | PMUX_M7},
-	{818, 0x08c, PMUX_OUTPUT | PMUX_M7},
-	{819, 0x020, PMUX_OUTPUT | PMUX_M7},
-	{826, 0x07c, PMUX_OUTPUT | PMUX_M7},
+	{807, 0x090, PMUX_OUTPUT | PMUX_M2},	// clk
+	{810, 0x098, PMUX_INOUT  | PMUX_M7},	// d7
+	{811, 0x034, PMUX_INOUT  | PMUX_M7},	// d6
+	{812, 0x030, PMUX_INOUT  | PMUX_M7},	// d5
+	{813, 0x024, PMUX_INOUT  | PMUX_M7},	// d4
+	{814, 0x028, PMUX_INOUT  | PMUX_M7},	// d3
+	{815, 0x03c, PMUX_INOUT  | PMUX_M7},	// d2
+	{816, 0x038, PMUX_INOUT  | PMUX_M7},	// d1
+	{817, 0x02c, PMUX_INOUT  | PMUX_M7},	// d0
+	{818, 0x08c, PMUX_OUTPUT | PMUX_M7},	// oe
+	{819, 0x020, PMUX_OUTPUT | PMUX_M7},	// dir
+	{826, 0x07c, PMUX_OUTPUT | PMUX_M7},	// vma
 
-	{911, 0x070, PMUX_OUTPUT | PMUX_M7},
-	{916, 0x04c, PMUX_INPUT | PMUX_M7},
-	{917, 0x15c, PMUX_INPUT | PMUX_M7},
-	{918, 0x158, PMUX_OUTPUT | PMUX_M7},
-	{921, 0x154, PMUX_OUTPUT | PMUX_M7},
-	{922, 0x150, PMUX_OUTPUT | PMUX_M7},
-	{923, 0x044, PMUX_OUTPUT | PMUX_M7},
-	{924, 0x184, PMUX_OUTPUT | PMUX_M7},
-	{926, 0x180, PMUX_OUTPUT | PMUX_M7},
-	{927, 0x1a4, PMUX_OUTPUT | PMUX_M7},
-	{930, 0x198, PMUX_OUTPUT | PMUX_M7},
+	{911, 0x070, PMUX_OUTPUT | PMUX_M7},	// rst
+	{916, 0x04c, PMUX_INPUT  | PMUX_M7},	// nmi
+	{917, 0x15c, PMUX_INPUT  | PMUX_M7},	// irq
+	{918, 0x158, PMUX_OUTPUT | PMUX_M7},	// rw
+	{921, 0x154, PMUX_OUTPUT | PMUX_M7},	// a6
+	{922, 0x150, PMUX_OUTPUT | PMUX_M7},	// a5
+	{923, 0x044, PMUX_OUTPUT | PMUX_M7},	// a4
+	{924, 0x184, PMUX_OUTPUT | PMUX_M7},	// a3
+	{926, 0x180, PMUX_OUTPUT | PMUX_M7},	// a2
+	{927, 0x1a4, PMUX_OUTPUT | PMUX_M7},	// a1
+	{930, 0x198, PMUX_OUTPUT | PMUX_M7},	// a0
 	
 	{0, 0, 0}
 };
@@ -61,7 +61,7 @@ void check_pmux()
 	for (p=pins; p->pin; p++) {
 		pm = pmux[(0x800 + p->offset) >> 2];
 		if (pm != p->pinmux) {
-			lprintf("pin %d pinmux is 0x%x should be 0x%x\n", p->pin, pm, p->pinmux);
+			lprintf("pin %d pinmux is 0x%02x should be 0x%02x\n", p->pin, pm, p->pinmux);
 			fail = 1;
 		}
 	}
