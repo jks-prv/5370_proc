@@ -1,11 +1,11 @@
-[edited 29-march-2017]
+[edited 20-october-2017]
 
 The HP 5370 processor replacement board project
 -----------------------------------------------
 
 Version 3.x of the project uses an inexpensive BeagleBone Black (BBB) single-board computer as the host for the 5370 application code (app). The BBB runs Linux from the on-board eMMC flash memory, either the Angstrom distribution on the rev B BBBs with 2GB of eMMC or Debian 7 on the rev C BBBs with 4GB of eMMC (the less expensive BB Green also works).
 
-**Important note (2017)**: The most recently manufactured Beagles ship with Debian 8 distributions that are incompatible with the 5370 software. The software installation instructions below will describe a procedure to re-flash the memory of the Beagle with a compatible version of Debian together with the 5370 software.
+**Important note (2017)**: The most recently manufactured Beagles ship with Debian 8 distributions that are incompatible with the 5370 software. The software installation instructions below will describe a procedure to re-flash the memory of the Beagle with a compatible version of Debian 7 together with the 5370 software.
 
 
 ### Quick Start
@@ -89,13 +89,12 @@ A large image file containing a complete Debian distribution for the Beagle incl
 This process is described fully in a section of the KiwiSDR project documentation: [Optionally downloading the software](http://kiwisdr.com/quickstart/index.html#id-dload). However, instead of the image files and scripts for the KiwiSDR specified in that documentation use the ones below.
 
 * Mac & Windows:
- * Download this 235 MB .img.xz file to your Mac/PC from either of these places
+ * Download this 235 MB .img.xz file to your Mac/PC
 (SHA256: 221892a7ea38edf01e27ef5b66810cb07e86d5dffa4686cebe7d0805ca16359f)
   * [dropbox.com](https://www.dropbox.com/s/t2dkk2k4ebuqdmi/5370_v3.5_BBB_Debian_7.img.xz?dl=1)
-  * [jks.com](http://www.jks.com/files/5370_v3.5_BBB_Debian_7.img.xz)
 
 * Beagle / Debian Linux:
- * Get install script by typing:
+ * Get install script by typing one of the following:
   * wget [http://jks.com/files/5370-download-5370-create-micro-SD-flasher.sh](http://jks.com/files/5370-download-5370-create-micro-SD-flasher.sh)
   * wget [https://www.dropbox.com/s/e62h414qxlr0ty5/5370-download-5370-create-micro-SD-flasher.sh](https://www.dropbox.com/s/e62h414qxlr0ty5/5370-download-5370-create-micro-SD-flasher.sh?dl=1)
 
