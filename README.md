@@ -1,4 +1,4 @@
-[edited 20-october-2017]
+[edited 5 Jun 2018]
 
 The HP 5370 processor replacement board project
 -----------------------------------------------
@@ -90,7 +90,7 @@ This process is described fully in a section of the KiwiSDR project documentatio
 
 * Mac & Windows:
  * Download this 235 MB .img.xz file to your Mac/PC
-(SHA256: 221892a7ea38edf01e27ef5b66810cb07e86d5dffa4686cebe7d0805ca16359f)
+(SHA256: 8dae19d4ae0752f6996f2f9b530d2eb59a7e49d8b08f7bf57cc4f039307337db)
   * [dropbox.com](https://www.dropbox.com/s/t2dkk2k4ebuqdmi/5370_v3.5_BBB_Debian_7.img.xz?dl=1)
 
 * Beagle / Debian Linux:

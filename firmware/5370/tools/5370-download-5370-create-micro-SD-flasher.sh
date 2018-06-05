@@ -5,10 +5,8 @@
 
 VER="v3.5"
 DEBIAN_VER="7"
-CKSUM="221892a7ea38edf01e27ef5b66810cb07e86d5dffa4686cebe7d0805ca16359f"
+CKSUM="8dae19d4ae0752f6996f2f9b530d2eb59a7e49d8b08f7bf57cc4f039307337db"
 
-# image files are available on both dropbox.com and jks.com
-#DISTRO_HOST="http://jks.com/files"
 DISTRO_HOST="https://www.dropbox.com/s/bf5yl3qd2tvm216"
 DISTRO="5370_${VER}_BBB_Debian_${DEBIAN_VER}.img.xz"
 
@@ -40,7 +38,7 @@ echo "--- copying to micro-SD card, will take several minutes"
 echo -n "--- hit enter when ready:" ; read not_used
 xzcat -v ${DISTRO} | dd of=/dev/mmcblk1
 
-echo "--- when next booted with micro-SD installed, KiwiSDR image should be copied to Beagle eMMC flash"
+echo "--- when next booted with micro-SD installed, the 5370 image should be copied to Beagle eMMC flash"
 echo -n "--- hit ^C to skip reboot, else enter when ready to reboot:" ; read not_used
 
 echo "--- rebooting with flasher micro-SD installed will COMPLETELY OVERWRITE THIS BEAGLE's FILESYSTEM!"
@@ -49,6 +47,6 @@ echo -n "--- ARE YOU SURE? enter when ready to reboot:" ; read not_used
 echo "--- okay, rebooting to re-flash Beagle eMMC flash from micro-SD"
 echo "--- you should see a back-and-forth pattern in the LEDs during the copy"
 echo "--- after all the LEDs go dark (Beagle is powered off), remove micro-SD and power up"
-echo "--- you should now be running KiwiSDR distro"
+echo "--- you should now be running the 5370 distro"
 echo "--- rebooting now..."
 reboot
