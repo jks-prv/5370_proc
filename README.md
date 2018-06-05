@@ -96,8 +96,9 @@ Download this 235 MB .img.xz file to your Mac/PC (SHA256: 8dae19d4ae0752f6996f2f
 Beagle / Debian Linux:  
 Get install script by typing one of the following:
 
-* wget [http://www.jks.com/files/5370-download-5370-create-micro-SD-flasher.sh](http://www.jks.com/files/5370-download-5370-create-micro-SD-flasher.sh)
-* wget [https://www.dropbox.com/s/e62h414qxlr0ty5/5370-download-5370-create-micro-SD-flasher.sh](https://www.dropbox.com/s/e62h414qxlr0ty5/5370-download-5370-create-micro-SD-flasher.sh?dl=1)
+    wget http://www.jks.com/files/5370-download-5370-create-micro-SD-flasher.sh
+    
+    wget https://www.dropbox.com/s/e62h414qxlr0ty5/5370-download-5370-create-micro-SD-flasher.sh?dl=1
 
 After the re-flashing process remove the 5V power and Ethernet connections.
 
