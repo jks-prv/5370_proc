@@ -1,4 +1,4 @@
-[edited 5 Jun 2018]
+[edited 9 Jun 2018]
 
 The HP 5370 processor replacement board project
 -----------------------------------------------
@@ -89,9 +89,11 @@ A large image file containing a complete Debian distribution for the Beagle incl
 This process is described fully in a section of the KiwiSDR project documentation: [Optionally downloading the software](http://kiwisdr.com/quickstart/index.html#id-dload). However, instead of the image files and scripts for the KiwiSDR specified in that documentation use the ones below.
 
 Mac & Windows:  
-Download this 235 MB .img.xz file to your Mac/PC (SHA256: 8dae19d4ae0752f6996f2f9b530d2eb59a7e49d8b08f7bf57cc4f039307337db)
+Download this 235 MB .img.xz file to your Mac/PC for either of these places:  
+(SHA256: 8dae19d4ae0752f6996f2f9b530d2eb59a7e49d8b08f7bf57cc4f039307337db)
 
 * [dropbox.com](https://www.dropbox.com/s/t2dkk2k4ebuqdmi/5370_v3.5_BBB_Debian_7.img.xz?dl=1)
+* [www.jks.com/files/5370_v3.5_BBB_Debian_7.img.xz](http://www.jks.com/files/5370_v3.5_BBB_Debian_7.img.xz)
 
 Beagle / Debian Linux:  
 Get install script by typing one of the following:
