@@ -92,7 +92,7 @@ Mac & Windows:
 Download this ~240 MB .img.xz file to your Mac/PC:  
 (SHA256: 5025869856d9061a23e27768ca55428dcd1691cd4591d08500ad558f57ae2072)
 
-* [www.jks.com/files/5370_v3.5_BBB_Debian_7.img.xz](http://www.jks.com/files/5370_v3.5_BBB_Debian_7.9.img.xz)
+* [www.jks.com/files/5370_v3.5_BBB_Debian_7.9.img.xz](http://www.jks.com/files/5370_v3.5_BBB_Debian_7.9.img.xz)
 
 Beagle / Debian Linux:  
 Get the install script by typing the following:
