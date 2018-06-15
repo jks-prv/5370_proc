@@ -2,12 +2,13 @@
 # Copyright (c) 2017 John Seamons, ZL/KF6VO
 
 # NB: this distro image is a flasher
+# updated 14 June 2018
 
 VER="v3.5"
-DEBIAN_VER="7"
-CKSUM="8dae19d4ae0752f6996f2f9b530d2eb59a7e49d8b08f7bf57cc4f039307337db"
+DEBIAN_VER="7.9"
+CKSUM="5025869856d9061a23e27768ca55428dcd1691cd4591d08500ad558f57ae2072"
 
-DISTRO_HOST="https://www.dropbox.com/s/bf5yl3qd2tvm216"
+DISTRO_HOST="http://www.jks.com/files"
 DISTRO="5370_${VER}_BBB_Debian_${DEBIAN_VER}.img.xz"
 
 echo "--- get 5370 distro image from net and create micro-SD flasher"
